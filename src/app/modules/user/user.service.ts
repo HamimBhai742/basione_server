@@ -385,6 +385,26 @@ const resetPassword = async (token: string, password: string) => {
   return null;
 };
 
+//get me
+const getMyProfile = async (id: string) => {
+  const user = await prisma.user.findFirstOrThrow({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      isVerified: true,
+
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  return user;
+};
 
 export const userService = {
   registerUser,
@@ -394,4 +414,5 @@ export const userService = {
   verifyForgotOtp,
   resetPassword,
   resendForgotPassOtp,
+  getMyProfile,
 };

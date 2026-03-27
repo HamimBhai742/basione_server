@@ -6,6 +6,7 @@ import {
   userZodSchema,
 } from "./user.zod.schema";
 import { validateRequest } from "../../middleware/validateRequest";
+import { checkAuth } from "../../middleware/checkAuth";
 
 const router = Router();
 
@@ -34,5 +35,7 @@ router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 router.post("/reset-password", userController.resetPassword);
 
 router.post("/resend-forgot-password-otp", userController.resendForgotPassOtp);
+
+router.get("/me", checkAuth("user"), userController.getMyProfile);
 
 export const userRoutes = router;
