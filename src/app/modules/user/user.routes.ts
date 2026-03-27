@@ -27,4 +27,10 @@ router.post(
   userController.resendOtp,
 );
 
+router.post("/forgot-password", userController.forgotPassword);
+
+router.post("/verify-forgot-otp", userController.verifyForgotOtp);
+
+router.post("/reset-password", userController.resetPassword);
+
 export const userRoutes = router;
