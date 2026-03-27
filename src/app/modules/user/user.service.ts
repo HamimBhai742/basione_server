@@ -385,6 +385,7 @@ const resetPassword = async (token: string, password: string) => {
   return null;
 };
 
+
 export const userService = {
   registerUser,
   verifyOtp,
