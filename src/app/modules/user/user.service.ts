@@ -14,6 +14,8 @@ interface IUserPayload {
   email: string;
   password: string;
 }
+
+//register user
 const registerUser = async (payload: IUserPayload) => {
   const isExistingUser = await prisma.user.findUnique({
     where: {
@@ -84,6 +86,7 @@ const registerUser = async (payload: IUserPayload) => {
   return user;
 };
 
+//verify register user email
 const verifyOtp = async (otp: string, email: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -124,6 +127,7 @@ const verifyOtp = async (otp: string, email: string) => {
   };
 };
 
+//resend otp for register user
 const resendOtp = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -166,6 +170,7 @@ const resendOtp = async (email: string) => {
   return null;
 };
 
+//forgot password
 const forgotPassword = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -222,6 +227,7 @@ const forgotPassword = async (email: string) => {
   };
 };
 
+//resend otp for forgot password
 const resendForgotPassOtp = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -278,6 +284,7 @@ const resendForgotPassOtp = async (email: string) => {
   };
 };
 
+//verify forgot password
 const verifyForgotOtp = async (otp: string, email: string, token: string) => {
   const user = await prisma.user.findUnique({
     where: {
@@ -324,6 +331,7 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
   };
 };
 
+//reset password after verify
 const resetPassword = async (token: string, password: string) => {
   const decoded = verifyToken(token, config.jwt.secret);
 
