@@ -38,4 +38,11 @@ router.post("/resend-forgot-password-otp", userController.resendForgotPassOtp);
 
 router.get("/me", checkAuth("user"), userController.getMyProfile);
 
+router.patch(
+  "/update-profile",
+  checkAuth("user"),
+  validateRequest(userZodSchema),
+  userController.updateUser,
+);
+
 export const userRoutes = router;

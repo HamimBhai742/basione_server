@@ -406,6 +406,28 @@ const getMyProfile = async (id: string) => {
   return user;
 };
 
+//user update profile
+const updateUser = async (id: string, payload: any) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!user) {
+    throw new AppError("User not found", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: payload,
+  });
+
+  return null;
+};
+
 export const userService = {
   registerUser,
   verifyOtp,
@@ -415,4 +437,5 @@ export const userService = {
   resetPassword,
   resendForgotPassOtp,
   getMyProfile,
+  updateUser,
 };

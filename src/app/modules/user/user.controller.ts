@@ -103,6 +103,19 @@ const getMyProfile = catchAsync(
   },
 );
 
+const updateUser = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const user = await userService.updateUser(req.user.id, req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User profile updated successfully",
+      data: user,
+    });
+  },
+);
+
 export const userController = {
   registerUser,
   verifyOtp,
@@ -112,4 +125,5 @@ export const userController = {
   resetPassword,
   resendForgotPassOtp,
   getMyProfile,
+  updateUser,
 };

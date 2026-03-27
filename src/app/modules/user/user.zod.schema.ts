@@ -18,3 +18,11 @@ export const otpVerifyZodSchema = z.object({
 export const otpResendZodSchema = z.object({
   email: z.email({ message: "Email is required" }),
 });
+
+export const userUpdateZodSchema = z.object({
+  name: z.string().optional(),
+  email: z.email().optional(),
+  image: z.string().optional(),
+  phone: z.string().optional(),
+  location: z.string().optional(),
+});
