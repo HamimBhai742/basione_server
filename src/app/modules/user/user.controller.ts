@@ -50,6 +50,17 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const resendForgotPassOtp = catchAsync(async (req: Request, res: Response) => {
+  const user = await userService.resendForgotPassOtp(req.body.email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "OTP sent successfully",
+    data: user,
+  });
+});
+
 const verifyForgotOtp = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.verifyForgotOtp(
     req.body.otp,
@@ -86,4 +97,5 @@ export const userController = {
   forgotPassword,
   verifyForgotOtp,
   resetPassword,
+  resendForgotPassOtp,
 };

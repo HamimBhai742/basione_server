@@ -7,6 +7,7 @@ import { AppError } from "../../error/AppError";
 import httpStatus from "http-status";
 import { generateToken } from "../../utils/generateToken";
 import { verifyToken } from "../../utils/verifyToken";
+import { email } from "zod";
 
 interface IUserPayload {
   name: string;
@@ -65,12 +66,21 @@ const registerUser = async (payload: IUserPayload) => {
     },
   });
 
-  await otpQueueEmail.add("registrationOtp", {
-    userName: user.name,
-    email: user.email,
-    otpCode: otp,
-    subject: "Email Verification Code",
-  });
+  await otpQueueEmail.add(
+    "registrationOtp",
+    {
+      userName: user.name,
+      email: user.email,
+      otpCode: otp,
+      subject: "Email Verification Code",
+    },
+    {
+      jobId: `${user.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
   return user;
 };
 
@@ -138,12 +148,21 @@ const resendOtp = async (email: string) => {
     },
   });
 
-  await otpQueueEmail.add("registrationOtp", {
-    userName: user.name,
-    email: user.email,
-    otpCode: otp,
-    subject: "Email Verification Code",
-  });
+  await otpQueueEmail.add(
+    "registrationOtp",
+    {
+      userName: user.name,
+      email: user.email,
+      otpCode: otp,
+      subject: "Email Verification Code",
+    },
+    {
+      jobId: `${user.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
   return null;
 };
 
@@ -183,12 +202,77 @@ const forgotPassword = async (email: string) => {
     },
   });
 
-  await otpQueueEmail.add("passwordResetRequest", {
-    userName: user.name,
-    email: user.email,
-    otpCode: otp,
-    subject: "Password Reset Code",
+  await otpQueueEmail.add(
+    "passwordResetRequest",
+    {
+      userName: user.name,
+      email: user.email,
+      otpCode: otp,
+      subject: "Password Reset Code",
+    },
+    {
+      jobId: `${user.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
+  return {
+    accessToken: tempToken,
+  };
+};
+
+const resendForgotPassOtp = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
   });
+
+  if (!user) {
+    throw new AppError("User not found", httpStatus.NOT_FOUND);
+  }
+
+  if (!user.isVerified) {
+    throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+  }
+
+  if (user.status !== "active") {
+    throw new AppError("User is not active", httpStatus.BAD_REQUEST);
+  }
+
+  const otp = generateOtp();
+  const otpExpiry = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+
+  const tempToken = await generateToken(user, config.jwt.secret, "2m");
+
+  await prisma.user.update({
+    where: {
+      email,
+    },
+    data: {
+      otp: otp,
+      otpExpiry,
+      forgetPasswordToken: tempToken,
+      forgetPasswordTokenExpires: otpExpiry,
+    },
+  });
+
+  await otpQueueEmail.add(
+    "passwordResetRequest",
+    {
+      userName: user.name,
+      email: user.email,
+      otpCode: otp,
+      subject: "Password Reset Code",
+    },
+    {
+      jobId: `${user.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
   return {
     accessToken: tempToken,
   };
@@ -276,6 +360,20 @@ const resetPassword = async (token: string, password: string) => {
       forgetPasswordTokenExpires: null,
     },
   });
+
+  await otpQueueEmail.add(
+    "resetPasswordSuccess",
+    {
+      userName: user.name,
+      email: user.email,
+    },
+    {
+      jobId: `${user.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
   return null;
 };
 
@@ -286,4 +384,5 @@ export const userService = {
   forgotPassword,
   verifyForgotOtp,
   resetPassword,
+  resendForgotPassOtp,
 };
