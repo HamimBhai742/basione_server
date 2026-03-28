@@ -8,6 +8,7 @@ import { passwordChangedTemplate } from "../../utils/emailTemplates/passwordChan
 import { passwordResetTemplate } from "../../utils/emailTemplates/passwordResetTemplate";
 import { parentApprovalOtpTemplate } from "../../utils/emailTemplates/parentApprovalOtpTemplate";
 import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetOtpSuccess";
+import { orderConfirmationTemplate } from "../../utils/emailTemplates/orderConfirmationTemplate";
 
 export const otpEmailWorker = new Worker(
   "otp-queue-email",
@@ -52,6 +53,11 @@ export const otpEmailWorker = new Worker(
       case "parentApprovalOtp": {
         const { userName, email, subject, otpCode } = job.data;
         await parentApprovalOtpTemplate(userName, subject, email, otpCode);
+        return "Otp end job completed";
+      }
+      case "orderConfirmation": {
+        const { userName, email, subject, data } = job.data;
+        await orderConfirmationTemplate(userName, subject, email, data);
         return "Otp end job completed";
       }
 

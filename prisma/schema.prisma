@@ -26,8 +26,9 @@ model User {
   orders                     Order[]
   addresses                  Address[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
 }
 
 enum Status {
@@ -80,6 +81,7 @@ model Order {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   addresses Address[]
+  payments  Payment[]
 }
 
 enum PaymentStatus {
@@ -100,6 +102,20 @@ enum OrderStatus {
 enum DeliveryType {
   standard
   express
+}
+
+model Payment {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount        Float
+  transactionId String        @unique
+  status        PaymentStatus
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id])
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Address {

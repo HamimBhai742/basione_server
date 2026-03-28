@@ -11,7 +11,7 @@ export const orderConfirmationTemplate = async (
       name: string;
       quantity: number;
       price: number;
-      image: string;
+      image?: string;
     }[];
     subtotal: number;
     shippingFee: number;
