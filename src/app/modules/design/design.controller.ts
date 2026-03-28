@@ -4,6 +4,19 @@ import { designService } from "./design.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 
+const createDesign = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const design = await designService.createDesign(req.user.id, req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Design created successfully",
+      data: design,
+    });
+  },
+);
+
 const myDesign = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const design = await designService.myDesign(req.user.id);
@@ -17,7 +30,7 @@ const myDesign = catchAsync(
   },
 );
 
-
 export const designController = {
   myDesign,
+  createDesign,
 };

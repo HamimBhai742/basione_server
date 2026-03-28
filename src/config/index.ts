@@ -6,8 +6,11 @@ export default {
     email: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
-  jwt:{
+  jwt: {
     secret: process.env.JWT_SECRET,
-    expire_in: process.env.JWT_EXPIRES_IN
-  }
+    expire_in: process.env.JWT_EXPIRES_IN,
+  },
+  stripe: {
+    secret: process.env.STRIPE_SECRET_KEY as string,
+  },
 };

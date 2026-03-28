@@ -19,13 +19,15 @@ model User {
   otpExpiry                  DateTime?
   forgetPasswordToken        String?
   forgetPasswordTokenExpires DateTime?
-  images                     String?
+  image                      String?
   phone                      String?
   location                   String?
+  designs                    Design[]
+  orders                     Order[]
+  addresses                  Address[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  designs   Design[]
 }
 
 enum Status {
@@ -40,12 +42,78 @@ enum Role {
 }
 
 model Design {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  name   String
-  price  Float
-  design String
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  price    Float
+  design   String
+  category Category
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+enum Category {
+  wedding
+  birthday
+  kids_party
+  baby_shower
+  engagement
+}
+
+model Order {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  quantity      Float
+  deliveryType  DeliveryType  @default(standard)
+  deliveryTime  String        @default("3-5 days")
+  deliveryFee   Float         @default(5)
+  total         Float
+  status        OrderStatus   @default(pending)
+  paymentStatus PaymentStatus @default(pending)
+  designId      String
+  design        Design        @relation(fields: [designId], references: [id])
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+  canceled
+}
+
+enum OrderStatus {
+  pending
+  processing
+  delivered
+  canceled
+  ref
+}
+
+enum DeliveryType {
+  standard
+  express
+}
+
+model Address {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  phone      String
+  email      String
+  country    String
+  postalCode String
+  address    String
+  userId     String
+  user       User   @relation(fields: [userId], references: [id])
+  orderId    String
+  order      Order  @relation(fields: [orderId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

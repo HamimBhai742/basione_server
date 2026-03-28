@@ -18,5 +18,29 @@ export const globalErrorHandler = (
       errorDetails.push({ path: error.path[0], message: error.message });
     });
   }
+
+  if (err.name === "PrismaClientValidationError") {
+    message = "Validation error";
+    statusCode = 400;
+    console.log(err);
+    const errorMessage = err.message;
+
+    // 🔥 field extract
+    const match = errorMessage.match(/Argument `(.*?)` is missing/);
+
+    if (match) {
+      errorDetails.push({
+        path: match[1], // 👉 price
+        message: `${match[1]} is required`,
+      });
+    } else {
+      errorDetails.push({
+        path: "",
+        message: "Invalid data provided",
+      });
+    }
+  }
+  console.log(err.name);
+
   res.status(statusCode).json({ success: false, message, errorDetails });
 };

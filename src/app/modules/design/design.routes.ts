@@ -4,6 +4,8 @@ import { checkAuth } from "../../middleware/checkAuth";
 
 const router = Router();
 
+router.post("/create-design", checkAuth("user"), designController.createDesign);
+
 router.get("/my-design", checkAuth("user"), designController.myDesign);
 
 export const designRoutes = router;

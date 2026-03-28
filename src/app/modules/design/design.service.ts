@@ -1,5 +1,16 @@
 import { prisma } from "../../lib/prisma";
 
+
+ const createDesign = async (userId: string, payload: any) => {
+    const design = await prisma.design.create({
+        data: {
+            ...payload,
+            userId,
+        },
+    });
+    return design;
+ }
+
 const myDesign = async (id: string) => {
     const design = await prisma.design.findMany({
         where: {
@@ -11,4 +22,5 @@ const myDesign = async (id: string) => {
 
 export const designService = {
     myDesign,
+    createDesign
 };
