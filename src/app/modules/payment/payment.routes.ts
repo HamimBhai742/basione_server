@@ -5,4 +5,6 @@ const router = Router();
 
 router.get("/success", paymentController.successPayment);
 
+router.get("/cancel", paymentController.cancelPayment);
+
 export const paymentRoutes = router;

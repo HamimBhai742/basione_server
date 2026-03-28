@@ -27,7 +27,7 @@ const successPayment = async (orderId: string) => {
     },
     data: {
       paymentStatus: "paid",
-      status:"processing"
+      status: "processing",
     },
   });
 
@@ -51,26 +51,46 @@ const successPayment = async (orderId: string) => {
     },
   });
 
-  const job = await otpQueueEmail.add(
-    "orderConfirmation",
+  //   const job = await otpQueueEmail.add(
+  //     "orderConfirmation",
+  //     {
+  //       userName: user?.name,
+  //       email: user?.email,
+  //       subject: "Order Confirmation",
+  //       data: {
+  //         orderNumber: transactionId,
+  //         orderDate: order.createdAt.toDateString(),
+  //         items: {
+  //           name: design?.name,
+  //           quantity: order.quantity,
+  //           price: design?.price,
+  //           image: design?.design,
+  //         },
+  //         subtotal: order.total - order.deliveryFee,
+  //         shippingFee: order.deliveryFee,
+  //         totalAmount: order.total,
+  //         deliveryAddress: user?.addresses[0].address,
+  //         paymentMethod: "Stripe",
+  //       },
+  //     },
+  //     {
+  //       jobId: `${user?.id}-${Date.now()}`,
+  //       removeOnComplete: true,
+  //       attempts: 3,
+  //       backoff: { type: "fixed", delay: 5000 },
+  //     },
+  //   );
+
+  await otpQueueEmail.add(
+    "paymentSuccessTemplate",
     {
-      userName: user?.name,
-      email: user?.email,
-      subject: "Order Confirmation",
       data: {
-        orderNumber: transactionId,
-        orderDate: order.createdAt.toDateString(),
-        items: {
-          name: design?.name,
-          quantity: order.quantity,
-          price: design?.price,
-          image: design?.design,
-        },
-        subtotal: order.total - order.deliveryFee,
-        shippingFee: order.deliveryFee,
-        totalAmount: order.total,
-        deliveryAddress: user?.addresses[0].address,
-        paymentMethod: "Stripe",
+        userName: user?.name,
+        email: user?.email,
+        amount: order?.total,
+        transactionId,
+        orderId,
+        date: order?.createdAt.toDateString(),
       },
     },
     {
@@ -80,9 +100,65 @@ const successPayment = async (orderId: string) => {
       backoff: { type: "fixed", delay: 5000 },
     },
   );
-  return job;
+
+  return order;
 };
 
+const cancelePayment = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      user: true,
+    }
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      paymentStatus: "canceled",
+      status: "canceled",
+    },
+  });
+
+  await prisma.payment.create({
+    data: {
+
+      orderId,
+      amount: order.total,
+      status: "canceled",
+      userId: order.userId,
+      transactionId: `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`,
+    },
+  });
+
+  await otpQueueEmail.add(
+    "paymentCancelTemplate",
+    {
+      data: {
+        userName: order?.user?.name,
+        email: order?.user?.email,
+        amount: order?.total,
+        transactionId: `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`,
+        orderId
+      },
+    },
+    {
+      jobId: `${order?.user?.id}-${Date.now()}`,
+      removeOnComplete: true,
+      attempts: 3,
+      backoff: { type: "fixed", delay: 5000 },
+    },
+  );
+};
 export const paymentService = {
   successPayment,
+  cancelePayment
 };

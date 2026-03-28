@@ -17,7 +17,20 @@ const successPayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const cancelPayment = catchAsync(async (req: Request, res: Response) => {
+  const order = await paymentService.cancelePayment(
+    req.query.orderId as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payment canceled",
+    data: order,
+  });
+});
 
 export const paymentController = {
   successPayment,
+  cancelPayment,
 };

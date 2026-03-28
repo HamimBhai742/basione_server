@@ -93,8 +93,9 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     ],
     mode: "payment",
     success_url: `http://localhost:5000/api/v1/payment/success?orderId=${orderId}`,
-    cancel_url: "http://localhost:5000/api/v1/payment/cancel",
+    cancel_url: `http://localhost:5000/api/v1/payment/cancel?orderId=${orderId}`,
   });
+  console.log(session);
 
   return session.url;
 };
