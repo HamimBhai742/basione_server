@@ -10,6 +10,8 @@ import { verifyToken } from "../../utils/verifyToken";
 import { email } from "zod";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
+import { passwordResetTemplate } from "../../utils/emailTemplates/passwordResetTemplate";
+import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetOtpSuccess";
 
 interface IUserPayload {
   name: string;
@@ -36,20 +38,26 @@ const registerUser = async (payload: IUserPayload) => {
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   if (isExistingUser && !isExistingUser.isVerified) {
-    await otpQueueEmail.add(
-      "registrationOtp",
-      {
-        userName: isExistingUser.name,
-        email: isExistingUser.email,
-        otpCode: otp,
-        subject: "Email Verification Code",
-      },
-      {
-        jobId: `${isExistingUser.id}-${Date.now()}`,
-        removeOnComplete: true,
-        attempts: 3,
-        backoff: { type: "fixed", delay: 5000 },
-      },
+    // await otpQueueEmail.add(
+    //   "registrationOtp",
+    //   {
+    //     userName: isExistingUser.name,
+    //     email: isExistingUser.email,
+    //     otpCode: otp,
+    //     subject: "Email Verification Code",
+    //   },
+    //   {
+    //     jobId: `${isExistingUser.id}-${Date.now()}`,
+    //     removeOnComplete: true,
+    //     attempts: 3,
+    //     backoff: { type: "fixed", delay: 5000 },
+    //   },
+    // );
+    await registrationOtpTemplate(
+      isExistingUser.name,
+      "Email Verification Code",
+      isExistingUser.email,
+      otp,
     );
     return isExistingUser;
   }
@@ -235,20 +243,27 @@ const forgotPassword = async (email: string) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "passwordResetRequest",
-    {
-      userName: user.name,
-      email: user.email,
-      otpCode: otp,
-      subject: "Password Reset Code",
-    },
-    {
-      jobId: `${user.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
+  // await otpQueueEmail.add(
+  //   "passwordResetRequest",
+  //   {
+  //     userName: user.name,
+  //     email: user.email,
+  //     otpCode: otp,
+  //     subject: "Password Reset Code",
+  //   },
+  //   {
+  //     jobId: `${user.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
+
+  await passwordResetTemplate(
+    user.name,
+    "Password Reset Code",
+    user.email,
+    otp,
   );
   return {
     accessToken: tempToken,
@@ -292,20 +307,27 @@ const resendForgotPassOtp = async (email: string) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "passwordResetRequest",
-    {
-      userName: user.name,
-      email: user.email,
-      otpCode: otp,
-      subject: "Password Reset Code",
-    },
-    {
-      jobId: `${user.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
+  // await otpQueueEmail.add(
+  //   "passwordResetRequest",
+  //   {
+  //     userName: user.name,
+  //     email: user.email,
+  //     otpCode: otp,
+  //     subject: "Password Reset Code",
+  //   },
+  //   {
+  //     jobId: `${user.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
+
+  await passwordResetTemplate(
+    user.name,
+    "Password Reset Code",
+    user.email,
+    otp,
   );
   return {
     accessToken: tempToken,
@@ -397,19 +419,21 @@ const resetPassword = async (token: string, password: string) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "resetPasswordSuccess",
-    {
-      userName: user.name,
-      email: user.email,
-    },
-    {
-      jobId: `${user.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
-  );
+  // await otpQueueEmail.add(
+  //   "resetPasswordSuccess",
+  //   {
+  //     userName: user.name,
+  //     email: user.email,
+  //   },
+  //   {
+  //     jobId: `${user.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
+
+  await resetPasswordSuccessTemplate(user.name, user.email);
   return null;
 };
 

@@ -7,5 +7,6 @@ export const connectedDB = async () => {
   } catch (error) {
     console.log("❌ Database connection error:", error);
     process.exit(1);
+    
   }
 };

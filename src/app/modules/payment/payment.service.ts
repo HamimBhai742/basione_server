@@ -3,6 +3,8 @@ import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import crypto from "crypto";
 import { otpQueueEmail } from "../../bullMQ/init";
+import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
+import { paymentCancelTemplate } from "../../utils/emailTemplates/paymentCanceled";
 
 const successPayment = async (orderId: string) => {
   const order = await prisma.order.findUnique({
@@ -51,6 +53,10 @@ const successPayment = async (orderId: string) => {
     },
   });
 
+  if (!user) {
+    throw new AppError("User not found", httpStatus.NOT_FOUND);
+  }
+
   //   const job = await otpQueueEmail.add(
   //     "orderConfirmation",
   //     {
@@ -81,26 +87,34 @@ const successPayment = async (orderId: string) => {
   //     },
   //   );
 
-  await otpQueueEmail.add(
-    "paymentSuccessTemplate",
-    {
-      data: {
-        userName: user?.name,
-        email: user?.email,
-        amount: order?.total,
-        transactionId,
-        orderId,
-        date: order?.createdAt.toDateString(),
-      },
-    },
-    {
-      jobId: `${user?.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
-  );
+  // await otpQueueEmail.add(
+  //   "paymentSuccessTemplate",
+  //   {
+  //     data: {
+  //       userName: user?.name,
+  //       email: user?.email,
+  //       amount: order?.total,
+  //       transactionId,
+  //       orderId,
+  //       date: order?.createdAt.toDateString(),
+  //     },
+  //   },
+  //   {
+  //     jobId: `${user?.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
 
+  await paymentSuccessTemplate({
+    userName: user?.name,
+    email: user?.email,
+    amount: order?.total,
+    transactionId,
+    orderId,
+    date: order?.createdAt.toDateString(),
+  });
   return order;
 };
 
@@ -140,24 +154,33 @@ const cancelePayment = async (orderId: string) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "paymentCancelTemplate",
-    {
-      data: {
-        userName: order?.user?.name,
-        email: order?.user?.email,
-        amount: order?.total,
-        transactionId,
-        orderId,
-      },
-    },
-    {
-      jobId: `${order?.user?.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
-  );
+  // await otpQueueEmail.add(
+  //   "paymentCancelTemplate",
+  //   {
+  //     data: {
+  //       userName: order?.user?.name,
+  //       email: order?.user?.email,
+  //       amount: order?.total,
+  //       transactionId,
+  //       orderId,
+  //     },
+  //   },
+  //   {
+  //     jobId: `${order?.user?.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
+
+  await paymentCancelTemplate({
+    userName: order?.user?.name,
+    email: order?.user?.email,
+    amount: order?.total,
+    transactionId,
+    orderId,
+  });
+  return null;
 };
 
 export const paymentService = {
