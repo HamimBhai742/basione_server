@@ -110,7 +110,7 @@ export const parentApprovalOtpTemplate = async (userName: string, subject: strin
 
                     <!-- Header -->
                     <div class="header">
-                        <img src="http://api.hirerise.org/logo.png" alt="Hire Rise" />
+                        <img src="https://i.ibb.co.com/k6rKTqjh/Screenshot-242-removebg-preview.png" alt="Spandoek Print" />
                     </div>
 
                     <!-- Content -->
@@ -120,7 +120,7 @@ export const parentApprovalOtpTemplate = async (userName: string, subject: strin
 
                         <p class="text">
                             A child name ${userName} account has requested to register using your email address
-                            on <strong>Hire Rise</strong>.
+                            on <strong>Spandoek Print</strong>.
                             To approve this request, please use the verification code below.
                         </p>
 
@@ -141,7 +141,7 @@ export const parentApprovalOtpTemplate = async (userName: string, subject: strin
                     <!-- Footer -->
                     <div class="footer">
                         Regards,<br />
-                        Team <strong>Hire Rise</strong>
+                        Team <strong>Spandoek Print</strong>
                     </div>
 
                 </div>

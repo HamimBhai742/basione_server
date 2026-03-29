@@ -120,7 +120,7 @@ export const registrationOtpTemplate = async (
           <!-- Header -->
           <div class="email-header">
             <div class="company-logo">
-              <img src="http://api.hirerise.org/logo.png" alt="Hire Rise" />
+              <img src="https://i.ibb.co.com/k6rKTqjh/Screenshot-242-removebg-preview.png" alt="Spandoek Print" />
             </div>
           </div>
 
@@ -129,7 +129,7 @@ export const registrationOtpTemplate = async (
             <p class="greeting">Welcome ${userName},</p>
 
             <p class="main-text">
-              Thank you for creating an account with <strong>Hire Rise</strong>.
+              Thank you for creating an account with <strong>Spandoek Print</strong>.
               To complete your registration, please verify your email address using the code below.
             </p>
 
@@ -147,7 +147,7 @@ export const registrationOtpTemplate = async (
           <!-- Footer -->
           <div class="footer">
             Regards,<br />
-            Team <strong>Hire Rise</strong>
+            Team <strong>Spandoek Print</strong>
           </div>
         </div>
       </td>

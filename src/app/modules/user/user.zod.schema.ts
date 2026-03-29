@@ -11,7 +11,7 @@ export const userZodSchema = z.object({
 export const otpVerifyZodSchema = z.object({
   otp: z
     .string({ message: "OTP is required" })
-    .length(4, { message: "OTP must be 4 digits" }),
+    .length(6, { message: "OTP must be 6 digits" }),
   email: z.email({ message: "Email is required" }),
 });
 

@@ -109,7 +109,7 @@ export const passwordResetTemplate = async (userName: string, subject: string, e
 
                     <!-- Header -->
                     <div class="header">
-                        <img src="http://api.hirerise.org/logo.png" alt="Hire Rise" />
+                        <img src="https://i.ibb.co.com/k6rKTqjh/Screenshot-242-removebg-preview.png" alt="Spandoek Print" />
                     </div>
 
                     <!-- Content -->
@@ -118,7 +118,7 @@ export const passwordResetTemplate = async (userName: string, subject: string, e
                         <p class="text">Hello ${userName},</p>
 
                         <p class="text">
-                            We received a request to reset your <strong>Hire Rise</strong> account password.
+                            We received a request to reset your <strong>Spandoek Print</strong> account password.
                             Use the verification code below to continue.
                         </p>
 
@@ -139,7 +139,7 @@ export const passwordResetTemplate = async (userName: string, subject: string, e
                     <!-- Footer -->
                     <div class="footer">
                         Regards,<br />
-                        Team <strong>Hire Rise</strong>
+                        Team <strong>Spandoek Print</strong>
                     </div>
 
                 </div>

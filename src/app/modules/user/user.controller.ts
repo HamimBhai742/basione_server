@@ -24,7 +24,7 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "User verified successfully",
-    data: user,
+    data: null,
   });
 });
 

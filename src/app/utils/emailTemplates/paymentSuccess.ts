@@ -32,7 +32,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:20px;">
-              <img src="http://api.hirerise.org/logo.png" width="100" alt="Logo"/>
+              <img src="https://i.ibb.co.com/k6rKTqjh/Screenshot-242-removebg-preview.png" width="100" alt="Logo"/>
             </td>
           </tr>
 

@@ -24,7 +24,7 @@ export const resetPasswordSuccessTemplate = async (
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:20px;">
-              <img src="http://api.hirerise.org/logo.png" width="100" alt="Hire Rise"/>
+              <img src="https://i.ibb.co.com/k6rKTqjh/Screenshot-242-removebg-preview.png" width="100" alt="Spandoek Print"/>
             </td>
           </tr>
 
@@ -42,7 +42,7 @@ export const resetPasswordSuccessTemplate = async (
 
               <p>
                 Your password has been successfully reset for your 
-                <strong>Hire Rise</strong> account.
+                <strong>Spandoek Print</strong> account.
               </p>
 
               <p>
@@ -86,7 +86,7 @@ export const resetPasswordSuccessTemplate = async (
           <!-- Footer -->
           <tr>
             <td style="padding-top:30px; text-align:center; font-size:14px; color:#999;">
-              <p>Regards,<br/>Team <strong>Hire Rise</strong></p>
+              <p>Regards,<br/>Team <strong>Spandoek Print</strong></p>
             </td>
           </tr>
 
