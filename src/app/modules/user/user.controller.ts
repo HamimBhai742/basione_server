@@ -4,18 +4,16 @@ import { userService } from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 
-const registerUser = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const user = await userService.registerUser(req.body);
+const registerUser = catchAsync(async (req: Request, res: Response) => {
+  const user = await userService.registerUser(req.body);
 
-    sendResponse(res, {
-      statusCode: httpStatus.CREATED,
-      success: true,
-      message: "User registered successfully. Please check your email",
-      data: user,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "User registered successfully. Please check your email",
+    data: user,
+  });
+});
 
 const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.verifyOtp(req.body.otp, req.body.email);

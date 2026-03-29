@@ -8,4 +8,6 @@ router.post("/create-design", checkAuth("user"), designController.createDesign);
 
 router.get("/my-design", checkAuth("user"), designController.myDesign);
 
+router.get("/all-designs", designController.getAllDesigns);
+
 export const designRoutes = router;
