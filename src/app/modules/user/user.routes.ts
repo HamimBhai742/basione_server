@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { userController } from "./user.controller";
 import {
+  forgotPasswordZodSchema,
   otpResendZodSchema,
   otpVerifyZodSchema,
   userZodSchema,
@@ -28,7 +29,11 @@ router.post(
   userController.resendOtp,
 );
 
-router.post("/forgot-password", userController.forgotPassword);
+router.post(
+  "/forgot-password",
+  validateRequest(forgotPasswordZodSchema),
+  userController.forgotPassword,
+);
 
 router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 

@@ -26,3 +26,14 @@ export const userUpdateZodSchema = z.object({
   phone: z.string().optional(),
   location: z.string().optional(),
 });
+
+export const forgotPasswordZodSchema = z.object({
+  email: z.email({ message: "Email is required" }),
+});
+
+export const resetPasswordZodSchema = z.object({
+  token: z.string({ message: "Token is required" }),
+  password: z
+    .string({ message: "Password is required" })
+    .min(6, { message: "Password must be at least 6 characters" })
+});
