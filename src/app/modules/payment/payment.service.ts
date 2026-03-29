@@ -160,7 +160,6 @@ const cancelePayment = async (orderId: string) => {
   );
 };
 
-
 export const paymentService = {
   successPayment,
   cancelePayment,
