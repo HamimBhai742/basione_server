@@ -111,7 +111,7 @@ const cancelePayment = async (orderId: string) => {
     },
     include: {
       user: true,
-    }
+    },
   });
 
   if (!order) {
@@ -128,14 +128,15 @@ const cancelePayment = async (orderId: string) => {
     },
   });
 
+  const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+
   await prisma.payment.create({
     data: {
-
       orderId,
       amount: order.total,
       status: "canceled",
       userId: order.userId,
-      transactionId: `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`,
+      transactionId,
     },
   });
 
@@ -146,8 +147,8 @@ const cancelePayment = async (orderId: string) => {
         userName: order?.user?.name,
         email: order?.user?.email,
         amount: order?.total,
-        transactionId: `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`,
-        orderId
+        transactionId,
+        orderId,
       },
     },
     {
@@ -158,7 +159,9 @@ const cancelePayment = async (orderId: string) => {
     },
   );
 };
+
+
 export const paymentService = {
   successPayment,
-  cancelePayment
+  cancelePayment,
 };

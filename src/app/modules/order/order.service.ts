@@ -100,7 +100,57 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
   return session.url;
 };
 
+const getMyOrders = async (
+  userId: string,
+  page: number,
+  limit: number,
+  skip: number,
+) => {
+  const orders = await prisma.order.findMany({
+    where: {
+      userId,
+    },
+    take: limit,
+    skip,
+  });
+
+  const total = await prisma.order.count({
+    where: {
+      userId,
+    },
+  });
+
+  return {
+    orders,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const getSingleOrder = async (orderId: string, userId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+      userId,
+    },
+    include: {
+      user: true,
+      design: true,
+      addresses: true,
+      payment: true,
+    },
+  });
+
+  return order;
+};
+
 export const orderService = {
   createOrder,
   checkOut,
+  getMyOrders,
+  getSingleOrder,
 };

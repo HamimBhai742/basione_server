@@ -25,10 +25,10 @@ model User {
   designs                    Design[]
   orders                     Order[]
   addresses                  Address[]
+  payments                   Payment[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Status {
@@ -50,10 +50,10 @@ model Design {
   category Category
   userId   String?
   user     User?    @relation(fields: [userId], references: [id])
+  orders   Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  orders    Order[]
 }
 
 enum Category {
@@ -77,11 +77,11 @@ model Order {
   design        Design        @relation(fields: [designId], references: [id])
   userId        String
   user          User          @relation(fields: [userId], references: [id])
+  payment       Payment?
+  addresses     Address?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  addresses Address[]
-  payments  Payment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PaymentStatus {
@@ -96,7 +96,7 @@ enum OrderStatus {
   processing
   delivered
   canceled
-  ref
+  refunded
 }
 
 enum DeliveryType {
@@ -109,7 +109,7 @@ model Payment {
   amount        Float
   transactionId String        @unique
   status        PaymentStatus
-  orderId       String
+  orderId       String        @unique
   order         Order         @relation(fields: [orderId], references: [id])
   userId        String
   user          User          @relation(fields: [userId], references: [id])
@@ -128,7 +128,7 @@ model Address {
   address    String
   userId     String
   user       User   @relation(fields: [userId], references: [id])
-  orderId    String
+  orderId    String @unique
   order      Order  @relation(fields: [orderId], references: [id])
 
   createdAt DateTime @default(now())
