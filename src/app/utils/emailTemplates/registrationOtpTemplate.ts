@@ -139,7 +139,7 @@ export const registrationOtpTemplate = async (
             </div>
 
             <p class="warning-text">
-              This code will expire in 2 minutes.  
+              This code will expire in 5 minutes.  
               If you didn’t create this account, you can safely ignore this email.
             </p>
           </div>
