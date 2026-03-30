@@ -5,16 +5,16 @@ import { notFound } from "./app/middleware/notFound";
 import { stripeWebhook } from "./app/utils/stripeWebhook";
 const app: Application = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use("/api/v1", router);
-
 app.post(
   "/api/v1/webhook",
   express.raw({ type: "application/json" }),
   stripeWebhook,
 );
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use("/api/v1", router);
 
 app.get("/", (req, res) => {
   res.send("basione server is running............");

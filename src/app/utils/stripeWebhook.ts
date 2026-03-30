@@ -15,12 +15,32 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       config.stripe.webhook_secret,
     );
   } catch (err) {
+    console.log(Stripe)
     console.error("Webhook signature verification failed", err);
     return res.status(400).send(`Webhook Error: ${(err as Error).message}`);
   }
 
   try {
     console.log(event);
+    switch (event.type) {
+      case "checkout.session.completed":
+        console.log("checkout.session.completed");
+        console.log(event?.data?.object?.metadata?.orderId);
+        break;
+      case "checkout.session.expired":
+        console.log("checkout.session.expired");
+        console.log(event?.data?.object?.metadata?.orderId);
+        break;
+      case "checkout.session.async_payment_succeeded":
+        console.log("checkout.session.async_payment_succeeded");
+        break;
+
+      case "checkout.session.async_payment_failed":
+        console.log("checkout.session.async_payment_failed");
+        break;
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
     res.status(200).json({ received: true });
   } catch (err) {
     console.error("Error handling webhook", err);

@@ -81,11 +81,6 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
           currency: "usd",
           product_data: {
             name: design?.name,
-            metadata: {
-              orderId,
-              userId,
-              designId: design?.id,
-            },
           },
           unit_amount: order.total * 100,
         },
@@ -93,6 +88,11 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
       },
     ],
     mode: "payment",
+    success_url: `http://localhost:5000/api/v1/payment/success?orderId=${orderId}`,
+    cancel_url: `http://localhost:5000/api/v1/payment/cancel?orderId=${orderId}`,
+    metadata: {
+      orderId,
+    },
   });
   console.log(session);
 
