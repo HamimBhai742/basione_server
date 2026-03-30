@@ -74,6 +74,7 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
+
     line_items: [
       {
         price_data: {
@@ -92,8 +93,6 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
       },
     ],
     mode: "payment",
-    success_url: `http://localhost:5000/api/v1/payment/success?orderId=${orderId}`,
-    cancel_url: `http://localhost:5000/api/v1/payment/cancel?orderId=${orderId}`,
   });
   console.log(session);
 
