@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { userRoutes } from "../modules/user/user.routes";
 import { authRoutes } from "../modules/auth/auth.routes";
-import { designRoutes } from "../modules/design/design.routes";
+import { bannerRoutes } from "../modules/banner/banner.routes";
 import { orderRoutes } from "../modules/order/order.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
 
@@ -17,8 +17,8 @@ const routes = [
     route: authRoutes,
   },
   {
-    path: "/design",
-    route: designRoutes,
+    path: "/banner",
+    route: bannerRoutes,
   },
   {
     path: "/order",

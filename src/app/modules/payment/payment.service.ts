@@ -13,9 +13,9 @@ const successPayment = async (orderId: string) => {
     },
   });
 
-  const design = await prisma.design.findUnique({
+  const banner = await prisma.banner.findUnique({
     where: {
-      id: order?.designId,
+      id: order?.bannerId,
     },
   });
 
@@ -67,10 +67,10 @@ const successPayment = async (orderId: string) => {
   //         orderNumber: transactionId,
   //         orderDate: order.createdAt.toDateString(),
   //         items: {
-  //           name: design?.name,
+  //           name: banner?.name,
   //           quantity: order.quantity,
-  //           price: design?.price,
-  //           image: design?.design,
+  //           price: banner?.price,
+  //           image: banner?.banner,
   //         },
   //         subtotal: order.total - order.deliveryFee,
   //         shippingFee: order.deliveryFee,

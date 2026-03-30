@@ -22,7 +22,7 @@ model User {
   image                      String?
   phone                      String?
   location                   String?
-  designs                    Design[]
+  banners                    Banner[]
   orders                     Order[]
   addresses                  Address[]
   payments                   Payment[]
@@ -42,7 +42,7 @@ enum Role {
   admin
 }
 
-model Design {
+model Banner {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   name     String
   price    Float
@@ -73,8 +73,8 @@ model Order {
   total         Float
   status        OrderStatus   @default(pending)
   paymentStatus PaymentStatus @default(pending)
-  designId      String
-  design        Design        @relation(fields: [designId], references: [id])
+  bannerId      String
+  banner        Banner        @relation(fields: [bannerId], references: [id])
   userId        String
   user          User          @relation(fields: [userId], references: [id])
   payment       Payment?

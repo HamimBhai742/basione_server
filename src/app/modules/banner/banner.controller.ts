@@ -1,40 +1,40 @@
 import { Request, Response } from "express";
 import { catchAsync } from "../../utils/catchAsync";
-import { designService, ICategory } from "./design.service";
+import { bannerService, ICategory } from "./banner.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { calculatePagination } from "../../utils/calculatePagination";
 
-const createDesign = catchAsync(
+const createBanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
-    const design = await designService.createDesign(req.user.id, req.body);
+    const banner = await bannerService.createBanner(req.user.id, req.body);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Design created successfully",
-      data: design,
+      message: "Banner created successfully",
+      data: banner,
     });
   },
 );
 
-const myDesign = catchAsync(
+const mybanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
-    const design = await designService.myDesign(req.user.id);
+    const banner = await bannerService.mybanner(req.user.id);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Design fetched successfully",
-      data: design,
+      message: "banner fetched successfully",
+      data: banner,
     });
   },
 );
 
-const getAllDesigns = catchAsync(async (req: Request, res: Response) => {
+const getAllbanners = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip } = calculatePagination(req.query);
   const category = req.query.category as string;
-  const designs = await designService.getAllDesigns(
+  const banners = await bannerService.getAllbanners(
     page,
     limit,
     skip,
@@ -44,14 +44,14 @@ const getAllDesigns = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Designs fetched successfully",
-    data: designs.designs,
-    metaData: designs.metaData,
+    message: "banners fetched successfully",
+    data: banners.banners,
+    metaData: banners.metaData,
   });
 });
 
-export const designController = {
-  myDesign,
-  createDesign,
-  getAllDesigns,
+export const bannerController = {
+  mybanner,
+  createBanner,
+  getAllbanners,
 };

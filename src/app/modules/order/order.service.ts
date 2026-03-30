@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import { stripe } from "../../lib/stripe";
 
-const createOrder = async (userId: string, designId: string, payload: any) => {
+const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
   let deliveryTime = "";
   if (payload.deliveryType === "standard") {
@@ -14,16 +14,16 @@ const createOrder = async (userId: string, designId: string, payload: any) => {
     deliveryTime = "1-2 days";
   }
 
-  const design = await prisma.design.findUnique({
+  const banner = await prisma.banner.findUnique({
     where: {
-      id: designId,
+      id: bannerId,
     },
   });
 
-  if (!design) {
-    throw new AppError("Design not found", httpStatus.NOT_FOUND);
+  if (!banner) {
+    throw new AppError("banner not found", httpStatus.NOT_FOUND);
   }
-  const totalAmount = Number(design.price * payload.quantity + deliveryFee);
+  const totalAmount = Number(banner.price * payload.quantity + deliveryFee);
 
   const order = await prisma.order.create({
     data: {
@@ -32,7 +32,7 @@ const createOrder = async (userId: string, designId: string, payload: any) => {
       deliveryTime,
       total: totalAmount,
       userId,
-      designId,
+      bannerId,
     },
   });
 
@@ -50,14 +50,14 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     throw new AppError("Order not found", httpStatus.NOT_FOUND);
   }
 
-  const design = await prisma.design.findUnique({
+  const banner = await prisma.banner.findUnique({
     where: {
-      id: order?.designId,
+      id: order?.bannerId,
     },
   });
 
-  if (!design) {
-    throw new AppError("Design not found", httpStatus.NOT_FOUND);
+  if (!banner) {
+    throw new AppError("banner not found", httpStatus.NOT_FOUND);
   }
 
   if (order.userId !== userId) {
@@ -80,13 +80,14 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
         price_data: {
           currency: "usd",
           product_data: {
-            name: design?.name,
+            name: banner?.name,
           },
           unit_amount: order.total * 100,
         },
         quantity: 1,
       },
     ],
+    customer_email: payload?.email,
     mode: "payment",
     success_url: `http://localhost:5000/api/v1/payment/success?orderId=${orderId}`,
     cancel_url: `http://localhost:5000/api/v1/payment/cancel?orderId=${orderId}`,
@@ -138,7 +139,7 @@ const getSingleOrder = async (orderId: string, userId: string) => {
     },
     include: {
       user: true,
-      design: true,
+      banner: true,
       addresses: true,
       payment: true,
     },
