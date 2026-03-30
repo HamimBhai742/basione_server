@@ -10,20 +10,20 @@ export enum ICategory {
 
 const createBanner = async (userId: string, payload: any) => {
   console.log(userId, payload);
-  const size = `${payload.width} x ${payload.height} cm`;
+  const size = `${payload.width} cm x ${payload.height} cm`;
   console.log(size);
   let price = 0;
   switch (size) {
-    case "60 x 40 cm":
+    case "60 cm x 40 cm":
       price = 20;
       break;
-    case "120 x 80 cm":
+    case "120 cm x 80 cm":
       price = 30;
       break;
-    case "180 x 120 cm":
+    case "180 cm x 120 cm":
       price = 40;
       break;
-    case "240 x 160 cm":
+    case "240 cm x 160 cm":
       price = 50;
       break;
     default:
