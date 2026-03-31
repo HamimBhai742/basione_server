@@ -61,9 +61,21 @@ const getSingleOrder = async (req: Request & { user?: any }, res: Response) => {
   });
 };
 
+const cancledOrder = async (req: Request, res: Response) => {
+  await orderService.cancledOrder(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Order canceled successfully",
+    data: null,
+  });
+};
+
 export const orderController = {
   createOrder,
   checkOut,
   getMyOrders,
   getSingleOrder,
+  cancledOrder,
 };

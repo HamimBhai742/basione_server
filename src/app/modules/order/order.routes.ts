@@ -12,4 +12,6 @@ router.get("/my-orders", checkAuth("user"), orderController.getMyOrders);
 
 router.get("/:id", checkAuth("user"), orderController.getSingleOrder);
 
+router.post("/cancel/:id", checkAuth("user"), orderController.cancledOrder);
+
 export const orderRoutes = router;

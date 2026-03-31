@@ -89,8 +89,7 @@ model Order {
 enum PaymentStatus {
   pending
   paid
-  failed
-  canceled
+  unpaid
 }
 
 enum OrderStatus {

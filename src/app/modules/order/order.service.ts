@@ -51,6 +51,24 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     throw new AppError("Order not found", httpStatus.NOT_FOUND);
   }
 
+  if (order.userId !== userId) {
+    throw new AppError("You are not authorized", httpStatus.UNAUTHORIZED);
+  }
+
+  const pay = await prisma.payment.findUnique({
+    where: {
+      orderId,
+    },
+  });
+
+  if (order?.status === "canceled") {
+    throw new AppError("Order is canceled", httpStatus.BAD_REQUEST);
+  }
+
+  if (pay?.status === "paid") {
+    throw new AppError("Order already paid", httpStatus.BAD_REQUEST);
+  }
+
   const banner = await prisma.banner.findUnique({
     where: {
       id: order?.bannerId,
@@ -113,6 +131,7 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
         paymentId: payment.id,
       },
     },
+    expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Session expires in 30 minutes
   });
   console.log(session);
 
@@ -171,9 +190,33 @@ const getSingleOrder = async (orderId: string, userId: string) => {
   return order;
 };
 
+const cancledOrder = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+  });
+
+  if (order?.status !== "pending") {
+    throw new AppError(
+      "Only pending orders can be canceled",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status: "canceled",
+    },
+  });
+};
+
 export const orderService = {
   createOrder,
   checkOut,
   getMyOrders,
   getSingleOrder,
+  cancledOrder,
 };

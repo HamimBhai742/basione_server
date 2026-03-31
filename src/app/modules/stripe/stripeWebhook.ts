@@ -26,7 +26,8 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   }
 
   try {
-    console.log(event.data.object);
+    console.log(event);
+    let reason = "";
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -46,6 +47,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const error = paymentIntent.last_payment_error;
         console.log("❌ payment_intent.payment_failed", paymentIntent.id);
 
         if (!paymentIntent.metadata?.orderId) {
@@ -56,12 +58,15 @@ export const stripeWebhook = async (req: Request, res: Response) => {
         await failedPayment(
           paymentIntent.metadata.orderId,
           paymentIntent.metadata.paymentId,
+          error?.message,
         );
         break;
       }
 
       case "payment_intent.canceled": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const message = paymentIntent.cancellation_reason;
+        reason = message || "Payment was canceled by the user";
         console.log("🚫 payment_intent.canceled", paymentIntent.id);
 
         if (!paymentIntent.metadata?.orderId) {
@@ -69,24 +74,24 @@ export const stripeWebhook = async (req: Request, res: Response) => {
           break;
         }
 
-        await cancelePayment(
-          paymentIntent.metadata.orderId,
-          paymentIntent.metadata.paymentId,
-        );
+        await cancelePayment(paymentIntent.metadata.orderId, reason);
         break;
       }
 
       case "checkout.session.expired": {
         console.log(event.data.object);
+        reason = "User did not complete payment in time";
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log("⏳ checkout.session.expired", session.id);
+        console.log("⏳ checkout.session.expired", session);
 
-        if (!session.metadata?.orderId) break;
+        if (!session.metadata?.orderId) {
+          res
+            .status(400)
+            .send("⚠️ Missing orderId in checkout.session.expired");
+          break;
+        }
 
-        await cancelePayment(
-          session.metadata.orderId,
-          session.metadata.paymentId,
-        );
+        await cancelePayment(session.metadata?.orderId, reason);
         break;
       }
 

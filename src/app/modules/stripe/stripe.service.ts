@@ -24,7 +24,7 @@ export const successPayment = async (orderId: string, paymentId: string) => {
     },
     data: {
       paymentStatus: "paid",
-      status: "processing",
+      status: "pending",
     },
   });
 
@@ -111,7 +111,11 @@ export const successPayment = async (orderId: string, paymentId: string) => {
   return order;
 };
 
-export const failedPayment = async (orderId: string, paymentId: string) => {
+export const failedPayment = async (
+  orderId: string,
+  paymentId: string,
+  reason?: string,
+) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -130,7 +134,7 @@ export const failedPayment = async (orderId: string, paymentId: string) => {
       id: orderId,
     },
     data: {
-      paymentStatus: "failed",
+      paymentStatus: "unpaid",
       status: "canceled",
     },
   });
@@ -140,7 +144,7 @@ export const failedPayment = async (orderId: string, paymentId: string) => {
       id: paymentId,
     },
     data: {
-      status: "failed",
+      status: "unpaid",
     },
   });
 
@@ -149,11 +153,14 @@ export const failedPayment = async (orderId: string, paymentId: string) => {
     email: order?.user?.email,
     amount: order?.total,
     transactionId: payment?.transactionId,
+    date: order?.createdAt.toDateString(),
     orderId,
+    failureReason: reason,
   });
 };
 
-export const cancelePayment = async (orderId: string, paymentId: string) => {
+export const cancelePayment = async (orderId: string, reason?: string) => {
+  console.log(orderId);
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -166,23 +173,22 @@ export const cancelePayment = async (orderId: string, paymentId: string) => {
   if (!order) {
     throw new AppError("Order not found", httpStatus.NOT_FOUND);
   }
-
   await prisma.order.update({
     where: {
       id: orderId,
     },
     data: {
-      paymentStatus: "canceled",
+      paymentStatus: "unpaid",
       status: "canceled",
     },
   });
 
   const payment = await prisma.payment.update({
     where: {
-      id: paymentId,
+      orderId: orderId,
     },
     data: {
-      status: "canceled",
+      status: "unpaid",
     },
   });
 
@@ -211,6 +217,8 @@ export const cancelePayment = async (orderId: string, paymentId: string) => {
     amount: order?.total,
     transactionId: payment?.transactionId,
     orderId,
+    cancelReason: reason,
+    date: order?.createdAt.toDateString(),
   });
   return null;
 };
