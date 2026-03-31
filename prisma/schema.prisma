@@ -43,10 +43,12 @@ enum Role {
 }
 
 model Banner {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  name     String
-  price    Float
-  design   String
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  price  Float
+  design String
+  size   String
+
   category Category
   userId   String?
   user     User?    @relation(fields: [userId], references: [id])

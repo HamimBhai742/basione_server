@@ -4,18 +4,13 @@ import httpStatus from "http-status";
 import crypto from "crypto";
 import { otpQueueEmail } from "../../bullMQ/init";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
-import { paymentCancelTemplate } from "../../utils/emailTemplates/paymentCanceled";
+import { paymentFailedTemplate } from "../../utils/emailTemplates/paymentFailed";
+import { paymentCancelledTemplate } from "../../utils/emailTemplates/paymentCanceled";
 
-const successPayment = async (orderId: string) => {
+export const successPayment = async (orderId: string, paymentId: string) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
-    },
-  });
-
-  const banner = await prisma.banner.findUnique({
-    where: {
-      id: order?.bannerId,
     },
   });
 
@@ -33,14 +28,12 @@ const successPayment = async (orderId: string) => {
     },
   });
 
-  const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-  const payment = await prisma.payment.create({
+  const payment = await prisma.payment.update({
+    where: {
+      id: paymentId,
+    },
     data: {
-      orderId,
-      amount: order.total,
       status: "paid",
-      transactionId,
-      userId: order.userId,
     },
   });
 
@@ -111,14 +104,56 @@ const successPayment = async (orderId: string) => {
     userName: user?.name,
     email: user?.email,
     amount: order?.total,
-    transactionId,
+    transactionId: payment?.transactionId,
     orderId,
     date: order?.createdAt.toDateString(),
   });
   return order;
 };
 
-const cancelePayment = async (orderId: string) => {
+export const failedPayment = async (orderId: string, paymentId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      paymentStatus: "failed",
+      status: "canceled",
+    },
+  });
+
+  const payment = await prisma.payment.update({
+    where: {
+      id: paymentId,
+    },
+    data: {
+      status: "failed",
+    },
+  });
+
+  await paymentFailedTemplate({
+    userName: order?.user?.name,
+    email: order?.user?.email,
+    amount: order?.total,
+    transactionId: payment?.transactionId,
+    orderId,
+  });
+};
+
+export const cancelePayment = async (orderId: string, paymentId: string) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -142,15 +177,12 @@ const cancelePayment = async (orderId: string) => {
     },
   });
 
-  const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-
-  await prisma.payment.create({
+  const payment = await prisma.payment.update({
+    where: {
+      id: paymentId,
+    },
     data: {
-      orderId,
-      amount: order.total,
       status: "canceled",
-      userId: order.userId,
-      transactionId,
     },
   });
 
@@ -173,17 +205,12 @@ const cancelePayment = async (orderId: string) => {
   //   },
   // );
 
-  await paymentCancelTemplate({
+  await paymentCancelledTemplate({
     userName: order?.user?.name,
     email: order?.user?.email,
     amount: order?.total,
-    transactionId,
+    transactionId: payment?.transactionId,
     orderId,
   });
   return null;
-};
-
-export const paymentService = {
-  successPayment,
-  cancelePayment,
 };

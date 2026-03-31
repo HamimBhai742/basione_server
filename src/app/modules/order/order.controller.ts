@@ -7,7 +7,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 const createOrder = async (req: Request & { user?: any }, res: Response) => {
   const order = await orderService.createOrder(
     req.user.id,
-    req.body.designId,
+    req.body.bannerId,
     req.body,
   );
 

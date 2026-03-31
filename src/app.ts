@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import { router } from "./app/routes";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
-import { stripeWebhook } from "./app/utils/stripeWebhook";
+import { stripeWebhook } from "./app/modules/stripe/stripeWebhook";
 const app: Application = express();
 
 app.post(

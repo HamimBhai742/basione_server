@@ -2,6 +2,7 @@ import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import { stripe } from "../../lib/stripe";
+import crypto from "crypto";
 
 const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
@@ -72,6 +73,17 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     },
   });
 
+  const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+  const payment = await prisma.payment.create({
+    data: {
+      orderId,
+      amount: order.total,
+      transactionId,
+      status: "pending",
+      userId,
+    },
+  });
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
 
@@ -89,10 +101,17 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     ],
     customer_email: payload?.email,
     mode: "payment",
-    success_url: `http://localhost:5000/api/v1/payment/success?orderId=${orderId}`,
-    cancel_url: `http://localhost:5000/api/v1/payment/cancel?orderId=${orderId}`,
+    success_url: `http://localhost:3000/success?orderId=${orderId}`,
+    cancel_url: `http://localhost:3000/cancel?orderId=${orderId}`,
     metadata: {
       orderId,
+      paymentId: payment.id,
+    },
+    payment_intent_data: {
+      metadata: {
+        orderId,
+        paymentId: payment.id,
+      },
     },
   });
   console.log(session);
@@ -109,6 +128,10 @@ const getMyOrders = async (
   const orders = await prisma.order.findMany({
     where: {
       userId,
+    },
+    include: {
+      banner: true,
+      payment: true,
     },
     take: limit,
     skip,
