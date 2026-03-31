@@ -115,6 +115,7 @@ export const failedPayment = async (
   orderId: string,
   paymentId: string,
   reason?: string,
+  sessionUrl?: string
 ) => {
   const order = await prisma.order.findUnique({
     where: {
@@ -156,6 +157,7 @@ export const failedPayment = async (
     date: order?.createdAt.toDateString(),
     orderId,
     failureReason: reason,
+    sessionUrl
   });
 };
 

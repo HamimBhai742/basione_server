@@ -48,6 +48,12 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         const error = paymentIntent.last_payment_error;
+        const sessionId = paymentIntent.id;
+        const session = await stripe.checkout.sessions.list({
+          payment_intent: sessionId,
+          limit: 1,
+        });
+        console.log(session);
         console.log("❌ payment_intent.payment_failed", paymentIntent.id);
 
         if (!paymentIntent.metadata?.orderId) {
@@ -59,6 +65,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
           paymentIntent.metadata.orderId,
           paymentIntent.metadata.paymentId,
           error?.message,
+          session?.data[0]?.url as string,
         );
         break;
       }

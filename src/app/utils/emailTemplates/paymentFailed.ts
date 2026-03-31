@@ -8,10 +8,11 @@ interface PaymentFailedData {
   orderId: string;
   date: string;
   failureReason?: string;
+  sessionUrl?: string;
 }
 
 export const paymentFailedTemplate = async (data: PaymentFailedData) => {
-  const { userName, email, amount, transactionId, orderId, date, failureReason } = data;
+  const { userName, email, amount, transactionId, orderId, date, failureReason, sessionUrl } = data;
 
   const subject = "⚠️ Payment Failed — Action Required";
 
@@ -317,7 +318,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
                 <tr>
                   <td align="center">
                     <a
-                      href="https://your-frontend-url.com/checkout"
+                      href=${sessionUrl}
                       style="
                         display: inline-block;
                         background: linear-gradient(135deg, #b91c1c, #ef4444);
