@@ -3,6 +3,10 @@ import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import { stripe } from "../../lib/stripe";
 import crypto from "crypto";
+import {
+  OrderCancelledData,
+  orderCancelledTemplate,
+} from "../../utils/emailTemplates/ordercanclled";
 
 const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
@@ -195,6 +199,10 @@ const cancledOrder = async (orderId: string) => {
     where: {
       id: orderId,
     },
+    include: {
+      user: true,
+      banner: true,
+    },
   });
 
   if (order?.status !== "pending") {
@@ -211,6 +219,25 @@ const cancledOrder = async (orderId: string) => {
       status: "canceled",
     },
   });
+
+  const data = {
+    userName: order?.user.name as string,
+    email: order?.user.email as string,
+    orderId: order?.id as string,
+    orderDate: order?.createdAt.toLocaleString() as string,
+    cancelledDate: new Date().toLocaleString(),
+    items: [
+      {
+        name: order?.banner.category as string,
+        quantity: order?.quantity as number,
+        price: order?.banner.price as number,
+      },
+    ],
+    subtotal: order.total,
+    cancelReason: "User requested cancellation",
+    cancelledBy: "user",
+  };
+  await orderCancelledTemplate(data as OrderCancelledData);
 };
 
 export const orderService = {
