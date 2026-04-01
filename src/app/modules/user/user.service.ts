@@ -10,8 +10,8 @@ import { verifyToken } from "../../utils/verifyToken";
 import { email } from "zod";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
-import { passwordResetTemplate } from "../../utils/emailTemplates/passwordResetTemplate";
 import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetOtpSuccess";
+import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
 
 interface IUserPayload {
   name: string;
@@ -259,12 +259,12 @@ const forgotPassword = async (email: string) => {
   //   },
   // );
 
-  await passwordResetTemplate(
-    user.name,
-    "Password Reset Code",
-    user.email,
+  await forgotPasswordOTPTemplate({
+    userName: user.name,
+    email: user.email,
     otp,
-  );
+    requestedAt: new Date().toLocaleString(),
+  });
   return {
     accessToken: tempToken,
   };
@@ -323,12 +323,12 @@ const resendForgotPassOtp = async (email: string) => {
   //   },
   // );
 
-  await passwordResetTemplate(
-    user.name,
-    "Password Reset Code",
-    user.email,
+  await forgotPasswordOTPTemplate({
+    userName: user.name,
+    email: user.email,
     otp,
-  );
+    requestedAt: new Date().toLocaleString(),
+  });
   return {
     accessToken: tempToken,
   };

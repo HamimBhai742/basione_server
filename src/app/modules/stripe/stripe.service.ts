@@ -171,7 +171,7 @@ export const failedPayment = async (
 };
 
 export const cancelePayment = async (orderId: string, reason?: string) => {
-  console.log(orderId);
+  
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
