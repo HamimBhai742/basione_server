@@ -1,7 +1,7 @@
 import { Server } from "http";
 import app from "./app";
 import config from "./config";
-import { connectedDB } from "./app/db/connected.db";
+import { connectedDB, seedAdmin } from "./app/db/connected.db";
 
 let server: Server;
 const port = config.port;
@@ -12,6 +12,7 @@ const main = () => {
   });
 
   connectedDB();
+   seedAdmin();
 
   const exitHandler = () => {
     if (server) {

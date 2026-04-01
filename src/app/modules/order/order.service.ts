@@ -7,6 +7,7 @@ import {
   OrderCancelledData,
   orderCancelledTemplate,
 } from "../../utils/emailTemplates/ordercanclled";
+import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
 
 const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
@@ -240,10 +241,78 @@ const cancledOrder = async (orderId: string) => {
   await orderCancelledTemplate(data as OrderCancelledData);
 };
 
+const orderConfirmationByAdmin = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      user: true,
+      banner: true,
+      addresses: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+  }
+
+  if (order.status !== "pending") {
+    throw new AppError(
+      "Only pending orders can be confirmed",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  if (order.paymentStatus !== "paid") {
+    throw new AppError(
+      "Only paid orders can be confirmed",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  await prisma.order.update({
+    where: {
+      id: orderId,
+    },
+    data: {
+      status: "processing",
+    },
+  });
+
+  const data = {
+    userName: order?.user.name as string,
+    email: order?.user.email as string,
+    orderId,
+    orderDate: order?.createdAt.toLocaleString(),
+    estimatedDelivery: order?.deliveryTime,
+    items: [
+      {
+        name: order?.banner.name as string,
+        quantity: order?.quantity as number,
+        price: order?.banner.price as number,
+        imageUrl: order?.banner.design as string,
+      },
+    ],
+    subtotal: order?.total - order?.deliveryFee,
+    shippingCost: order?.deliveryFee,
+    discount: 0,
+    total: order?.total,
+    shippingAddress: {
+      address: order?.addresses?.address as string,
+      zipCode: order?.addresses?.postalCode as string,
+      country: order?.addresses?.country as string,
+    },
+    paymentMethod: "Stripe",
+  };
+  await orderConfirmedTemplate(data);
+};
+
 export const orderService = {
   createOrder,
   checkOut,
   getMyOrders,
   getSingleOrder,
   cancledOrder,
+  orderConfirmationByAdmin,
 };

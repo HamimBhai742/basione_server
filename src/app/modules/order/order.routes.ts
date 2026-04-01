@@ -14,4 +14,6 @@ router.get("/:id", checkAuth("user"), orderController.getSingleOrder);
 
 router.post("/cancel/:id", checkAuth("user"), orderController.cancledOrder);
 
+router.post("/confirm/:id", checkAuth("admin"), orderController.orderConfirmationByAdmin);
+
 export const orderRoutes = router;

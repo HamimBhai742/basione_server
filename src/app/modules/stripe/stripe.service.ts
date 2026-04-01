@@ -6,11 +6,17 @@ import { otpQueueEmail } from "../../bullMQ/init";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
 import { paymentFailedTemplate } from "../../utils/emailTemplates/paymentFailed";
 import { paymentCancelledTemplate } from "../../utils/emailTemplates/paymentCanceled";
+import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
 
 export const successPayment = async (orderId: string, paymentId: string) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
+    },
+    include: {
+      banner: true,
+      user: true,
+      addresses: true,
     },
   });
 
@@ -115,7 +121,7 @@ export const failedPayment = async (
   orderId: string,
   paymentId: string,
   reason?: string,
-  sessionUrl?: string
+  sessionUrl?: string,
 ) => {
   const order = await prisma.order.findUnique({
     where: {
@@ -157,7 +163,7 @@ export const failedPayment = async (
     date: order?.createdAt.toDateString(),
     orderId,
     failureReason: reason,
-    sessionUrl
+    sessionUrl,
   });
 };
 
