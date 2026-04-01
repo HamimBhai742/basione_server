@@ -107,12 +107,12 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
           <tr>
             <td style="
               background: linear-gradient(135deg, #1e293b 0%, #334155 55%, #475569 100%);
-             
+              padding: 40px 40px 32px;
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="200"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="300"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
@@ -405,12 +405,12 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
             <td style="
               background: #f8f9fc;
               border-top: 1px solid #e8ecf5;
-        
+              padding: 28px 40px;
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="120"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="200"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 12px; opacity: 0.7;"
               />

@@ -195,7 +195,7 @@ const getSingleOrder = async (orderId: string, userId: string) => {
   return order;
 };
 
-const cancledOrder = async (orderId: string) => {
+export const cancledOrder = async (orderId: string, reason?: string) => {
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -235,7 +235,7 @@ const cancledOrder = async (orderId: string) => {
       },
     ],
     subtotal: order.total,
-    cancelReason: "User requested cancellation",
+    cancelReason: reason || "User requested cancellation",
     cancelledBy: "user",
   };
   await orderCancelledTemplate(data as OrderCancelledData);

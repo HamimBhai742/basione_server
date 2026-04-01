@@ -49,11 +49,15 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
 
           <!-- ===== HEADER BANNER ===== -->
           <tr>
-            <td style="text-align: center;">
+            <td style="
+              background: linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%);
+              padding: 40px 40px 32px;
+              text-align: center;
+            ">
               <!-- Logo -->
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="300px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="300"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
@@ -74,7 +78,7 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
 
               <h1 style="
                 margin: 0 0 8px;
-                color: #dc2626;
+                color: #ffffff;
                 font-size: 26px;
                 font-weight: 700;
                 letter-spacing: -0.3px;
@@ -90,7 +94,7 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
 
           <!-- ===== BODY CONTENT ===== -->
           <tr>
-            <td style="padding: 0px 40px 0;">
+            <td style="padding: 36px 40px 0;">
 
               <!-- Greeting -->
               <p style="
@@ -330,8 +334,8 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="150px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="200"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 12px; opacity: 0.7;"
               />

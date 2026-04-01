@@ -7,6 +7,7 @@ import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSucces
 import { paymentFailedTemplate } from "../../utils/emailTemplates/paymentFailed";
 import { paymentCancelledTemplate } from "../../utils/emailTemplates/paymentCanceled";
 import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
+import { cancledOrder } from "../order/order.service";
 
 export const successPayment = async (orderId: string, paymentId: string) => {
   const order = await prisma.order.findUnique({
@@ -142,7 +143,6 @@ export const failedPayment = async (
     },
     data: {
       paymentStatus: "unpaid",
-      status: "canceled",
     },
   });
 
@@ -165,6 +165,9 @@ export const failedPayment = async (
     failureReason: reason,
     sessionUrl,
   });
+
+  // await cancledOrder(orderId, reason);
+  return null;
 };
 
 export const cancelePayment = async (orderId: string, reason?: string) => {
@@ -187,7 +190,6 @@ export const cancelePayment = async (orderId: string, reason?: string) => {
     },
     data: {
       paymentStatus: "unpaid",
-      status: "canceled",
     },
   });
 
@@ -228,5 +230,6 @@ export const cancelePayment = async (orderId: string, reason?: string) => {
     cancelReason: reason,
     date: order?.createdAt.toDateString(),
   });
+  await cancledOrder(orderId, reason);
   return null;
 };

@@ -12,7 +12,16 @@ interface PaymentFailedData {
 }
 
 export const paymentFailedTemplate = async (data: PaymentFailedData) => {
-  const { userName, email, amount, transactionId, orderId, date, failureReason, sessionUrl } = data;
+  const {
+    userName,
+    email,
+    amount,
+    transactionId,
+    orderId,
+    date,
+    failureReason,
+    sessionUrl,
+  } = data;
 
   const subject = "⚠️ Payment Failed — Action Required";
 
@@ -50,17 +59,36 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
 
           <!-- ===== HEADER BANNER ===== -->
           <tr>
-            <td style="text-align: center;">
+            <td style="
+              background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 60%, #ef4444 100%);
+              padding: 40px 40px 32px;
+              text-align: center;
+            ">
               <!-- Logo -->
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="300px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="300"
                 alt="Spandoek Print"
+                style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
+
               <!-- Failed icon circle -->
+              <div style="
+                display: inline-block;
+                background: rgba(255,255,255,0.15);
+                border: 3px solid rgba(255,255,255,0.4);
+                border-radius: 50%;
+                width: 72px;
+                height: 72px;
+                line-height: 72px;
+                text-align: center;
+                font-size: 34px;
+                margin-bottom: 20px;
+              ">❌</div>
+
               <h1 style="
                 margin: 0 0 8px;
-                color: #f59e0b;
+                color: #ffffff;
                 font-size: 26px;
                 font-weight: 700;
                 letter-spacing: -0.3px;
@@ -76,7 +104,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
 
           <!-- ===== BODY CONTENT ===== -->
           <tr>
-            <td style="padding: 0px 40px 0;">
+            <td style="padding: 36px 40px 0;">
 
               <!-- Greeting -->
               <p style="
@@ -114,7 +142,9 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
               </table>
 
               <!-- ===== FAILURE REASON BOX ===== -->
-              ${failureReason ? `
+              ${
+                failureReason
+                  ? `
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #fff8f0;
                 border: 1px solid #fbd38d;
@@ -129,7 +159,9 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
                   </td>
                 </tr>
               </table>
-              ` : ""}
+              `
+                  : ""
+              }
 
               <!-- ===== ORDER DETAILS TABLE ===== -->
               <p style="
@@ -371,8 +403,8 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="150px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="200"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 12px; opacity: 0.7;"
               />

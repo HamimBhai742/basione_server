@@ -74,7 +74,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
         text-align: right;
       ">$${(item.price * item.quantity).toFixed(2)}</td>
     </tr>
-  `
+  `,
     )
     .join("");
 
@@ -113,11 +113,12 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
           <tr>
             <td style="
               background: linear-gradient(135deg, #1a3faa 0%, #2d63e2 60%, #3b82f6 100%);
+              padding: 40px 40px 32px;
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="200"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="300"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
@@ -327,7 +328,9 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                 </tr>
 
                 <!-- Discount (conditional) -->
-                ${discount > 0 ? `
+                ${
+                  discount > 0
+                    ? `
                 <tr>
                   <td colspan="2" style="
                     padding: 12px 18px;
@@ -347,7 +350,9 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     font-weight: 700;
                   ">- $${discount.toFixed(2)}</td>
                 </tr>
-                ` : ""}
+                `
+                    : ""
+                }
 
                 <!-- Grand Total -->
                 <tr>
@@ -567,10 +572,11 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
               background: #f8f9fc;
               border-top: 1px solid #e8ecf5;
               text-align: center;
+              padding: 28px 40px;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="120"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="200"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 12px; opacity: 0.7;"
               />

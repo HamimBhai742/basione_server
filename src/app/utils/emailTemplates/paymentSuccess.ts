@@ -48,20 +48,36 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
 
           <!-- ===== HEADER BANNER ===== -->
           <tr>
-            <td style="text-align: center;">
+            <td style="
+              background: linear-gradient(135deg, #1a3faa 0%, #2d63e2 60%, #3b82f6 100%);
+              padding: 40px 40px 32px;
+              text-align: center;
+            ">
               <!-- Logo -->
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="300px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="300"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
 
               <!-- Success icon circle -->
-              
+              <div style="
+                display: inline-block;
+                background: rgba(255,255,255,0.15);
+                border: 3px solid rgba(255,255,255,0.4);
+                border-radius: 50%;
+                width: 72px;
+                height: 72px;
+                line-height: 72px;
+                text-align: center;
+                font-size: 34px;
+                margin-bottom: 20px;
+              ">✅</div>
+
               <h1 style="
                 margin: 0 0 8px;
-                color: #16a34a;
+                color: #ffffff;
                 font-size: 26px;
                 font-weight: 700;
                 letter-spacing: -0.3px;
@@ -77,7 +93,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
 
           <!-- ===== BODY CONTENT ===== -->
           <tr>
-            <td style="padding: 0px 40px 0;">
+            <td style="padding: 36px 40px 0;">
 
               <!-- Greeting -->
               <p style="
@@ -268,8 +284,8 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/JwZrfwqT/spandoek-print-logo.png"
-                width="150px"
+                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
+                width="200"
                 alt="Spandoek Print"
                 style="display:block; margin: 0 auto 12px; opacity: 0.7;"
               />
