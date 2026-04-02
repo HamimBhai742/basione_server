@@ -2,6 +2,7 @@ import { Server } from "http";
 import app from "./app";
 import config from "./config";
 import { connectedDB, seedAdmin } from "./app/db/connected.db";
+import "./app/bullMQ/workers/mailWorkers";
 
 let server: Server;
 const port = config.port;
