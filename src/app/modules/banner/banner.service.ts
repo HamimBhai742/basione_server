@@ -34,17 +34,17 @@ const createBanner = async (userId: string, payload: any) => {
   const prompt = `Create a ${payload.style} banner design for ${payload.describe} with size ${size} and user name ${payload.name} with background image of ${payload.image} and category ${payload.category} `;
   console.log(prompt);
 
-  const banner = await prisma.banner.create({
-    data: {
-      userId,
-      price,
-      design: prompt,
-      category: payload?.category,
-      name: payload?.name,
-      size,
-    },
-  });
-  return banner;
+  //  await prisma.banner.create({
+  //   data: {
+  //     userId,
+  //     price,
+  //     design: prompt,
+  //     category: payload?.category,
+  //     name: payload?.name,
+  //     size,
+  //   },
+  // });
+  return null;
 };
 
 const mybanner = async (id: string) => {
