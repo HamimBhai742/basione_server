@@ -2,8 +2,13 @@
 
 import sendEmail from "./nodemailerTransport";
 
-export const passwordChangedTemplate = async (userName: string, subject: string, email: string, secureLink: string,) => {
-    const html = `<!DOCTYPE html>
+export const passwordChangedTemplate = async (
+  userName: string,
+  subject: string,
+  email: string,
+  secureLink: string,
+) => {
+  const html = `<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -149,8 +154,6 @@ export const passwordChangedTemplate = async (userName: string, subject: string,
 </body>
 
 </html>`;
-    //   await sendEmail(email, subject, html);
-    await sendEmail(email, subject, html)
-
-}
-
+  //   await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
+};

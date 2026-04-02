@@ -9,7 +9,9 @@ interface ResetPasswordSuccessData {
   location?: string;
 }
 
-export const resetPasswordSuccessTemplate = async (data: ResetPasswordSuccessData) => {
+export const resetPasswordSuccessTemplate = async (
+  data: ResetPasswordSuccessData,
+) => {
   const { userName, email, resetAt, ipAddress, device, location } = data;
 
   const subject = "✅ Your Password Has Been Reset Successfully";
@@ -171,7 +173,9 @@ export const resetPasswordSuccessTemplate = async (data: ResetPasswordSuccessDat
                 </tr>
 
                 <!-- Device (conditional) -->
-                ${device ? `
+                ${
+                  device
+                    ? `
                 <tr>
                   <td style="
                     padding: 13px 18px;
@@ -190,10 +194,14 @@ export const resetPasswordSuccessTemplate = async (data: ResetPasswordSuccessDat
                     font-weight: 500;
                   ">${device}</td>
                 </tr>
-                ` : ""}
+                `
+                    : ""
+                }
 
                 <!-- Location (conditional) -->
-                ${location ? `
+                ${
+                  location
+                    ? `
                 <tr>
                   <td style="
                     padding: 13px 18px;
@@ -212,10 +220,14 @@ export const resetPasswordSuccessTemplate = async (data: ResetPasswordSuccessDat
                     font-weight: 500;
                   ">${location}</td>
                 </tr>
-                ` : ""}
+                `
+                    : ""
+                }
 
                 <!-- IP Address (conditional) -->
-                ${ipAddress ? `
+                ${
+                  ipAddress
+                    ? `
                 <tr>
                   <td style="
                     padding: 13px 18px;
@@ -233,7 +245,9 @@ export const resetPasswordSuccessTemplate = async (data: ResetPasswordSuccessDat
                     font-family: 'Courier New', monospace;
                   ">${ipAddress}</td>
                 </tr>
-                ` : ""}
+                `
+                    : ""
+                }
               </table>
 
               <!-- ===== WHAT'S NEXT ===== -->

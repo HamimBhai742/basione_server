@@ -37,6 +37,16 @@ const registerUser = async (payload: IUserPayload) => {
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   if (isExistingUser && !isExistingUser.isVerified) {
+    await prisma.user.update({
+      where: {
+        email: payload.email,
+      },
+      data: {
+        otp,
+        otpExpiry,
+      },
+    });
+
     // await otpQueueEmail.add(
     //   "registrationOtp",
     //   {
@@ -52,6 +62,7 @@ const registerUser = async (payload: IUserPayload) => {
     //     backoff: { type: "fixed", delay: 5000 },
     //   },
     // );
+
     await registrationOtpTemplate({
       userName: isExistingUser.name,
       email: isExistingUser.email,
@@ -69,6 +80,7 @@ const registerUser = async (payload: IUserPayload) => {
     payload.password,
     config.password_salt,
   );
+  
   const user = await prisma.user.create({
     data: {
       name: payload.name,
@@ -92,7 +104,6 @@ const registerUser = async (payload: IUserPayload) => {
   //     userName: user.name,
   //     email: user.email,
   //     otpCode: otp,
-  //     subject: "Email Verification Code",
   //   },
   //   {
   //     jobId: `${user.id}-${Date.now()}`,
@@ -101,6 +112,7 @@ const registerUser = async (payload: IUserPayload) => {
   //     backoff: { type: "fixed", delay: 5000 },
   //   },
   // );
+
   await registrationOtpTemplate({
     userName: user.name,
     email: user.email,
@@ -243,12 +255,11 @@ const forgotPassword = async (email: string) => {
   });
 
   // await otpQueueEmail.add(
-  //   "passwordResetRequest",
+  //   "forgotPasswordOTP",
   //   {
   //     userName: user.name,
   //     email: user.email,
   //     otpCode: otp,
-  //     subject: "Password Reset Code",
   //   },
   //   {
   //     jobId: `${user.id}-${Date.now()}`,

@@ -31,7 +31,7 @@ export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
         box-shadow: 0 2px 10px rgba(26,63,170,0.13);
       ">${digit}</div>
     </td>
-  `
+  `,
     )
     .join("");
 

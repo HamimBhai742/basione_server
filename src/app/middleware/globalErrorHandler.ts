@@ -22,7 +22,6 @@ export const globalErrorHandler = (
   if (err.name === "PrismaClientValidationError") {
     message = "Validation error";
     statusCode = 400;
-    console.log(err);
     const errorMessage = err.message;
 
     // 🔥 field extract
@@ -40,7 +39,7 @@ export const globalErrorHandler = (
       });
     }
   }
-  console.log(err.name);
+  console.log(err);
 
   res.status(statusCode).json({ success: false, message, errorDetails });
 };

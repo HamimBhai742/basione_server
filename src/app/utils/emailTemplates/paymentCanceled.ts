@@ -11,7 +11,15 @@ interface PaymentCancelledData {
 }
 
 export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
-  const { userName, email, amount, transactionId, orderId, date, cancelReason } = data;
+  const {
+    userName,
+    email,
+    amount,
+    transactionId,
+    orderId,
+    date,
+    cancelReason,
+  } = data;
 
   const subject = "🚫 Payment Cancelled — Your Order Has Been Cancelled";
 
@@ -133,7 +141,9 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
               </table>
 
               <!-- ===== CANCEL REASON BOX ===== -->
-              ${cancelReason ? `
+              ${
+                cancelReason
+                  ? `
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #f8f9fc;
                 border: 1px solid #d1d5db;
@@ -148,7 +158,9 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
                   </td>
                 </tr>
               </table>
-              ` : ""}
+              `
+                  : ""
+              }
 
               <!-- ===== ORDER DETAILS TABLE ===== -->
               <p style="

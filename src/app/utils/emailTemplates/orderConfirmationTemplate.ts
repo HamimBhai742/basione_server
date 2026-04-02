@@ -18,7 +18,7 @@ export const orderConfirmationTemplate = async (
     totalAmount: number;
     deliveryAddress: string;
     paymentMethod: string;
-  }
+  },
 ) => {
   const html = `
 <!DOCTYPE html>
@@ -137,7 +137,7 @@ body {
           <div>Price: ৳${item.price}</div>
         </div>
       </div>
-    `
+    `,
       )
       .join("")}
 

@@ -14,12 +14,13 @@ export const otpEmailWorker = new Worker(
     switch (job.name) {
       // handle verify
       case "registrationOtp": {
-        const { userName, email, otpCode, subject } = job.data;
+        const { userName, email, otpCode } = job.data;
         await registrationOtpTemplate({
           userName,
           email,
           otp: otpCode,
-          requestedAt: new Date().toLocaleString(),});
+          requestedAt: new Date().toLocaleString(),
+        });
         return "Otp end job completed";
       }
       case "passwordChangedConfirmation": {
@@ -28,7 +29,7 @@ export const otpEmailWorker = new Worker(
         return "Otp end job completed";
       }
       case "forgotPasswordOTP": {
-        const { userName, email, subject, otpCode } = job.data;
+        const { userName, email, otpCode } = job.data;
         await forgotPasswordOTPTemplate({
           userName,
           email,
@@ -67,7 +68,7 @@ export const otpEmailWorker = new Worker(
         break;
     }
   },
-  { connection: redisOptions },
+  { connection: redisOptions, concurrency: 5 },
 );
 
 otpEmailWorker.on("failed", (job, err) => {

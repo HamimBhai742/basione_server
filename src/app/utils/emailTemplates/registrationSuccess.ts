@@ -7,10 +7,13 @@ interface RegistrationSuccessData {
   avatarUrl?: string;
 }
 
-export const registrationSuccessTemplate = async (data: RegistrationSuccessData) => {
+export const registrationSuccessTemplate = async (
+  data: RegistrationSuccessData,
+) => {
   const { userName, email, registeredAt, avatarUrl } = data;
 
-  const subject = "🎉 Welcome to Spandoek Print — Account Successfully Created!";
+  const subject =
+    "🎉 Welcome to Spandoek Print — Account Successfully Created!";
 
   const html = `
 <!DOCTYPE html>
@@ -58,15 +61,16 @@ export const registrationSuccessTemplate = async (data: RegistrationSuccessData)
               />
 
               <!-- Avatar or default icon -->
-              ${avatarUrl
-                ? `<img src="${avatarUrl}" width="80" height="80" alt="${userName}" style="
+              ${
+                avatarUrl
+                  ? `<img src="${avatarUrl}" width="80" height="80" alt="${userName}" style="
                     display: block;
                     margin: 0 auto 16px;
                     border-radius: 50%;
                     border: 3px solid rgba(255,255,255,0.5);
                     object-fit: cover;
                   "/>`
-                : `<div style="
+                  : `<div style="
                     display: inline-block;
                     background: rgba(255,255,255,0.15);
                     border: 3px solid rgba(255,255,255,0.4);
