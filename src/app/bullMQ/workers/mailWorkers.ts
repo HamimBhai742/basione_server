@@ -2,11 +2,11 @@ import { redisOptions } from "../../lib/redis/redisOptions";
 import { Worker } from "bullmq";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { passwordChangedTemplate } from "../../utils/emailTemplates/passwordChangedTemplate";
-import { passwordResetTemplate } from "../../utils/emailTemplates/passwordResetTemplate";
-import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetOtpSuccess";
+import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
+import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
 import { orderConfirmationTemplate } from "../../utils/emailTemplates/orderConfirmationTemplate";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
-import { paymentCancelTemplate } from "../../utils/emailTemplates/paymentCanceled";
+import { paymentCancelledTemplate } from "../../utils/emailTemplates/paymentCanceled";
 
 export const otpEmailWorker = new Worker(
   "otp-queue-email",
@@ -15,7 +15,11 @@ export const otpEmailWorker = new Worker(
       // handle verify
       case "registrationOtp": {
         const { userName, email, otpCode, subject } = job.data;
-        await registrationOtpTemplate(userName, subject, email, otpCode);
+        await registrationOtpTemplate({
+          userName,
+          email,
+          otp: otpCode,
+          requestedAt: new Date().toLocaleString(),});
         return "Otp end job completed";
       }
       case "passwordChangedConfirmation": {
@@ -23,14 +27,23 @@ export const otpEmailWorker = new Worker(
         await passwordChangedTemplate(userName, subject, email, secureLink);
         return "Otp end job completed";
       }
-      case "passwordResetRequest": {
+      case "forgotPasswordOTP": {
         const { userName, email, subject, otpCode } = job.data;
-        await passwordResetTemplate(userName, subject, email, otpCode);
+        await forgotPasswordOTPTemplate({
+          userName,
+          email,
+          otp: otpCode,
+          requestedAt: new Date().toLocaleString(),
+        });
         return "Otp end job completed";
       }
       case "resetPasswordSuccess": {
         const { userName, email } = job.data;
-        await resetPasswordSuccessTemplate(userName, email);
+        await resetPasswordSuccessTemplate({
+          userName,
+          email,
+          resetAt: new Date().toLocaleString(),
+        });
         return "Otp end job completed";
       }
       case "orderConfirmation": {
@@ -43,10 +56,9 @@ export const otpEmailWorker = new Worker(
         await paymentSuccessTemplate(data);
         return "Otp end job completed";
       }
-
-      case "paymentCancelTemplate": {
+      case "paymentCancelledTemplate": {
         const { data } = job.data;
-        await paymentCancelTemplate(data);
+        await paymentCancelledTemplate(data);
         return "Otp end job completed";
       }
 

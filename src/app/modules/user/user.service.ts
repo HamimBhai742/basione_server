@@ -7,10 +7,9 @@ import { AppError } from "../../error/AppError";
 import httpStatus from "http-status";
 import { generateToken } from "../../utils/generateToken";
 import { verifyToken } from "../../utils/verifyToken";
-import { email } from "zod";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
-import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetOtpSuccess";
+import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
 import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
 
 interface IUserPayload {
@@ -53,12 +52,12 @@ const registerUser = async (payload: IUserPayload) => {
     //     backoff: { type: "fixed", delay: 5000 },
     //   },
     // );
-    await registrationOtpTemplate(
-      isExistingUser.name,
-      "Email Verification Code",
-      isExistingUser.email,
+    await registrationOtpTemplate({
+      userName: isExistingUser.name,
+      email: isExistingUser.email,
       otp,
-    );
+      requestedAt: new Date().toLocaleString(),
+    });
     return isExistingUser;
   }
 
@@ -102,12 +101,12 @@ const registerUser = async (payload: IUserPayload) => {
   //     backoff: { type: "fixed", delay: 5000 },
   //   },
   // );
-  await registrationOtpTemplate(
-    user.name,
-    "Email Verification Code",
-    user.email,
+  await registrationOtpTemplate({
+    userName: user.name,
+    email: user.email,
     otp,
-  );
+    requestedAt: new Date().toLocaleString(),
+  });
   return user;
 };
 
@@ -142,11 +141,11 @@ const verifyOtp = async (otp: string, email: string) => {
     },
   });
 
-  await registrationSuccessTemplate(
-    user.name,
-    user.email,
-    "Registration Success",
-  );
+  await registrationSuccessTemplate({
+    userName: user.name,
+    email: user.email,
+    registeredAt: new Date().toLocaleString(),
+  });
   // const token = await generateToken(
   //   user,
   //   config.jwt.secret,
@@ -197,12 +196,12 @@ const resendOtp = async (email: string) => {
   //     backoff: { type: "fixed", delay: 5000 },
   //   },
   // );
-  await registrationOtpTemplate(
-    user.name,
-    "Email Verification Code",
-    user.email,
+  await registrationOtpTemplate({
+    userName: user.name,
+    email: user.email,
     otp,
-  );
+    requestedAt: new Date().toLocaleString(),
+  });
   return null;
 };
 
@@ -433,7 +432,11 @@ const resetPassword = async (token: string, password: string) => {
   //   },
   // );
 
-  await resetPasswordSuccessTemplate(user.name, user.email);
+  await resetPasswordSuccessTemplate({
+    userName: user.name,
+    email: user.email,
+    resetAt: new Date().toLocaleString(),
+  });
   return null;
 };
 
