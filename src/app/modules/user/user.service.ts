@@ -47,27 +47,27 @@ const registerUser = async (payload: IUserPayload) => {
       },
     });
 
-    await otpQueueEmail.add(
-      "registrationOtp",
-      {
-        userName: isExistingUser.name,
-        email: isExistingUser.email,
-        otpCode: otp,
-      },
-      {
-        jobId: `${isExistingUser.id}-${Date.now()}`,
-        removeOnComplete: true,
-        attempts: 3,
-        backoff: { type: "fixed", delay: 5000 },
-      },
-    );
+    // await otpQueueEmail.add(
+    //   "registrationOtp",
+    //   {
+    //     userName: isExistingUser.name,
+    //     email: isExistingUser.email,
+    //     otpCode: otp,
+    //   },
+    //   {
+    //     jobId: `${isExistingUser.id}-${Date.now()}`,
+    //     removeOnComplete: true,
+    //     attempts: 3,
+    //     backoff: { type: "fixed", delay: 5000 },
+    //   },
+    // );
 
-    // await registrationOtpTemplate({
-    //   userName: isExistingUser.name,
-    //   email: isExistingUser.email,
-    //   otp,
-    //   requestedAt: new Date().toLocaleString(),
-    // });
+    await registrationOtpTemplate({
+      userName: isExistingUser.name,
+      email: isExistingUser.email,
+      otp,
+      requestedAt: new Date().toLocaleString(),
+    });
     return isExistingUser;
   }
 
@@ -97,27 +97,27 @@ const registerUser = async (payload: IUserPayload) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "registrationOtp",
-    {
-      userName: user.name,
-      email: user.email,
-      otpCode: otp,
-    },
-    {
-      jobId: `${user.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
-  );
+  // await otpQueueEmail.add(
+  //   "registrationOtp",
+  //   {
+  //     userName: user.name,
+  //     email: user.email,
+  //     otpCode: otp,
+  //   },
+  //   {
+  //     jobId: `${user.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
 
-  // await registrationOtpTemplate({
-  //   userName: user.name,
-  //   email: user.email,
-  //   otp,
-  //   requestedAt: new Date().toLocaleString(),
-  // });
+  await registrationOtpTemplate({
+    userName: user.name,
+    email: user.email,
+    otp,
+    requestedAt: new Date().toLocaleString(),
+  });
   return user;
 };
 
@@ -157,6 +157,7 @@ const verifyOtp = async (otp: string, email: string) => {
     email: user.email,
     registeredAt: new Date().toLocaleString(),
   });
+  
   // const token = await generateToken(
   //   user,
   //   config.jwt.secret,
@@ -179,7 +180,7 @@ const resendOtp = async (email: string) => {
     throw new AppError("User not found", httpStatus.NOT_FOUND);
   }
 
-  if(user.isVerified){
+  if (user.isVerified) {
     throw new AppError("User is already verified", httpStatus.BAD_REQUEST);
   }
 
@@ -257,27 +258,27 @@ const forgotPassword = async (email: string) => {
     },
   });
 
-  await otpQueueEmail.add(
-    "forgotPasswordOTP",
-    {
-      userName: user.name,
-      email: user.email,
-      otpCode: otp,
-    },
-    {
-      jobId: `${user.id}-${Date.now()}`,
-      removeOnComplete: true,
-      attempts: 3,
-      backoff: { type: "fixed", delay: 5000 },
-    },
-  );
+  // await otpQueueEmail.add(
+  //   "forgotPasswordOTP",
+  //   {
+  //     userName: user.name,
+  //     email: user.email,
+  //     otpCode: otp,
+  //   },
+  //   {
+  //     jobId: `${user.id}-${Date.now()}`,
+  //     removeOnComplete: true,
+  //     attempts: 3,
+  //     backoff: { type: "fixed", delay: 5000 },
+  //   },
+  // );
 
-  // await forgotPasswordOTPTemplate({
-  //   userName: user.name,
-  //   email: user.email,
-  //   otp,
-  //   requestedAt: new Date().toLocaleString(),
-  // });
+  await forgotPasswordOTPTemplate({
+    userName: user.name,
+    email: user.email,
+    otp,
+    requestedAt: new Date().toLocaleString(),
+  });
   return {
     accessToken: tempToken,
   };
@@ -344,6 +345,7 @@ const resendForgotPassOtp = async (email: string) => {
   });
   return {
     accessToken: tempToken,
+    email: user.email,
   };
 };
 
@@ -358,6 +360,7 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
   if (!user) {
     throw new AppError("User not found", httpStatus.NOT_FOUND);
   }
+
   if (user.forgetPasswordToken !== token) {
     throw new AppError("Invalid token", httpStatus.BAD_REQUEST);
   }
@@ -467,6 +470,9 @@ const getMyProfile = async (id: string) => {
       role: true,
       status: true,
       isVerified: true,
+      image: true,
+      location: true,
+      phone: true,
 
       createdAt: true,
       updatedAt: true,
@@ -477,6 +483,7 @@ const getMyProfile = async (id: string) => {
 
 //user update profile
 const updateUser = async (id: string, payload: any) => {
+  console.log(payload);
   const user = await prisma.user.findUnique({
     where: {
       id,
@@ -487,14 +494,28 @@ const updateUser = async (id: string, payload: any) => {
     throw new AppError("User not found", httpStatus.NOT_FOUND);
   }
 
-  await prisma.user.update({
+  const result = await prisma.user.update({
     where: {
       id,
     },
     data: payload,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      isVerified: true,
+      image: true,
+      location: true,
+      phone: true,
+
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
-  return null;
+  return result;
 };
 
 export const userService = {

@@ -13,8 +13,7 @@ export const checkAuth = (...role: string[]) => {
     next: NextFunction,
   ) => {
     try {
-      const token = req.headers.authorization;
-
+      const token = req.headers.authorization || req.cookies.accessToken;
       if (!token) {
         throw new AppError("Token not found", httpStatus.UNAUTHORIZED);
       }

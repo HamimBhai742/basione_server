@@ -1,13 +1,14 @@
 
 import { Queue } from "bullmq";
+import { redis } from "../../lib/redis/redisOptions";
 
-import { redisOptions } from "../../lib/redis/redisOptions";
-
-
-export const otpQueueEmail = new Queue("otp-queue-email", { connection: redisOptions });
+// import { redisOptions } from "../../lib/redis/redisOptions";
 
 
-export const requestQueueEmail = new Queue("request-queue-email", { connection: redisOptions });
+export const otpQueueEmail = new Queue("otp-queue-email", { connection: redis });
+
+
+export const requestQueueEmail = new Queue("request-queue-email", { connection: redis });
 /*
 // requestPasswordReset
 await requestQueueEmail.add("requestPasswordReset", {

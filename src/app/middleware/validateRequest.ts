@@ -2,12 +2,16 @@ import { NextFunction, Request, Response } from "express";
 import { ZodObject, ZodRawShape } from "zod";
 
 export const validateRequest =
-  (schema: ZodObject<ZodRawShape>) =>
-  (req: Request, res: Response, next: NextFunction) => {
+  (zodSchema: ZodObject<ZodRawShape>) =>
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      req.body = schema.parse(req.body);
+      console.log(req.body.data);
+      if (req.body.data) {
+        req.body = JSON.parse(req.body.data);
+      }
+      req.body = await zodSchema.parseAsync(req.body);
       next();
-    } catch (error: any) {
-      next(error);
+    } catch (err) {
+      next(err);
     }
   };

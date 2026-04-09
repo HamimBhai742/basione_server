@@ -21,8 +21,6 @@ export const otpResendZodSchema = z.object({
 
 export const userUpdateZodSchema = z.object({
   name: z.string().optional(),
-  email: z.email().optional(),
-  image: z.string().optional(),
   phone: z.string().optional(),
   location: z.string().optional(),
 });

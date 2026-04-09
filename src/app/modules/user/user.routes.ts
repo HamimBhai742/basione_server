@@ -4,10 +4,12 @@ import {
   forgotPasswordZodSchema,
   otpResendZodSchema,
   otpVerifyZodSchema,
+  userUpdateZodSchema,
   userZodSchema,
 } from "./user.zod.schema";
 import { validateRequest } from "../../middleware/validateRequest";
 import { checkAuth } from "../../middleware/checkAuth";
+import { upload } from "../../middleware/upload";
 
 const router = Router();
 
@@ -46,7 +48,8 @@ router.get("/me", checkAuth("user"), userController.getMyProfile);
 router.patch(
   "/update-profile",
   checkAuth("user"),
-  validateRequest(userZodSchema),
+  upload.single("file"),
+  validateRequest(userUpdateZodSchema),
   userController.updateUser,
 );
 

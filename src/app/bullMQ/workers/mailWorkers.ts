@@ -1,4 +1,4 @@
-import { redisOptions } from "../../lib/redis/redisOptions";
+// import { redisOptions } from "../../lib/redis/redisOptions";
 import { Worker } from "bullmq";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { passwordChangedTemplate } from "../../utils/emailTemplates/passwordChangedTemplate";
@@ -7,6 +7,7 @@ import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPa
 import { orderConfirmationTemplate } from "../../utils/emailTemplates/orderConfirmationTemplate";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
 import { paymentCancelledTemplate } from "../../utils/emailTemplates/paymentCanceled";
+import { redis } from "../../lib/redis/redisOptions";
 
 export const otpEmailWorker = new Worker(
   "otp-queue-email",
@@ -68,7 +69,7 @@ export const otpEmailWorker = new Worker(
         break;
     }
   },
-  { connection: redisOptions, concurrency: 5 },
+  { connection: redis, concurrency: 5 },
 );
 
 otpEmailWorker.on("failed", (job, err) => {

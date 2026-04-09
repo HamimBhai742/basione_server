@@ -41,10 +41,14 @@ const loginUser = async (payload: IUserPayload) => {
     config.jwt.expire_in,
   );
 
+
+
   return {
     accessToken: token,
   };
 };
+
+
 
 export const authService = {
   loginUser,

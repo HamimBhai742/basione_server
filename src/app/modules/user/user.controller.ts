@@ -3,6 +3,31 @@ import { catchAsync } from "../../utils/catchAsync";
 import { userService } from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
+import { uploadToCloudinary } from "../../utils/uploadCloudinary";
+
+export interface CloudinaryUploadResponse {
+  asset_id: string;
+  public_id: string;
+  version: number;
+  version_id: string;
+  signature: string;
+  width: number;
+  height: number;
+  format: string;
+  resource_type: string;
+  created_at: string; // ISO date string
+  tags: string[];
+  bytes: number;
+  type: string;
+  etag: string;
+  placeholder: boolean;
+  url: string;
+  secure_url: string;
+  asset_folder: string;
+  display_name: string;
+  original_filename: string;
+  api_key: string;
+}
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
   const user = await userService.registerUser(req.body);
@@ -103,6 +128,14 @@ const getMyProfile = catchAsync(
 
 const updateUser = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
+    if (req.file) {
+      const result = (await uploadToCloudinary(
+        req.file as Express.Multer.File,
+      )) as CloudinaryUploadResponse;
+      if (result?.secure_url) {
+        req.body.image = result.secure_url;
+      }
+    }
     const user = await userService.updateUser(req.user.id, req.body);
 
     sendResponse(res, {

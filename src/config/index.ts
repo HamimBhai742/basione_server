@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { cloudinary } from "../app/lib/cloudinary";
 export default {
   port: Number(process.env.PORT) || 3000,
   password_salt: Number(process.env.PASSWORD_SALT) || 10,
@@ -17,5 +18,10 @@ export default {
   admin: {
     email: process.env.ADMIN_EMAIL as string,
     password: process.env.ADMIN_PASSWORD as string,
+  },
+  cloudinary: {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
+    api_key: process.env.CLOUDINARY_API_KEY as string,
+    api_secret: process.env.CLOUDINARY_API_SECRET as string,
   },
 };
