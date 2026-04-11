@@ -89,7 +89,9 @@ model Order {
 enum PaymentStatus {
   pending
   paid
-  unpaid
+  canceled
+  failed
+  expired
 }
 
 enum OrderStatus {
@@ -114,6 +116,7 @@ model Payment {
   order         Order         @relation(fields: [orderId], references: [id])
   userId        String
   user          User          @relation(fields: [userId], references: [id])
+  paymentJSON   Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -217,7 +217,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                           border-radius: 99px;
                           padding: 6px 16px;
                         ">
-                          <span style="font-size: 13px; color: #065f46; font-weight: 700;">● Payment Status: Confirmed</span>
+                          <span style="font-size: 13px; color: #065f46; font-weight: 700;">● Payment Status: Paid</span>
                         </td>
                       </tr>
                     </table>
