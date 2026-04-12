@@ -73,7 +73,7 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
   if (order?.status === "canceled") {
     throw new AppError("Order is canceled", httpStatus.BAD_REQUEST);
   }
-
+  console.log(pay);
   if (pay?.status === "paid") {
     throw new AppError("Order already paid", httpStatus.BAD_REQUEST);
   }

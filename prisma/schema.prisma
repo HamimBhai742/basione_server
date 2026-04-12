@@ -42,20 +42,63 @@ enum Role {
   admin
 }
 
-model Banner {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  name   String
-  price  Float
-  design String
-  size   String
+// model Banner {
+//   id     String @id @default(auto()) @map("_id") @db.ObjectId
+//   name   String
+//   price  Float
+//   design String
+//   size   String
 
-  category Category
-  userId   String?
-  user     User?    @relation(fields: [userId], references: [id])
-  orders   Order[]
+//   category Category
+//   userId   String?
+//   user     User?    @relation(fields: [userId], references: [id])
+//   orders   Order[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+model Banner {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId String?
+
+  occasion String
+  style    String
+  headline String
+  name     String
+
+  hobbies String[] // PostgreSQL array
+
+  description String
+
+  sizeType  String
+  sizeLabel String
+  width     Int
+  height    Int
+
+  imageUrl String
+  variant  Int
+
+  revisedPrompt String?
+
+  isSelected Boolean      @default(false)
+  status     BannerStatus @default(GENERATED)
+
+  generationId String? // group 4 variants
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?     @relation(fields: [userId], references: [id])
+  orders    Order[]
+
+  @@index([userId])
+  @@index([generationId])
+}
+
+enum BannerStatus {
+  SELECTED
+  GENERATED
+  ORDERED
 }
 
 enum Category {

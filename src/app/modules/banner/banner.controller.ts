@@ -7,7 +7,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 
 const createBanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
-    const banner = await bannerService.createBanner(req.user.id, req.body);
+    const banner = await bannerService.createBanner(req);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -41,12 +41,23 @@ const getAllbanners = catchAsync(async (req: Request, res: Response) => {
     category as ICategory,
   );
 
+  // sendResponse(res, {
+  //   statusCode: httpStatus.OK,
+  //   success: true,
+  //   message: "banners fetched successfully",
+  //   data: banners.banners,
+  //   metaData: banners.metaData,
+  // });
+});
+
+const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
+  const banner = await bannerService.getSelectedBanner(req.params.id as string);
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "banners fetched successfully",
-    data: banners.banners,
-    metaData: banners.metaData,
+    message: "banner fetched successfully",
+    data: banner,
   });
 });
 
@@ -54,4 +65,5 @@ export const bannerController = {
   mybanner,
   createBanner,
   getAllbanners,
+  getSelectedBanner,
 };

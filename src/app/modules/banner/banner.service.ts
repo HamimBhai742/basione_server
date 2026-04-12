@@ -1,5 +1,8 @@
+import { Request } from "express";
 import { prisma } from "../../lib/prisma";
-
+import axios from "axios";
+import FormData from "form-data";
+import { AppError } from "../../error/AppError";
 export enum ICategory {
   wedding = "wedding",
   birthday = "birthday",
@@ -8,43 +11,369 @@ export enum ICategory {
   engagement = "engagement",
 }
 
-const createBanner = async (userId: string, payload: any) => {
-  console.log(userId, payload);
-  const size = `${payload.width} cm x ${payload.height} cm`;
-  console.log(size);
-  let price = 0;
-  switch (size) {
-    case "60 cm x 40 cm":
-      price = 20;
-      break;
-    case "120 cm x 80 cm":
-      price = 30;
-      break;
-    case "180 cm x 120 cm":
-      price = 40;
-      break;
-    case "240 cm x 160 cm":
-      price = 50;
-      break;
-    default:
-      price = 50;
+type AuthRequest = Request & {
+  user?: any;
+  file?: Express.Multer.File;
+};
+
+type FinalVariant = {
+  variant: number;
+  url?: string | null;
+  image_b64?: string | null;
+  revised_prompt?: string;
+};
+
+const parseSSEEvents = (rawChunk: string) => {
+  const blocks = rawChunk.split("\n\n").filter(Boolean);
+
+  const events: { event: string; data: any }[] = [];
+
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    let eventName = "";
+    let dataString = "";
+
+    for (const line of lines) {
+      if (line.startsWith("event:")) {
+        eventName = line.replace("event:", "").trim();
+      } else if (line.startsWith("data:")) {
+        dataString += line.replace("data:", "").trim();
+      }
+    }
+
+    if (!eventName) continue;
+
+    let parsedData: any = dataString;
+    try {
+      parsedData = dataString ? JSON.parse(dataString) : {};
+    } catch {
+      parsedData = dataString;
+    }
+
+    events.push({
+      event: eventName,
+      data: parsedData,
+    });
   }
 
-  console.log(price);
-  const prompt = `Create a ${payload.style} banner design for ${payload.describe} with size ${size} and user name ${payload.name} with background image of ${payload.image} and category ${payload.category} `;
-  console.log(prompt);
+  return events;
+};
 
-  //  await prisma.banner.create({
-  //   data: {
-  //     userId,
-  //     price,
-  //     design: prompt,
-  //     category: payload?.category,
-  //     name: payload?.name,
-  //     size,
-  //   },
+const createBanner = async (req: AuthRequest) => {
+  const parsedData = req.body;
+  console.log(parsedData);
+  let occ = "";
+  let headline = "";
+  if (parsedData.size.type === "party-banner") {
+    occ = "party";
+    headline = "Welcome to the party";
+  } else if (parsedData.size.type === "blessing-sign") {
+    occ = "wedding";
+    headline = "We are getting married";
+  } else if (parsedData.size.type === "birthday-banner") {
+    occ = "birthday";
+    headline = `Happy birthday ${parsedData.name}`;
+  } else {
+    occ = parsedData.occasion;
+    headline = parsedData.headline;
+  }
+  console.log(occ, headline);
+  const formData = new FormData();
+
+  formData.append(
+    "data",
+    JSON.stringify({
+      occasion: occ,
+      style: parsedData?.style.toLowerCase(),
+      headline: headline || "",
+      height: `${parsedData.size.height}cm`,
+      width: `${parsedData.size.width}cm`,
+      description: parsedData.description || "A banner for a wedding invitation",
+    }),
+  );
+
+  if (req.file) {
+    formData.append("ref_image_1", req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+  }
+
+  formData.append("ref_image_2", "");
+  formData.append("ref_image_3", "");
+  formData.append("ref_image_4", "");
+
+  const response = await axios.post(
+    "http://206.162.244.134:8800/generate",
+    formData,
+    {
+      headers: {
+        ...formData.getHeaders(),
+        accept: "application/json",
+      },
+      responseType: "stream",
+      validateStatus: () => true,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    },
+  );
+
+  console.log(response.data);
+  if (response.status >= 400) {
+    let rawError = "";
+
+    await new Promise<void>((resolve, reject) => {
+      response.data.on("data", (chunk: Buffer) => {
+        rawError += chunk.toString("utf-8");
+      });
+
+      response.data.on("end", () => resolve());
+      response.data.on("error", reject);
+    });
+
+    throw new AppError(`AI server error ${response.status}: ${rawError}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const finalVariants: {
+      variant: number;
+      url: string | null;
+      image_b64?: string | null;
+      revised_prompt?: string;
+    }[] = [];
+
+    let buffer = "";
+    let isFinished = false;
+
+    const saveAndResolve = async () => {
+      if (isFinished) return;
+      isFinished = true;
+
+      const sortedVariants = [...finalVariants].sort(
+        (a, b) => a.variant - b.variant,
+      );
+
+      const savedBanners = await Promise.all(
+        sortedVariants.map((item) =>
+          prisma.banner.create({
+            data: {
+              userId: req.user?.id || null,
+
+              occasion: parsedData.occasion,
+              style: parsedData.style,
+              headline: parsedData.headline,
+              name: parsedData.name,
+
+              hobbies: parsedData.hobbies || [],
+              description: parsedData.description,
+
+              sizeType: parsedData.size.type,
+              sizeLabel: parsedData.size.label,
+              width: parsedData.size.width,
+              height: parsedData.size.height,
+
+              imageUrl: item.url ?? "",
+              variant: item.variant,
+
+              revisedPrompt: item.revised_prompt || null,
+            },
+          }),
+        ),
+      );
+
+      resolve({
+        variants: savedBanners,
+      });
+    };
+
+    response.data.on("data", (chunk: Buffer) => {
+      const text = chunk.toString("utf-8");
+      buffer += text;
+
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const lines = part.split("\n");
+        const dataLines: string[] = [];
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+
+          if (trimmedLine.startsWith("data:")) {
+            dataLines.push(trimmedLine.replace("data:", "").trim());
+          }
+        }
+
+        const dataStr = dataLines.join("");
+        if (!dataStr) continue;
+
+        let data: any;
+        try {
+          data = JSON.parse(dataStr);
+        } catch {
+          data = dataStr;
+        }
+
+        const event = data?.event?.trim?.();
+
+        console.log("EVENT:", event);
+        console.log("DATA:", data);
+
+        if (event === "final") {
+          finalVariants.push({
+            variant: data?.variant ?? null,
+            url: data?.url ?? null,
+            image_b64: data?.image_b64 ?? null,
+            revised_prompt: data?.revised_prompt ?? "",
+          });
+        }
+
+        if (event === "error") {
+          if (!isFinished) {
+            isFinished = true;
+            reject(
+              new AppError(data?.message || "AI server returned an error"),
+            );
+          }
+          return;
+        }
+
+        if (event === "all_done") {
+          saveAndResolve().catch((err) => {
+            if (!isFinished) {
+              isFinished = true;
+              reject(err);
+            }
+          });
+          return;
+        }
+      }
+    });
+
+    response.data.on("end", () => {
+      saveAndResolve().catch((err) => {
+        if (!isFinished) {
+          isFinished = true;
+          reject(err);
+        }
+      });
+    });
+
+    response.data.on("error", (err: Error) => {
+      if (!isFinished) {
+        isFinished = true;
+        reject(err);
+      }
+    });
+  });
+
+  // return new Promise((resolve, reject) => {
+  //   const finalVariants: {
+  //     variant: number;
+  //     url: string | null;
+  //     image_b64?: string | null;
+  //     revised_prompt?: string;
+  //   }[] = [];
+
+  //   let buffer = "";
+
+  //   response.data.on("data", async (chunk: Buffer) => {
+  //     const text = chunk.toString("utf-8");
+  //     buffer += text;
+
+  //     const parts = buffer.split("\n\n");
+  //     buffer = parts.pop() || "";
+
+  //     for (const part of parts) {
+  //       const lines = part.split("\n");
+  //       const dataLines: string[] = [];
+
+  //       for (const line of lines) {
+  //         const trimmedLine = line.trim();
+
+  //         if (trimmedLine.startsWith("data:")) {
+  //           dataLines.push(trimmedLine.replace("data:", "").trim());
+  //         }
+  //       }
+
+  //       const dataStr = dataLines.join("");
+
+  //       if (!dataStr) continue;
+
+  //       let data: any;
+  //       try {
+  //         data = JSON.parse(dataStr);
+  //       } catch {
+  //         data = dataStr;
+  //       }
+
+  //       const event = data?.event?.trim?.();
+
+  //       console.log("EVENT:", event);
+  //       console.log("DATA:", data);
+
+  //       if (event === "final") {
+  //         finalVariants.push({
+  //           variant: data?.variant ?? null,
+  //           url: data?.url ?? null,
+  //           image_b64: data?.image_b64 ?? null,
+  //           revised_prompt: data?.revised_prompt ?? "",
+  //         });
+  //       }
+
+  //       if (event === "error") {
+  //         return reject(
+  //           new Error(data?.message || "AI server returned an error"),
+  //         );
+  //       }
+
+  //       if (event === "all_done") {
+  //         const savedBanners = await Promise.all(
+  //           finalVariants.map((item) =>
+  //             prisma.banner.create({
+  //               data: {
+  //                 userId: req.user?.id || null,
+
+  //                 occasion: parsedData.occasion,
+  //                 style: parsedData.style,
+  //                 headline: parsedData.headline,
+  //                 name: parsedData.name,
+
+  //                 hobbies: parsedData.hobbies || [],
+  //                 description: parsedData.description,
+
+  //                 sizeType: parsedData.size.type,
+  //                 sizeLabel: parsedData.size.label,
+  //                 width: parsedData.size.width,
+  //                 height: parsedData.size.height,
+
+  //                 imageUrl: item.url ?? "",
+  //                 variant: item.variant,
+
+  //                 revisedPrompt: item.revised_prompt || null,
+  //               },
+  //             }),
+  //           ),
+  //         );
+
+  //         return resolve({
+  //           variants: savedBanners,
+  //         });
+  //       }
+  //     }
+  //   });
+
+  //   response.data.on("end", () => {
+  //     resolve({
+  //       variants: finalVariants,
+  //     });
+  //   });
+
+  //   response.data.on("error", (err: Error) => {
+  //     reject(err);
+  //   });
   // });
-  return null;
 };
 
 const mybanner = async (id: string) => {
@@ -62,32 +391,54 @@ const getAllbanners = async (
   skip: number,
   category?: ICategory,
 ) => {
-  const banners = await prisma.banner.findMany({
-    skip,
-    take: limit,
-    where: {
-      category: category ? category : undefined,
-    },
-  });
+  // const banners = await prisma.banner.findMany({
+  //   skip,
+  //   take: limit,
+  //   where: {
+  //     category: category ? category : undefined,
+  //   },
+  // });
+  // const total = await prisma.banner.count({
+  //   where: {
+  //     category: category ? category : undefined,
+  //   },
+  // });
+  // return {
+  //   banners,
+  //   metaData: {
+  //     total,
+  //     page,
+  //     limit,
+  //     totalPages: Math.ceil(total / limit),
+  //   },
+  // };
+  return [];
+};
 
-  const total = await prisma.banner.count({
+const getSelectedBanner = async (id: string) => {
+  await prisma.banner.update({
     where: {
-      category: category ? category : undefined,
+      id,
+    },
+    data: {
+      isSelected: true,
+      status: "SELECTED",
     },
   });
-  return {
-    banners,
-    metaData: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+  const banner = await prisma.banner.findUnique({
+    where: {
+      id,
     },
-  };
+    select: {
+      imageUrl: true,
+    },
+  });
+  return banner;
 };
 
 export const bannerService = {
   mybanner,
   createBanner,
   getAllbanners,
+  getSelectedBanner,
 };

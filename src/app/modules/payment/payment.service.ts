@@ -24,7 +24,7 @@ export const createPayment = async (payload: any, userId: string) => {
       value: Number(amount).toFixed(2), // Mollie string decimal চায়
     },
     description: `Order #${orderId} - ${customerName}`,
-    redirectUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/`,
+    redirectUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev?status=${payment.status}`, // frontend url
     webhookUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/api/v1/payment/mollie/webhook`,
     metadata: {
       orderId,
@@ -188,6 +188,8 @@ const paymentExpired = async (orderId: string, paymentId: string) => {
       status: "expired",
     },
   });
+
+  
 };
 
 export const paymentService = {
