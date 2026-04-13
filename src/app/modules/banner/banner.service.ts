@@ -88,7 +88,8 @@ const createBanner = async (req: AuthRequest) => {
       headline: headline || "",
       height: `${parsedData.size.height}cm`,
       width: `${parsedData.size.width}cm`,
-      description: parsedData.description || "A banner for a wedding invitation",
+      description:
+        parsedData.description || "A banner for a wedding invitation",
     }),
   );
 
@@ -119,6 +120,21 @@ const createBanner = async (req: AuthRequest) => {
   );
 
   console.log(response.data);
+  let price = 0;
+  const height = Number(parsedData.size.height);
+  const width = Number(parsedData.size.width);
+  if (height < 80 && width < 120) {
+    price = 20;
+  } else if (height < 120 && width < 160) {
+    price = 30;
+  } else if (height < 160 && width < 200) {
+    price = 40;
+  } else if (height < 200 && width < 240) {
+    price = 50;
+  } else {
+    price = 60;
+  }
+  console.log(price);
   if (response.status >= 400) {
     let rawError = "";
 
@@ -174,6 +190,7 @@ const createBanner = async (req: AuthRequest) => {
 
               imageUrl: item.url ?? "",
               variant: item.variant,
+              price,
 
               revisedPrompt: item.revised_prompt || null,
             },
@@ -267,113 +284,6 @@ const createBanner = async (req: AuthRequest) => {
       }
     });
   });
-
-  // return new Promise((resolve, reject) => {
-  //   const finalVariants: {
-  //     variant: number;
-  //     url: string | null;
-  //     image_b64?: string | null;
-  //     revised_prompt?: string;
-  //   }[] = [];
-
-  //   let buffer = "";
-
-  //   response.data.on("data", async (chunk: Buffer) => {
-  //     const text = chunk.toString("utf-8");
-  //     buffer += text;
-
-  //     const parts = buffer.split("\n\n");
-  //     buffer = parts.pop() || "";
-
-  //     for (const part of parts) {
-  //       const lines = part.split("\n");
-  //       const dataLines: string[] = [];
-
-  //       for (const line of lines) {
-  //         const trimmedLine = line.trim();
-
-  //         if (trimmedLine.startsWith("data:")) {
-  //           dataLines.push(trimmedLine.replace("data:", "").trim());
-  //         }
-  //       }
-
-  //       const dataStr = dataLines.join("");
-
-  //       if (!dataStr) continue;
-
-  //       let data: any;
-  //       try {
-  //         data = JSON.parse(dataStr);
-  //       } catch {
-  //         data = dataStr;
-  //       }
-
-  //       const event = data?.event?.trim?.();
-
-  //       console.log("EVENT:", event);
-  //       console.log("DATA:", data);
-
-  //       if (event === "final") {
-  //         finalVariants.push({
-  //           variant: data?.variant ?? null,
-  //           url: data?.url ?? null,
-  //           image_b64: data?.image_b64 ?? null,
-  //           revised_prompt: data?.revised_prompt ?? "",
-  //         });
-  //       }
-
-  //       if (event === "error") {
-  //         return reject(
-  //           new Error(data?.message || "AI server returned an error"),
-  //         );
-  //       }
-
-  //       if (event === "all_done") {
-  //         const savedBanners = await Promise.all(
-  //           finalVariants.map((item) =>
-  //             prisma.banner.create({
-  //               data: {
-  //                 userId: req.user?.id || null,
-
-  //                 occasion: parsedData.occasion,
-  //                 style: parsedData.style,
-  //                 headline: parsedData.headline,
-  //                 name: parsedData.name,
-
-  //                 hobbies: parsedData.hobbies || [],
-  //                 description: parsedData.description,
-
-  //                 sizeType: parsedData.size.type,
-  //                 sizeLabel: parsedData.size.label,
-  //                 width: parsedData.size.width,
-  //                 height: parsedData.size.height,
-
-  //                 imageUrl: item.url ?? "",
-  //                 variant: item.variant,
-
-  //                 revisedPrompt: item.revised_prompt || null,
-  //               },
-  //             }),
-  //           ),
-  //         );
-
-  //         return resolve({
-  //           variants: savedBanners,
-  //         });
-  //       }
-  //     }
-  //   });
-
-  //   response.data.on("end", () => {
-  //     resolve({
-  //       variants: finalVariants,
-  //     });
-  //   });
-
-  //   response.data.on("error", (err: Error) => {
-  //     reject(err);
-  //   });
-  // });
 };
 
 const mybanner = async (id: string) => {

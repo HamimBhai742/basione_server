@@ -239,7 +239,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     cancelledDate: new Date().toLocaleString(),
     items: [
       {
-        name: order?.banner.category as string,
+        name: order?.banner.headline as string,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
       },
@@ -301,7 +301,7 @@ const orderConfirmationByAdmin = async (orderId: string) => {
         name: order?.banner.name as string,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
-        imageUrl: order?.banner.design as string,
+        imageUrl: order?.banner.imageUrl as string,
       },
     ],
     subtotal: order?.total - order?.deliveryFee,
