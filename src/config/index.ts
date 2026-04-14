@@ -24,4 +24,5 @@ export default {
     api_key: process.env.CLOUDINARY_API_KEY as string,
     api_secret: process.env.CLOUDINARY_API_SECRET as string,
   },
+  baseUrl: process.env.BASE_URL as string,
 };
