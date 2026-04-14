@@ -90,15 +90,11 @@ const createBanner = async (req: AuthRequest) => {
   } else {
     price = 60;
   }
-  await prisma.banner.updateMany({
-    data: {
-      imageUrl:
-        "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80",
-    },
-  });
-
   const banners = await prisma.banner.findMany({ take: 4 });
-  return banners;
+  return {
+    variants: banners,
+  };
+  
   if (response.status >= 400) {
     let rawError = "";
 
