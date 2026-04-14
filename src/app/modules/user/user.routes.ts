@@ -39,8 +39,6 @@ router.post(
 
 router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 
-router.post("/reset-password", userController.resetPassword);
-
 router.post("/resend-forgot-password-otp", userController.resendForgotPassOtp);
 
 router.get("/me", checkAuth("user"), userController.getMyProfile);

@@ -1,15 +1,12 @@
 import bcrypt from "bcrypt";
 import config from "../../../config";
 import { prisma } from "../../lib/prisma";
-import { otpQueueEmail } from "../../bullMQ/init";
 import { generateOtp } from "../../utils/generateOtp";
 import { AppError } from "../../error/AppError";
 import httpStatus from "http-status";
 import { generateToken } from "../../utils/generateToken";
-import { verifyToken } from "../../utils/verifyToken";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
-import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
 import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
 
 interface IUserPayload {
@@ -157,7 +154,7 @@ const verifyOtp = async (otp: string, email: string) => {
     email: user.email,
     registeredAt: new Date().toLocaleString(),
   });
-  
+
   // const token = await generateToken(
   //   user,
   //   config.jwt.secret,
@@ -351,7 +348,7 @@ const resendForgotPassOtp = async (email: string) => {
 
 //verify forgot password
 const verifyForgotOtp = async (otp: string, email: string, token: string) => {
-  console.log(token,"gfhfghfghg")
+  console.log(token, "gfhfghfghg");
   const user = await prisma.user.findUnique({
     where: {
       email,
@@ -395,67 +392,8 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
 
   return {
     accessToken: tempToken,
+    userId: user.id,
   };
-};
-
-//reset password after verify
-const resetPassword = async (token: string, password: string) => {
-  const decoded = verifyToken(token, config.jwt.secret);
-
-  const user = await prisma.user.findUnique({
-    where: {
-      email: decoded.email,
-    },
-  });
-
-  if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
-  }
-
-  if (user.forgetPasswordToken !== token) {
-    throw new AppError("Invalid token", httpStatus.BAD_REQUEST);
-  }
-
-  if (
-    user.forgetPasswordTokenExpires &&
-    user.forgetPasswordTokenExpires < new Date()
-  ) {
-    throw new AppError("Token has expired", httpStatus.BAD_REQUEST);
-  }
-
-  const hashedPassword = await bcrypt.hash(password, config.password_salt);
-
-  await prisma.user.update({
-    where: {
-      email: decoded.email,
-    },
-    data: {
-      password: hashedPassword,
-      forgetPasswordToken: null,
-      forgetPasswordTokenExpires: null,
-    },
-  });
-
-  // await otpQueueEmail.add(
-  //   "resetPasswordSuccess",
-  //   {
-  //     userName: user.name,
-  //     email: user.email,
-  //   },
-  //   {
-  //     jobId: `${user.id}-${Date.now()}`,
-  //     removeOnComplete: true,
-  //     attempts: 3,
-  //     backoff: { type: "fixed", delay: 5000 },
-  //   },
-  // );
-
-  await resetPasswordSuccessTemplate({
-    userName: user.name,
-    email: user.email,
-    resetAt: new Date().toLocaleString(),
-  });
-  return null;
 };
 
 //get me
@@ -525,7 +463,6 @@ export const userService = {
   resendOtp,
   forgotPassword,
   verifyForgotOtp,
-  resetPassword,
   resendForgotPassOtp,
   getMyProfile,
   updateUser,

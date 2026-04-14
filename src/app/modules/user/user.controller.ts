@@ -99,20 +99,6 @@ const verifyForgotOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const user = await userService.resetPassword(
-    req.body.token,
-    req.body.password,
-  );
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Password reset successfully",
-    data: user,
-  });
-});
-
 const getMyProfile = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const user = await userService.getMyProfile(req.user.id);
@@ -153,7 +139,6 @@ export const userController = {
   resendOtp,
   forgotPassword,
   verifyForgotOtp,
-  resetPassword,
   resendForgotPassOtp,
   getMyProfile,
   updateUser,
