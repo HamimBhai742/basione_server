@@ -348,7 +348,6 @@ const resendForgotPassOtp = async (email: string) => {
 
 //verify forgot password
 const verifyForgotOtp = async (otp: string, email: string, token: string) => {
-  console.log(token, "gfhfghfghg");
   const user = await prisma.user.findUnique({
     where: {
       email,

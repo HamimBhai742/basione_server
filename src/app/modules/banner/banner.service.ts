@@ -90,11 +90,11 @@ const createBanner = async (req: AuthRequest) => {
   } else {
     price = 60;
   }
-  const banners = await prisma.banner.findMany({ take: 4 });
-  return {
-    variants: banners,
-  };
-  
+  // const banners = await prisma.banner.findMany({ take: 4 });
+  // return {
+  //   variants: banners,
+  // };
+
   if (response.status >= 400) {
     let rawError = "";
 
@@ -110,140 +110,140 @@ const createBanner = async (req: AuthRequest) => {
     throw new AppError(`AI server error ${response.status}: ${rawError}`);
   }
 
-  // return new Promise((resolve, reject) => {
-  //   const finalVariants: {
-  //     variant: number;
-  //     url: string | null;
-  //     image_b64?: string | null;
-  //     revised_prompt?: string;
-  //   }[] = [];
+  return new Promise((resolve, reject) => {
+    const finalVariants: {
+      variant: number;
+      url: string | null;
+      image_b64?: string | null;
+      revised_prompt?: string;
+    }[] = [];
 
-  //   let buffer = "";
-  //   let isFinished = false;
+    let buffer = "";
+    let isFinished = false;
 
-  //   const saveAndResolve = async () => {
-  //     if (isFinished) return;
-  //     isFinished = true;
+    const saveAndResolve = async () => {
+      if (isFinished) return;
+      isFinished = true;
 
-  //     const sortedVariants = [...finalVariants].sort(
-  //       (a, b) => a.variant - b.variant,
-  //     );
+      const sortedVariants = [...finalVariants].sort(
+        (a, b) => a.variant - b.variant,
+      );
 
-  //     const savedBanners = await Promise.all(
-  //       sortedVariants.map((item) =>
-  //         prisma.banner.create({
-  //           data: {
-  //             userId: req.user?.id || null,
+      const savedBanners = await Promise.all(
+        sortedVariants.map((item) =>
+          prisma.banner.create({
+            data: {
+              userId: req.user?.id || null,
 
-  //             occasion: parsedData.occasion,
-  //             style: parsedData.style,
-  //             headline: parsedData.headline,
-  //             name: parsedData.name,
+              occasion: parsedData.occasion,
+              style: parsedData.style,
+              headline: parsedData.headline,
+              name: parsedData.name,
 
-  //             hobbies: parsedData.hobbies || [],
-  //             description: parsedData.description,
+              hobbies: parsedData.hobbies || [],
+              description: parsedData.description,
 
-  //             sizeType: parsedData.size.type,
-  //             sizeLabel: parsedData.size.label,
-  //             width: parsedData.size.width,
-  //             height: parsedData.size.height,
+              sizeType: parsedData.size.type,
+              sizeLabel: parsedData.size.label,
+              width: parsedData.size.width,
+              height: parsedData.size.height,
 
-  //             imageUrl: item.url ?? "",
-  //             variant: item.variant,
-  //             price,
+              imageUrl: item.url ?? "",
+              variant: item.variant,
+              price,
 
-  //             revisedPrompt: item.revised_prompt || null,
-  //           },
-  //         }),
-  //       ),
-  //     );
+              revisedPrompt: item.revised_prompt || null,
+            },
+          }),
+        ),
+      );
 
-  //     resolve({
-  //       variants: savedBanners,
-  //     });
-  //   };
+      resolve({
+        variants: savedBanners,
+      });
+    };
 
-  //   response.data.on("data", (chunk: Buffer) => {
-  //     const text = chunk.toString("utf-8");
-  //     buffer += text;
+    response.data.on("data", (chunk: Buffer) => {
+      const text = chunk.toString("utf-8");
+      buffer += text;
 
-  //     const parts = buffer.split("\n\n");
-  //     buffer = parts.pop() || "";
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
 
-  //     for (const part of parts) {
-  //       const lines = part.split("\n");
-  //       const dataLines: string[] = [];
+      for (const part of parts) {
+        const lines = part.split("\n");
+        const dataLines: string[] = [];
 
-  //       for (const line of lines) {
-  //         const trimmedLine = line.trim();
+        for (const line of lines) {
+          const trimmedLine = line.trim();
 
-  //         if (trimmedLine.startsWith("data:")) {
-  //           dataLines.push(trimmedLine.replace("data:", "").trim());
-  //         }
-  //       }
+          if (trimmedLine.startsWith("data:")) {
+            dataLines.push(trimmedLine.replace("data:", "").trim());
+          }
+        }
 
-  //       const dataStr = dataLines.join("");
-  //       if (!dataStr) continue;
+        const dataStr = dataLines.join("");
+        if (!dataStr) continue;
 
-  //       let data: any;
-  //       try {
-  //         data = JSON.parse(dataStr);
-  //       } catch {
-  //         data = dataStr;
-  //       }
+        let data: any;
+        try {
+          data = JSON.parse(dataStr);
+        } catch {
+          data = dataStr;
+        }
 
-  //       const event = data?.event?.trim?.();
+        const event = data?.event?.trim?.();
 
-  //       console.log("EVENT:", event);
-  //       console.log("DATA:", data);
+        console.log("EVENT:", event);
+        console.log("DATA:", data);
 
-  //       if (event === "final") {
-  //         finalVariants.push({
-  //           variant: data?.variant ?? null,
-  //           url: data?.url ?? null,
-  //           image_b64: data?.image_b64 ?? null,
-  //           revised_prompt: data?.revised_prompt ?? "",
-  //         });
-  //       }
+        if (event === "final") {
+          finalVariants.push({
+            variant: data?.variant ?? null,
+            url: data?.url ?? null,
+            image_b64: data?.image_b64 ?? null,
+            revised_prompt: data?.revised_prompt ?? "",
+          });
+        }
 
-  //       if (event === "error") {
-  //         if (!isFinished) {
-  //           isFinished = true;
-  //           reject(
-  //             new AppError(data?.message || "AI server returned an error"),
-  //           );
-  //         }
-  //         return;
-  //       }
+        if (event === "error") {
+          if (!isFinished) {
+            isFinished = true;
+            reject(
+              new AppError(data?.message || "AI server returned an error"),
+            );
+          }
+          return;
+        }
 
-  //       if (event === "all_done") {
-  //         saveAndResolve().catch((err) => {
-  //           if (!isFinished) {
-  //             isFinished = true;
-  //             reject(err);
-  //           }
-  //         });
-  //         return;
-  //       }
-  //     }
-  //   });
+        if (event === "all_done") {
+          saveAndResolve().catch((err) => {
+            if (!isFinished) {
+              isFinished = true;
+              reject(err);
+            }
+          });
+          return;
+        }
+      }
+    });
 
-  //   response.data.on("end", () => {
-  //     saveAndResolve().catch((err) => {
-  //       if (!isFinished) {
-  //         isFinished = true;
-  //         reject(err);
-  //       }
-  //     });
-  //   });
+    response.data.on("end", () => {
+      saveAndResolve().catch((err) => {
+        if (!isFinished) {
+          isFinished = true;
+          reject(err);
+        }
+      });
+    });
 
-  //   response.data.on("error", (err: Error) => {
-  //     if (!isFinished) {
-  //       isFinished = true;
-  //       reject(err);
-  //     }
-  //   });
-  // });
+    response.data.on("error", (err: Error) => {
+      if (!isFinished) {
+        isFinished = true;
+        reject(err);
+      }
+    });
+  });
 };
 
 // const createBanner = async (req: AuthRequest) => {
