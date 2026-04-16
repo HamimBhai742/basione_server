@@ -25,7 +25,8 @@ export const createPayment = async (payload: any, userId: string) => {
     },
     description: `Order #${orderId} - ${customerName}`,
     redirectUrl: `http://localhost:3000/payment/success?paymentId=${payment.id}&orderId=${orderId}`, // frontend url
-    webhookUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/api/v1/payment/mollie/webhook`,
+    webhookUrl: `https://basione-server.vercel.app/api/v1/payment/mollie/webhook`,
+    cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
     metadata: {
       orderId,
       customerName,
@@ -81,7 +82,7 @@ const paymentPaid = async (
       },
       data: {
         paymentStatus: "paid",
-        status: "pending",
+        status: "processing",
       },
     });
 
@@ -134,7 +135,7 @@ const paymentFailed = async (orderId: string, paymentId: string) => {
     },
     data: {
       paymentStatus: "failed",
-      status: "canceled",
+      status: "cancelled",
     },
   });
 
@@ -154,8 +155,8 @@ const paymentCanceled = async (orderId: string, paymentId: string) => {
       id: orderId,
     },
     data: {
-      paymentStatus: "canceled",
-      status: "canceled",
+      paymentStatus: "cancelled",
+      status: "cancelled",
     },
   });
 
@@ -164,7 +165,7 @@ const paymentCanceled = async (orderId: string, paymentId: string) => {
       id: paymentId,
     },
     data: {
-      status: "canceled",
+      status: "cancelled",
     },
   });
 };
@@ -176,7 +177,7 @@ const paymentExpired = async (orderId: string, paymentId: string) => {
     },
     data: {
       paymentStatus: "expired",
-      status: "canceled",
+      status: "cancelled",
     },
   });
 

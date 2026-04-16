@@ -133,7 +133,7 @@ model Order {
 enum PaymentStatus {
   pending
   paid
-  canceled
+  cancelled
   failed
   expired
 }
@@ -142,7 +142,7 @@ enum OrderStatus {
   pending
   processing
   delivered
-  canceled
+  cancelled
   refunded
 }
 

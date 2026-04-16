@@ -30,6 +30,14 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
   if (!banner) {
     throw new AppError("banner not found", httpStatus.NOT_FOUND);
   }
+  await prisma.banner.update({
+    where: {
+      id: bannerId,
+    },
+    data: {
+      userId,
+    },
+  });
   const totalAmount = Number(banner.price * payload.quantity + deliveryFee);
 
   const order = await prisma.order.create({
@@ -70,7 +78,7 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     },
   });
 
-  if (order?.status === "canceled") {
+  if (order?.status === "cancelled") {
     throw new AppError("Order is canceled", httpStatus.BAD_REQUEST);
   }
   console.log(pay);
@@ -159,6 +167,7 @@ const getMyOrders = async (
   limit: number,
   skip: number,
 ) => {
+  console.log(userId, page, limit, skip);
   const orders = await prisma.order.findMany({
     where: {
       userId,
@@ -166,6 +175,9 @@ const getMyOrders = async (
     include: {
       banner: true,
       payment: true,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
     take: limit,
     skip,
@@ -176,7 +188,7 @@ const getMyOrders = async (
       userId,
     },
   });
-
+  console.log(orders);
   return {
     orders,
     metaData: {
@@ -227,7 +239,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
       id: orderId,
     },
     data: {
-      status: "canceled",
+      status: "cancelled",
     },
   });
 
