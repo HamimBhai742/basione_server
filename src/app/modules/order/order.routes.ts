@@ -12,7 +12,7 @@ router.get("/my-orders", checkAuth("user"), orderController.getMyOrders);
 
 router.get("/:id", checkAuth("user"), orderController.getSingleOrder);
 
-router.post("/cancel/:id", checkAuth("user"), orderController.cancledOrder);
+router.patch("/cancel/:id", checkAuth("user"), orderController.cancledOrder);
 
 router.post("/confirm/:id", checkAuth("admin"), orderController.orderConfirmationByAdmin);
 

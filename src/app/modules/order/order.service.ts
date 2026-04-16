@@ -228,7 +228,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     },
   });
 
-  if (order?.status !== "pending") {
+  if (order?.status !== "pending" && order?.status !== "processing") {
     throw new AppError(
       "Only pending orders can be canceled",
       httpStatus.BAD_REQUEST,

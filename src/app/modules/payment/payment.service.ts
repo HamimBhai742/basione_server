@@ -4,6 +4,8 @@ import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
 import { generateTransactionId } from "../../utils/generateTransactionId";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
+import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
+import { cancledOrder } from "../order/order.service";
 
 export const createPayment = async (payload: any, userId: string) => {
   const { amount, orderId, customerName } = payload;
@@ -24,7 +26,7 @@ export const createPayment = async (payload: any, userId: string) => {
       value: Number(amount).toFixed(2), // Mollie string decimal চায়
     },
     description: `Order #${orderId} - ${customerName}`,
-    redirectUrl: `http://localhost:3000/payment/success?paymentId=${payment.id}&orderId=${orderId}`, // frontend url
+    redirectUrl: `https://basione-client-sage.vercel.app/payment/success?paymentId=${payment.id}&orderId=${orderId}`, // frontend url
     webhookUrl: `https://basione-server.vercel.app/api/v1/payment/mollie/webhook`,
     cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
     metadata: {
@@ -53,14 +55,16 @@ const mollieWebhook = async (payId: string) => {
     console.log("paid");
     await paymentPaid(orderId, paymentId, userId, payment);
   } else if (payment.status === "failed") {
-    console.log("failed");
-    await paymentFailed(orderId, paymentId);
+    const reason = "Payment failed by mollie";
+    await paymentFailed(orderId, paymentId, reason);
   } else if (payment.status === "canceled") {
     console.log("canceled");
-    await paymentCanceled(orderId, paymentId);
+    const reason = "Payment canceled by user";
+    await paymentCanceled(orderId, paymentId, reason);
   } else if (payment.status === "expired") {
     console.log("expired");
-    await paymentExpired(orderId, paymentId);
+    const reason = "Payment link expired";
+    await paymentExpired(orderId, paymentId, reason);
   }
 
   return {
@@ -108,6 +112,11 @@ const paymentPaid = async (
     where: {
       id: orderId,
     },
+    include: {
+      banner: true,
+      user: true,
+      addresses: true,
+    },
   });
 
   const payment = await prisma.payment.findUnique({
@@ -126,9 +135,40 @@ const paymentPaid = async (
     orderId,
     date: order?.createdAt.toDateString(),
   });
+
+  const data = {
+    userName: order?.user.name as string,
+    email: order?.user.email as string,
+    orderId,
+    orderDate: order?.createdAt.toLocaleString(),
+    estimatedDelivery: order?.deliveryTime,
+    items: [
+      {
+        name: order?.banner.name as string,
+        quantity: order?.quantity as number,
+        price: order?.banner.price as number,
+        imageUrl: order?.banner.imageUrl as string,
+      },
+    ],
+    subtotal: order?.total - order?.deliveryFee,
+    shippingCost: order?.deliveryFee,
+    discount: 0,
+    total: order?.total,
+    shippingAddress: {
+      address: order?.addresses?.address as string,
+      zipCode: order?.addresses?.postalCode as string,
+      country: order?.addresses?.country as string,
+    },
+    paymentMethod: "Stripe",
+  };
+  await orderConfirmedTemplate(data);
 };
 
-const paymentFailed = async (orderId: string, paymentId: string) => {
+const paymentFailed = async (
+  orderId: string,
+  paymentId: string,
+  reason?: string,
+) => {
   await prisma.order.update({
     where: {
       id: orderId,
@@ -147,9 +187,15 @@ const paymentFailed = async (orderId: string, paymentId: string) => {
       status: "failed",
     },
   });
+
+  await cancledOrder(orderId, reason);
 };
 
-const paymentCanceled = async (orderId: string, paymentId: string) => {
+const paymentCanceled = async (
+  orderId: string,
+  paymentId: string,
+  reason?: string,
+) => {
   await prisma.order.update({
     where: {
       id: orderId,
@@ -168,9 +214,15 @@ const paymentCanceled = async (orderId: string, paymentId: string) => {
       status: "cancelled",
     },
   });
+
+  await cancledOrder(orderId, reason);
 };
 
-const paymentExpired = async (orderId: string, paymentId: string) => {
+const paymentExpired = async (
+  orderId: string,
+  paymentId: string,
+  reason?: string,
+) => {
   await prisma.order.update({
     where: {
       id: orderId,
@@ -189,6 +241,8 @@ const paymentExpired = async (orderId: string, paymentId: string) => {
       status: "expired",
     },
   });
+
+  await cancledOrder(orderId, reason);
 };
 
 export const paymentService = {
