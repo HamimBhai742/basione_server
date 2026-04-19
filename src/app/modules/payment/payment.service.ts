@@ -26,7 +26,7 @@ export const createPayment = async (payload: any, userId: string) => {
       value: Number(amount).toFixed(2), // Mollie string decimal চায়
     },
     description: `Order #${orderId} - ${customerName}`,
-    redirectUrl: `https://basione-client-sage.vercel.app/payment/success?paymentId=${payment.id}&orderId=${orderId}`, // frontend url
+    redirectUrl: `http://localhost:3000/payment/success?paymentId=${payment.id}&orderId=${orderId}`, // frontend url
     webhookUrl: `https://basione-server.vercel.app/api/v1/payment/mollie/webhook`,
     cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
     metadata: {

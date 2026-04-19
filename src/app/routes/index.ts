@@ -4,6 +4,7 @@ import { authRoutes } from "../modules/auth/auth.routes";
 import { bannerRoutes } from "../modules/banner/banner.routes";
 import { orderRoutes } from "../modules/order/order.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
+import { adminRoutes } from "../modules/admin/admin.route";
 
 export const router = Router();
 
@@ -27,6 +28,10 @@ const routes = [
   {
     path: "/payment",
     route: paymentRoutes,
+  },
+  {
+    path: "/admin",
+    route: adminRoutes,
   }
 ];
 

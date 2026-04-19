@@ -456,6 +456,29 @@ const updateUser = async (id: string, payload: any) => {
   return result;
 };
 
+const getTotalActiveUsers = async () => {
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      isVerified: true,
+      image: true,
+      location: true,
+      phone: true,
+
+      createdAt: true,
+      updatedAt: true,
+    },
+    where: {
+      status: "active",
+    },
+  });
+  return users;
+};
+
 export const userService = {
   registerUser,
   verifyOtp,
@@ -465,4 +488,5 @@ export const userService = {
   resendForgotPassOtp,
   getMyProfile,
   updateUser,
+  getTotalActiveUsers,
 };

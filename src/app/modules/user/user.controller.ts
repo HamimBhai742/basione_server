@@ -133,6 +133,18 @@ const updateUser = catchAsync(
   },
 );
 
+
+const getTotalActiveUsers = catchAsync(async (req: Request, res: Response) => {
+  const totalActiveUsers = await userService.getTotalActiveUsers();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Total active users fetched successfully",
+    data: totalActiveUsers,
+  });
+});
+
 export const userController = {
   registerUser,
   verifyOtp,
@@ -142,4 +154,5 @@ export const userController = {
   resendForgotPassOtp,
   getMyProfile,
   updateUser,
+  getTotalActiveUsers,
 };

@@ -51,4 +51,6 @@ router.patch(
   userController.updateUser,
 );
 
+router.get("/total-active-users", userController.getTotalActiveUsers);
+
 export const userRoutes = router;

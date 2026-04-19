@@ -7,7 +7,7 @@ import config from "../../../config";
 export enum ICategory {
   wedding = "wedding",
   birthday = "birthday",
-  kids_party = "kids_party",
+  kids_party = "party",
   baby_shower = "baby_shower",
   engagement = "engagement",
 }
@@ -19,7 +19,7 @@ type AuthRequest = Request & {
 
 const createBanner = async (req: AuthRequest) => {
   const parsedData = req.body;
-  console.log(parsedData)
+  console.log(parsedData);
   let occ = "";
   let headline = "";
   if (parsedData.size.type === "party-banner") {
@@ -76,7 +76,6 @@ const createBanner = async (req: AuthRequest) => {
   //   },
   // );
 
-  // console.log(response.status);
   let price = 0;
   const height = Number(parsedData.size.height);
   const width = Number(parsedData.size.width);
@@ -91,6 +90,7 @@ const createBanner = async (req: AuthRequest) => {
   } else {
     price = 60;
   }
+
   const banners = await prisma.banner.findMany({
     take: 4,
     orderBy: { createdAt: "desc" },
@@ -521,28 +521,29 @@ const getAllbanners = async (
   skip: number,
   category?: ICategory,
 ) => {
-  // const banners = await prisma.banner.findMany({
-  //   skip,
-  //   take: limit,
-  //   where: {
-  //     category: category ? category : undefined,
-  //   },
-  // });
-  // const total = await prisma.banner.count({
-  //   where: {
-  //     category: category ? category : undefined,
-  //   },
-  // });
-  // return {
-  //   banners,
-  //   metaData: {
-  //     total,
-  //     page,
-  //     limit,
-  //     totalPages: Math.ceil(total / limit),
-  //   },
-  // };
-  return [];
+  const banners = await prisma.banner.findMany({
+    skip,
+    take: limit,
+    where: {
+      occasion: category ? category : undefined,
+    },
+  });
+
+  const total = await prisma.banner.count({
+    where: {
+      occasion: category ? category : undefined,
+    },
+  });
+  
+  return {
+    banners,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 const getSelectedBanner = async (id: string) => {

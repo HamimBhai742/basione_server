@@ -42,22 +42,6 @@ enum Role {
   admin
 }
 
-// model Banner {
-//   id     String @id @default(auto()) @map("_id") @db.ObjectId
-//   name   String
-//   price  Float
-//   design String
-//   size   String
-
-//   category Category
-//   userId   String?
-//   user     User?    @relation(fields: [userId], references: [id])
-//   orders   Order[]
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
-
 model Banner {
   id     String  @id @default(auto()) @map("_id") @db.ObjectId
   userId String?
