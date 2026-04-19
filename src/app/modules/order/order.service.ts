@@ -200,6 +200,45 @@ const getMyOrders = async (
   };
 };
 
+const getMyDesigns = async (
+  userId: string,
+  page: number,
+  limit: number,
+  skip: number,
+) => {
+  console.log(userId, page, limit, skip);
+  const orders = await prisma.order.findMany({
+    where: {
+      userId,
+    },
+    include: {
+      banner: true,
+      payment: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: limit,
+    skip,
+  });
+
+  const total = await prisma.order.count({
+    where: {
+      userId,
+    },
+  });
+  console.log(orders);
+  return {
+    orders,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 const getSingleOrder = async (orderId: string, userId: string) => {
   const order = await prisma.order.findUnique({
     where: {
@@ -337,4 +376,5 @@ export const orderService = {
   getSingleOrder,
   cancledOrder,
   orderConfirmationByAdmin,
+  getMyDesigns
 };

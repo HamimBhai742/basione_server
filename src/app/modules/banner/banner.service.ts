@@ -62,7 +62,7 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_4", "");
 
   // const response = await axios.post(
-  //   "http://206.162.244.134:8800/generate",
+  //   "http://basion-ai.aiteamtwo.com/generate",
   //   formData,
   //   {
   //     headers: {
@@ -519,11 +519,12 @@ const getAllbanners = async (
   page: number,
   limit: number,
   skip: number,
-  category?: ICategory,
+  category?: string,
+  fetchFrom?: "home" | "gallery",
 ) => {
   const banners = await prisma.banner.findMany({
     skip,
-    take: limit,
+    take: fetchFrom === "home" ? 6 : limit,
     where: {
       occasion: category ? category : undefined,
     },
@@ -534,7 +535,7 @@ const getAllbanners = async (
       occasion: category ? category : undefined,
     },
   });
-  
+
   return {
     banners,
     metaData: {

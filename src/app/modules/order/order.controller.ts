@@ -47,6 +47,24 @@ const getMyOrders = async (req: Request & { user?: any }, res: Response) => {
   });
 };
 
+const getMyDesigns = async (req: Request & { user?: any }, res: Response) => {
+  const { page, limit, skip } = calculatePagination(req.query);
+  const designs = await orderService.getMyDesigns(
+    req.user.id,
+    page,
+    limit,
+    skip,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Designs fetched successfully",
+    data: designs.orders,
+    metaData: designs.metaData,
+  });
+};
+
 const getSingleOrder = async (req: Request & { user?: any }, res: Response) => {
   const order = await orderService.getSingleOrder(
     req.params.id as string,
@@ -90,4 +108,5 @@ export const orderController = {
   getSingleOrder,
   cancledOrder,
   orderConfirmationByAdmin,
+  getMyDesigns
 };

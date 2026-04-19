@@ -38,16 +38,17 @@ const getAllbanners = catchAsync(async (req: Request, res: Response) => {
     page,
     limit,
     skip,
-    category as ICategory,
+    category,
+    req.query.fetchFrom as "home" | "gallery",
   );
 
-  // sendResponse(res, {
-  //   statusCode: httpStatus.OK,
-  //   success: true,
-  //   message: "banners fetched successfully",
-  //   data: banners.banners,
-  //   metaData: banners.metaData,
-  // });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "banners fetched successfully",
+    data: banners.banners,
+    metaData: banners.metaData,
+  });
 });
 
 const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
