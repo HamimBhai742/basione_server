@@ -12,7 +12,7 @@ router.post(
   authController.loginUser,
 );
 
-router.post("/logout", checkAuth("user"), authController.logoutUser);
+router.post("/logout", checkAuth("user", "admin"), authController.logoutUser);
 
 router.post("/reset-password", checkAuth("user"), authController.resetPassword);
 

@@ -23,6 +23,15 @@ const totalOrder = async (
     include: {
       banner: true,
       payment: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          image: true,
+        },
+      },
     },
     orderBy: {
       [sortBy]: sortOrder,
@@ -103,17 +112,23 @@ const updateUserStatus = async (
   userId: string,
   status: "active" | "inactive" | "blocked",
 ) => {
-  let isActive = true;
-  if (status === "inactive" || status === "blocked") {
-    isActive = false;
-  }
   const user = await prisma.user.update({
     where: {
       id: userId,
     },
     data: {
       status,
-      isActive,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+      phone: true,
+      role: true,
+      image: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
   return user;

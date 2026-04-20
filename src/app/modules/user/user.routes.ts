@@ -41,11 +41,11 @@ router.post("/verify-forgot-otp", userController.verifyForgotOtp);
 
 router.post("/resend-forgot-password-otp", userController.resendForgotPassOtp);
 
-router.get("/me", checkAuth("user"), userController.getMyProfile);
+router.get("/me", checkAuth("user", "admin"), userController.getMyProfile);
 
 router.patch(
   "/update-profile",
-  checkAuth("user"),
+  checkAuth("user", "admin"),
   upload.single("file"),
   validateRequest(userUpdateZodSchema),
   userController.updateUser,

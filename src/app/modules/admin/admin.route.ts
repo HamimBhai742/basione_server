@@ -3,11 +3,11 @@ import { adminController } from "./admin.controller";
 
 const router = Router();
 
-router.get("/total-order", adminController.totalOrder);
+router.get("/total-orders", adminController.totalOrder);
 
-router.patch("/manage-order/:id", adminController.manageOrder);
+router.patch("/update-order/:id", adminController.manageOrder);
 
-router.get("/manage-users", adminController.manageUsers);
+router.get("/total-users", adminController.manageUsers);
 
 router.patch("/update-user/:id", adminController.updateUserStatus);
 
