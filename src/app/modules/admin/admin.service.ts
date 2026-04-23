@@ -1,3 +1,4 @@
+import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import { orderUserSearchableFields } from "./admin.contain";
 
@@ -306,7 +307,7 @@ const totalTransaction = async (
   sortOrder: "asc" | "desc",
   searchTerm?: string,
 ) => {
-  console.log(searchTerm)
+  console.log(searchTerm);
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
@@ -356,6 +357,86 @@ const totalTransaction = async (
   };
 };
 
+const createDecoration = async (data: any) => {
+  const { category } = JSON.parse(data.data);
+  const decoration = await prisma.decoration.create({
+    data: {
+      name:
+        category?.toLowerCase() === "ballon"
+          ? "Ballon Decoration"
+          : category?.toLowerCase() === "confetti"
+            ? "Confetti Decoration"
+            : category?.toLowerCase() === "drink"
+              ? "Drink Decoration"
+              : category?.toLowerCase() === "geslaagd"
+                ? "Flower Decoration"
+                : "General Decoration",
+      category: category,
+      element: data.element,
+    },
+  });
+  return decoration;
+};
+
+const deleteDecoration = async (id: string) => {
+  await prisma.decoration.delete({
+    where: {
+      id,
+    },
+  });
+  return true;
+};
+
+const getAllDecoration = async (
+  page: number,
+  limit: number,
+  skip: number,
+  filter: any,
+  sortBy: string,
+  sortOrder: "asc" | "desc",
+) => {
+  const decorations = await prisma.decoration.findMany({
+    where: filter && Object.keys(filter).length > 0 ? filter : undefined,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    take: limit,
+    skip,
+  });
+  return {
+    decorations,
+    metaData: {
+      page,
+      limit,
+      total: decorations?.length,
+      totalPages: Math.ceil(decorations?.length / limit),
+    },
+  };
+};
+
+const createDecorationCategory = async (name: string) => {
+  const isExist = await prisma.decorationCategory.findUnique({
+    where: {
+      name,
+    },
+  });
+
+  if (isExist) {
+    throw new AppError("Decoration category already exists");
+  }
+  const category = await prisma.decorationCategory.create({
+    data: {
+      name,
+    },
+  });
+  return category;
+};
+
+const getAllDecorationCategory = async () => {
+  const categories = await prisma.decorationCategory.findMany();
+  return categories;
+};
+
 export const adminService = {
   totalOrder,
   manageOrder,
@@ -363,4 +444,9 @@ export const adminService = {
   updateUserStatus,
   dashboardStats,
   totalTransaction,
+  createDecoration,
+  deleteDecoration,
+  createDecorationCategory,
+  getAllDecorationCategory,
+  getAllDecoration,
 };

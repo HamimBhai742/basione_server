@@ -5,6 +5,9 @@ import { calculatePagination } from "../../utils/calculatePagination";
 import { Request, Response } from "express";
 import { adminService } from "./admin.service";
 import { excludeFiled } from "../../utils/constain";
+import { uploadImageToS3 } from "../../utils/uploadAws";
+import { uploadToCloudinary } from "../../utils/uploadCloudinary";
+import { CloudinaryUploadResponse } from "../user/user.controller";
 
 const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -129,6 +132,88 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createDecoration = catchAsync(async (req: Request, res: Response) => {
+  const file = req.file;
+  if (file) {
+    const fileUrl = (await uploadToCloudinary(
+      file,
+    )) as CloudinaryUploadResponse;
+    req.body.element = fileUrl?.secure_url;
+    console.log(fileUrl);
+  }
+
+  const decoration = await adminService.createDecoration(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Decoration created successfully",
+    data: decoration,
+  });
+});
+
+const deleteDecoration = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteDecoration(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: null,
+    message: "Decoration deleted successfully",
+  });
+});
+
+const getAllDecoration = catchAsync(async (req: Request, res: Response) => {
+  const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
+    req.query,
+  );
+  const filter = { ...req.query };
+
+  for (const f of excludeFiled) {
+    delete filter[f];
+  }
+  const decorations = await adminService.getAllDecoration(
+    page,
+    limit,
+    skip,
+    filter,
+    sortBy,
+    sortOrder as "asc" | "desc",
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Decorations fetched successfully",
+    data: decorations.decorations,
+    metaData: decorations.metaData,
+  });
+});
+
+const createDecorationCategory = catchAsync(
+  async (req: Request, res: Response) => {
+    const category = await adminService.createDecorationCategory(req.body.name);
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Decoration category created successfully",
+      data: category,
+    });
+  },
+);
+
+const getAllDecorationCategory = catchAsync(
+  async (req: Request, res: Response) => {
+    const categories = await adminService.getAllDecorationCategory();
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Decoration categories fetched successfully",
+      data: categories,
+    });
+  },
+);
+
 export const adminController = {
   totalOrder,
   manageOrder,
@@ -136,4 +221,9 @@ export const adminController = {
   updateUserStatus,
   dashboardStats,
   totalTransaction,
+  createDecoration,
+  deleteDecoration,
+  getAllDecoration,
+  createDecorationCategory,
+  getAllDecorationCategory,
 };
