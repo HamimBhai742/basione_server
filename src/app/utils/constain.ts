@@ -1,1 +1,8 @@
-export const excludeFiled=['page', 'limit','sortBy','sortOrder','search']
+export const excludeFiled = [
+  "page",
+  "limit",
+  "sortBy",
+  "sortOrder",
+  "search",
+  "searchTerm",
+];

@@ -55,6 +55,7 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
 };
 
 const checkOut = async (orderId: string, userId: string, payload: any) => {
+  console.log(orderId, userId, payload);
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -167,7 +168,6 @@ const getMyOrders = async (
   limit: number,
   skip: number,
 ) => {
-  console.log(userId, page, limit, skip);
   const orders = await prisma.order.findMany({
     where: {
       userId,
@@ -177,7 +177,7 @@ const getMyOrders = async (
       payment: true,
     },
     orderBy: {
-      createdAt: "desc",
+      updatedAt: "desc",
     },
     take: limit,
     skip,
@@ -188,7 +188,7 @@ const getMyOrders = async (
       userId,
     },
   });
-  console.log(orders);
+
   return {
     orders,
     metaData: {
@@ -206,7 +206,6 @@ const getMyDesigns = async (
   limit: number,
   skip: number,
 ) => {
-  console.log(userId, page, limit, skip);
   const orders = await prisma.order.findMany({
     where: {
       userId,
@@ -227,7 +226,6 @@ const getMyDesigns = async (
       userId,
     },
   });
-  console.log(orders);
   return {
     orders,
     metaData: {
@@ -376,5 +374,5 @@ export const orderService = {
   getSingleOrder,
   cancledOrder,
   orderConfirmationByAdmin,
-  getMyDesigns
+  getMyDesigns,
 };

@@ -61,20 +61,20 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_3", "");
   formData.append("ref_image_4", "");
 
-  // const response = await axios.post(
-  //   "http://basion-ai.aiteamtwo.com/generate",
-  //   formData,
-  //   {
-  //     headers: {
-  //       ...formData.getHeaders(),
-  //       accept: "application/json",
-  //     },
-  //     responseType: "stream",
-  //     validateStatus: () => true,
-  //     maxBodyLength: Infinity,
-  //     maxContentLength: Infinity,
-  //   },
-  // );
+  const response = await axios.post(
+    "https://basion-ai.aiteamtwo.com/generate",
+    formData,
+    {
+      headers: {
+        ...formData.getHeaders(),
+        accept: "application/json",
+      },
+      responseType: "stream",
+      validateStatus: () => true,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    },
+  );
 
   let price = 0;
   const height = Number(parsedData.size.height);
@@ -91,163 +91,163 @@ const createBanner = async (req: AuthRequest) => {
     price = 60;
   }
 
-  const banners = await prisma.banner.findMany({
-    take: 4,
-    orderBy: { createdAt: "desc" },
-  });
-  return {
-    variants: banners,
-  };
-
-  // if (response.status >= 400) {
-  //   let rawError = "";
-
-  //   await new Promise<void>((resolve, reject) => {
-  //     response.data.on("data", (chunk: Buffer) => {
-  //       rawError += chunk.toString("utf-8");
-  //     });
-
-  //     response.data.on("end", () => resolve());
-  //     response.data.on("error", reject);
-  //   });
-
-  //   throw new AppError(`AI server error ${response.status}: ${rawError}`);
-  // }
-
-  // return new Promise((resolve, reject) => {
-  //   const finalVariants: {
-  //     variant: number;
-  //     url: string | null;
-  //     image_b64?: string | null;
-  //     revised_prompt?: string;
-  //   }[] = [];
-
-  //   let buffer = "";
-  //   let isFinished = false;
-
-  //   const saveAndResolve = async () => {
-  //     if (isFinished) return;
-  //     isFinished = true;
-
-  //     const sortedVariants = [...finalVariants].sort(
-  //       (a, b) => a.variant - b.variant,
-  //     );
-
-  //     const savedBanners = await Promise.all(
-  //       sortedVariants.map((item) =>
-  //         prisma.banner.create({
-  //           data: {
-  //             userId: req.user?.id || null,
-
-  //             occasion: occ,
-  //             style: parsedData.style,
-  //             headline: headline,
-  //             name: parsedData.name,
-
-  //             hobbies: parsedData.hobbies || [],
-  //             description: parsedData.description,
-
-  //             sizeType: parsedData.size.type,
-  //             sizeLabel: parsedData.size.label,
-  //             width: parsedData.size.width,
-  //             height: parsedData.size.height,
-
-  //             imageUrl: item.url ?? "",
-  //             variant: item.variant,
-  //             price,
-
-  //             revisedPrompt: item.revised_prompt || null,
-  //           },
-  //         }),
-  //       ),
-  //     );
-
-  //     resolve({
-  //       variants: savedBanners,
-  //     });
-  //   };
-
-  //   response.data.on("data", (chunk: Buffer) => {
-  //     const text = chunk.toString("utf-8");
-  //     buffer += text;
-
-  //     const parts = buffer.split("\n\n");
-  //     buffer = parts.pop() || "";
-
-  //     for (const part of parts) {
-  //       const lines = part.split("\n");
-  //       const dataLines: string[] = [];
-
-  //       for (const line of lines) {
-  //         const trimmedLine = line.trim();
-
-  //         if (trimmedLine.startsWith("data:")) {
-  //           dataLines.push(trimmedLine.replace("data:", "").trim());
-  //         }
-  //       }
-
-  //       const dataStr = dataLines.join("");
-  //       if (!dataStr) continue;
-
-  //       let data: any;
-  //       try {
-  //         data = JSON.parse(dataStr);
-  //       } catch {
-  //         data = dataStr;
-  //       }
-
-  //       const event = data?.event?.trim?.();
-
-  //       console.log("EVENT:", event);
-  //       console.log("DATA:", data);
-
-  //       if (event === "final") {
-  //         finalVariants.push({
-  //           variant: data?.variant ?? null,
-  //           url: data?.url ?? null,
-  //           image_b64: data?.image_b64 ?? null,
-  //           revised_prompt: data?.revised_prompt ?? "",
-  //         });
-  //       }
-
-  //       if (event === "error") {
-  //         if (!isFinished) {
-  //           isFinished = true;
-  //           reject(
-  //             new AppError(data?.message || "AI server returned an error"),
-  //           );
-  //         }
-  //         return;
-  //       }
-
-  //       if (event === "all_done") {
-  //         saveAndResolve().catch((err) => {
-  //           if (!isFinished) {
-  //             isFinished = true;
-  //             reject(err);
-  //           }
-  //         });
-  //         return;
-  //       }
-  //     }
-  //   });
-
-  //   response.data.on("end", () => {
-  //     saveAndResolve().catch((err) => {
-  //       if (!isFinished) {
-  //         isFinished = true;
-  //         reject(err);
-  //       }
-  //     });
-  //   });
-
-  //   response.data.on("error", (err: Error) => {
-  //     if (!isFinished) {
-  //       isFinished = true;
-  //       reject(err);
-  //     }
-  //   });
+  // const banners = await prisma.banner.findMany({
+  //   take: 4,
+  //   orderBy: { createdAt: "desc" },
   // });
+  // return {
+  //   variants: banners,
+  // };
+
+  if (response.status >= 400) {
+    let rawError = "";
+
+    await new Promise<void>((resolve, reject) => {
+      response.data.on("data", (chunk: Buffer) => {
+        rawError += chunk.toString("utf-8");
+      });
+
+      response.data.on("end", () => resolve());
+      response.data.on("error", reject);
+    });
+
+    throw new AppError(`AI server error ${response.status}: ${rawError}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    const finalVariants: {
+      variant: number;
+      url: string | null;
+      image_b64?: string | null;
+      revised_prompt?: string;
+    }[] = [];
+
+    let buffer = "";
+    let isFinished = false;
+
+    const saveAndResolve = async () => {
+      if (isFinished) return;
+      isFinished = true;
+
+      const sortedVariants = [...finalVariants].sort(
+        (a, b) => a.variant - b.variant,
+      );
+
+      const savedBanners = await Promise.all(
+        sortedVariants.map((item) =>
+          prisma.banner.create({
+            data: {
+              userId: req.user?.id || null,
+
+              occasion: occ,
+              style: parsedData.style,
+              headline: headline,
+              name: parsedData.name,
+
+              hobbies: parsedData.hobbies || [],
+              description: parsedData.description,
+
+              sizeType: parsedData.size.type,
+              sizeLabel: parsedData.size.label,
+              width: parsedData.size.width,
+              height: parsedData.size.height,
+
+              imageUrl: item.url ?? "",
+              variant: item.variant,
+              price,
+
+              revisedPrompt: item.revised_prompt || null,
+            },
+          }),
+        ),
+      );
+
+      resolve({
+        variants: savedBanners,
+      });
+    };
+
+    response.data.on("data", (chunk: Buffer) => {
+      const text = chunk.toString("utf-8");
+      buffer += text;
+
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const lines = part.split("\n");
+        const dataLines: string[] = [];
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+
+          if (trimmedLine.startsWith("data:")) {
+            dataLines.push(trimmedLine.replace("data:", "").trim());
+          }
+        }
+
+        const dataStr = dataLines.join("");
+        if (!dataStr) continue;
+
+        let data: any;
+        try {
+          data = JSON.parse(dataStr);
+        } catch {
+          data = dataStr;
+        }
+
+        const event = data?.event?.trim?.();
+
+        console.log("EVENT:", event);
+        console.log("DATA:", data);
+
+        if (event === "final") {
+          finalVariants.push({
+            variant: data?.variant ?? null,
+            url: data?.url ?? null,
+            image_b64: data?.image_b64 ?? null,
+            revised_prompt: data?.revised_prompt ?? "",
+          });
+        }
+
+        if (event === "error") {
+          if (!isFinished) {
+            isFinished = true;
+            reject(
+              new AppError(data?.message || "AI server returned an error"),
+            );
+          }
+          return;
+        }
+
+        if (event === "all_done") {
+          saveAndResolve().catch((err) => {
+            if (!isFinished) {
+              isFinished = true;
+              reject(err);
+            }
+          });
+          return;
+        }
+      }
+    });
+
+    response.data.on("end", () => {
+      saveAndResolve().catch((err) => {
+        if (!isFinished) {
+          isFinished = true;
+          reject(err);
+        }
+      });
+    });
+
+    response.data.on("error", (err: Error) => {
+      if (!isFinished) {
+        isFinished = true;
+        reject(err);
+      }
+    });
+  });
 };
 
 // const createBanner = async (req: AuthRequest) => {

@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { orderUserSearchableFields } from "./admin.contain";
 
 type IOrderStatus =
   | "pending"
@@ -14,33 +15,116 @@ const totalOrder = async (
   filter: any,
   sortBy: string,
   sortOrder: "asc" | "desc",
+  searchTerm?: string,
 ) => {
-  const where: any = {
-    AND: [filter && filter].filter(Boolean),
-  };
-  const orders = await prisma.order.findMany({
-    where,
-    include: {
-      banner: true,
-      payment: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          image: true,
+  const cleanFilter = { ...filter };
+  delete cleanFilter.searchTerm;
+
+  const andConditions: any[] = [];
+
+  if (Object.keys(cleanFilter).length > 0) {
+    andConditions.push(cleanFilter);
+  }
+
+  if (searchTerm) {
+    const isObjectId = /^[a-fA-F0-9]{24}$/.test(searchTerm);
+
+    const [matchedUsers, matchedBanners] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { name: { contains: searchTerm, mode: "insensitive" } },
+            { email: { contains: searchTerm, mode: "insensitive" } },
+            { phone: { contains: searchTerm, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      }),
+      prisma.banner.findMany({
+        where: {
+          OR: [
+            { headline: { contains: searchTerm, mode: "insensitive" } },
+            { occasion: { contains: searchTerm, mode: "insensitive" } },
+            { name: { contains: searchTerm, mode: "insensitive" } },
+            { description: { contains: searchTerm, mode: "insensitive" } },
+            { style: { contains: searchTerm, mode: "insensitive" } },
+          ],
+        },
+        select: { id: true },
+      }),
+    ]);
+
+    const userIds = matchedUsers.map((u) => u.id);
+    const bannerIds = matchedBanners.map((b) => b.id);
+
+    const orConditions: any[] = [];
+
+    if (isObjectId) {
+      orConditions.push(
+        { id: searchTerm },
+        { userId: searchTerm },
+        { bannerId: searchTerm },
+      );
+    }
+
+    if (userIds.length > 0) {
+      orConditions.push({
+        userId: { in: userIds },
+      });
+    }
+
+    if (bannerIds.length > 0) {
+      orConditions.push({
+        bannerId: { in: bannerIds },
+      });
+    }
+
+    if (orConditions.length === 0) {
+      return {
+        orders: [],
+        metaData: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
+
+    andConditions.push({
+      OR: orConditions,
+    });
+  }
+
+  const where = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  console.log("WHERE =>", JSON.stringify(where, null, 2));
+
+  const [orders, total] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      include: {
+        banner: true,
+        payment: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            image: true,
+          },
         },
       },
-    },
-    orderBy: {
-      [sortBy]: sortOrder,
-    },
-    take: limit,
-    skip,
-  });
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      take: limit,
+      skip,
+    }),
+    prisma.order.count({ where }),
+  ]);
 
-  const total = await prisma.order.count({ where });
   return {
     orders,
     metaData: {
@@ -71,11 +155,32 @@ const manageUsers = async (
   filter: any,
   sortBy: string,
   sortOrder: "asc" | "desc",
+  searchTerm?: string,
 ) => {
-  console.log(sortBy, sortOrder);
-  const where: any = {
-    AND: [{ role: "user" }, filter && filter].filter(Boolean),
-  };
+  const cleanFilter = { ...filter };
+  delete cleanFilter.searchTerm;
+
+  const andConditions: any[] = [{ role: "user" }];
+
+  if (Object.keys(cleanFilter).length > 0) {
+    andConditions.push(cleanFilter);
+  }
+
+  if (searchTerm) {
+    const search = orderUserSearchableFields.map((field) => ({
+      [field]: {
+        contains: searchTerm,
+        mode: "insensitive",
+      },
+    }));
+
+    andConditions.push({
+      OR: search,
+    });
+  }
+
+  const where = { AND: andConditions };
+
   const users = await prisma.user.findMany({
     where,
     select: {
@@ -86,7 +191,6 @@ const manageUsers = async (
       phone: true,
       role: true,
       image: true,
-
       createdAt: true,
       updatedAt: true,
     },
@@ -96,7 +200,9 @@ const manageUsers = async (
     take: limit,
     skip,
   });
+
   const total = await prisma.user.count({ where });
+
   return {
     users,
     metaData: {
@@ -198,10 +304,33 @@ const totalTransaction = async (
   filter: any,
   sortBy: string,
   sortOrder: "asc" | "desc",
+  searchTerm?: string,
 ) => {
-  const where: any = {
-    AND: [filter && filter].filter(Boolean),
-  };
+  console.log(searchTerm)
+  const cleanFilter = { ...filter };
+  delete cleanFilter.searchTerm;
+
+  const andConditions: any[] = [];
+
+  if (Object.keys(cleanFilter).length > 0) {
+    andConditions.push(cleanFilter);
+  }
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          transactionId: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  const where = andConditions.length > 0 ? { AND: andConditions } : {};
+
   const payments = await prisma.payment.findMany({
     where,
     include: {
@@ -213,7 +342,9 @@ const totalTransaction = async (
     take: limit,
     skip,
   });
+
   const total = await prisma.payment.count({ where });
+
   return {
     payments,
     metaData: {

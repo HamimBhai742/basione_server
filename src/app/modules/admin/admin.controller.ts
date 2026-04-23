@@ -10,7 +10,8 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
     req.query,
   );
-  const filter = req.query || "";
+  const filter = { ...req.query };
+
   for (const f of excludeFiled) {
     delete filter[f];
   }
@@ -21,6 +22,7 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
     filter,
     sortBy,
     sortOrder as "asc" | "desc",
+    req.query.searchTerm as string,
   );
 
   sendResponse(res, {
@@ -50,7 +52,8 @@ const manageUsers = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
     req.query,
   );
-  const filter = req.query || "";
+  const filter = { ...req.query };
+
   for (const f of excludeFiled) {
     delete filter[f];
   }
@@ -61,6 +64,7 @@ const manageUsers = catchAsync(async (req: Request, res: Response) => {
     filter,
     sortBy,
     sortOrder as "asc" | "desc",
+    req.query.searchTerm as string,
   );
 
   sendResponse(res, {
@@ -101,7 +105,8 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
     req.query,
   );
-  const filter = req.query || "";
+  const filter = { ...req.query };
+
   for (const f of excludeFiled) {
     delete filter[f];
   }
@@ -112,6 +117,7 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
     filter,
     sortBy,
     sortOrder as "asc" | "desc",
+    req.query.searchTerm as string,
   );
 
   sendResponse(res, {
