@@ -5,6 +5,7 @@ import { bannerRoutes } from "../modules/banner/banner.routes";
 import { orderRoutes } from "../modules/order/order.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
 import { adminRoutes } from "../modules/admin/admin.route";
+import { decorationRoutes } from "../modules/decorations/decorations.routes";
 
 export const router = Router();
 
@@ -32,7 +33,11 @@ const routes = [
   {
     path: "/admin",
     route: adminRoutes,
-  }
+  },
+  {
+    path: "/decorations",
+    route: decorationRoutes,
+  },
 ];
 
 routes.forEach((route) => {

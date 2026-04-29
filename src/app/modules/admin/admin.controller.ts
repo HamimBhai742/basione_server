@@ -138,7 +138,7 @@ const createDecoration = catchAsync(async (req: Request, res: Response) => {
     const fileUrl = (await uploadToCloudinary(
       file,
     )) as CloudinaryUploadResponse;
-    req.body.element = fileUrl?.secure_url;
+    req.body.image = fileUrl?.secure_url;
     console.log(fileUrl);
   }
 
@@ -214,6 +214,46 @@ const getAllDecorationCategory = catchAsync(
   },
 );
 
+const updateDecorationCategory = catchAsync(
+  async (req: Request, res: Response) => {
+    const category = await adminService.updateDecorationCategory(
+      req.params.id as string,
+      req.body.name,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Decoration category updated successfully",
+      data: category,
+    });
+  },
+);
+
+const deleteDecorationCategory = catchAsync(
+  async (req: Request, res: Response) => {
+    await adminService.deleteDecorationCategory(req.params.id as string);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Decoration category deleted successfully",
+      data: null,
+    });
+  },
+);
+
+const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
+  console.log(req.params.id, "fgdsgdfgdgfd");
+  const order = await adminService.getSingleOrder(req.params.id as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Order response sent successfully",
+    data: order,
+  });
+});
+
 export const adminController = {
   totalOrder,
   manageOrder,
@@ -226,4 +266,7 @@ export const adminController = {
   getAllDecoration,
   createDecorationCategory,
   getAllDecorationCategory,
+  updateDecorationCategory,
+  deleteDecorationCategory,
+  getSingleOrder,
 };

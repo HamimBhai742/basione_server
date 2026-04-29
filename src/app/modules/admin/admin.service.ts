@@ -1,10 +1,18 @@
 import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import { orderUserSearchableFields } from "./admin.contain";
+import httpStatus from "http-status";
+import { orderDeliveryCompleteTemplate } from "../../utils/emailTemplates/orderDeliveryTemplate";
+import { cancledOrder } from "../order/order.service";
+import { orderRefundedTemplate } from "../../utils/emailTemplates/orderRefunded";
+import { orderReadyTemplate } from "../../utils/emailTemplates/orderReadyTemplate";
+import { orderShippedTemplate } from "../../utils/emailTemplates/orderShipped";
 
 type IOrderStatus =
   | "pending"
   | "processing"
+  | "ready"
+  | "shipped"
   | "refunded"
   | "delivered"
   | "cancelled";
@@ -99,14 +107,13 @@ const totalOrder = async (
 
   const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  console.log("WHERE =>", JSON.stringify(where, null, 2));
-
   const [orders, total] = await prisma.$transaction([
     prisma.order.findMany({
       where,
       include: {
         banner: true,
         payment: true,
+        addresses: true,
         user: {
           select: {
             id: true,
@@ -138,14 +145,229 @@ const totalOrder = async (
 };
 
 const manageOrder = async (orderId: string, status: IOrderStatus) => {
-  const order = await prisma.order.update({
+  const payemt = await prisma.payment.findUnique({
+    where: {
+      orderId,
+    },
+  });
+
+  const order = await prisma.order.findUnique({
     where: {
       id: orderId,
     },
-    data: {
-      status,
+    include: {
+      user: true,
+      banner: true,
+      addresses: true,
     },
   });
+
+  if (!order) {
+    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+  }
+
+  const data = {
+    orderNumber: orderId as string,
+
+    deliveredDate: order?.createdAt
+      ? new Date(order.createdAt).toLocaleString()
+      : "",
+
+    items: [
+      {
+        name: order?.banner?.name as string,
+        quantity: order?.quantity as number,
+        price: order?.banner?.price as number,
+        image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
+      },
+    ],
+
+    totalAmount: order?.total as number,
+
+    deliveryAddress: `${order?.addresses?.houseNumber || ""} ${
+      order?.addresses?.street || ""
+    } ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
+
+    reviewLink: "", // optional
+  };
+
+  const refundedData = {
+    orderNumber: orderId as string,
+
+    refundDate: new Date().toLocaleString(), // বা backend থেকে refund date
+
+    refundAmount: order?.total as number, // বা partial হলে change করবা
+
+    refundMethod: "Mollie", // dynamic হলে payment method use করো
+
+    refundReason: "Order cancelled", // optional (dynamic দিতে পারো)
+
+    items: [
+      {
+        name: order?.banner?.name as string,
+        quantity: order?.quantity as number,
+        price: order?.banner?.price as number,
+        image: order?.banner?.imageUrl as string,
+      },
+    ],
+
+    estimatedArrival: "", // optional (refund case-এ usually empty)
+
+    supportLink: "https://yourwebsite.com/support", // optional
+  };
+
+  const orderReadyData = {
+    orderNumber: orderId as string,
+    readyDate: order?.updatedAt
+      ? new Date(order.updatedAt).toLocaleString()
+      : "",
+    pickupAddress: order?.addresses?.address
+      ? order?.addresses?.address
+      : `${order?.addresses?.houseNumber || ""} ${order?.addresses?.street || ""} ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
+    items: [
+      {
+        name: order?.banner?.name as string,
+        quantity: order?.quantity as number,
+        price: order?.banner?.price as number,
+        image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
+      },
+    ],
+    totalAmount: order?.total as number,
+    paymentMethod: "Mollie",
+    deliveryAddress: `${order?.addresses?.houseNumber || ""} ${
+      order?.addresses?.street || ""
+    } ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
+
+    trackingLink: "",
+    supportLink: "https://yourwebsite.com/support",
+  };
+
+  if (status === "ready") {
+    if (payemt?.status !== "paid") {
+      throw new AppError(
+        "Only orders with paid status can be updated",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (order.status !== "processing") {
+      throw new AppError(
+        "Only orders with processing status can be ready for delivery",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+    await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        status: "ready",
+      },
+    });
+
+    await orderReadyTemplate(
+      order.user.name,
+      order.user.email,
+      "Order Ready for Delivery",
+      orderReadyData,
+    );
+  } else if (status === "delivered") {
+    if (payemt?.status !== "paid") {
+      throw new AppError(
+        "Only orders with paid status can be updated",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+    if (order.status !== "shipped") {
+      throw new AppError(
+        "Only orders with ready status can be updated to delivered",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+    await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        status: "delivered",
+      },
+    });
+
+    await orderDeliveryCompleteTemplate(
+      order.user.name,
+      order.user.email,
+      "Order Delivered",
+      data,
+    );
+  } else if (status === "cancelled") {
+    await cancledOrder(orderId, "Order canclled by admin");
+  } else if (status === "refunded") {
+    if (payemt?.status !== "paid") {
+      throw new AppError(
+        "Only orders with paid status can be updated",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+
+    await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        status: "refunded",
+      },
+    });
+    await orderRefundedTemplate(
+      order.user.name,
+      order.user.email,
+      "Order Refunded",
+      refundedData,
+    );
+  } else if (status === "shipped") {
+    if (order.status !== "ready") {
+      throw new AppError(
+        "Only orders with ready status can be updated to shipped",
+      );
+    }
+
+    await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        status: "shipped",
+      },
+    });
+    const shippedData = {
+      orderNumber: orderId as string,
+      shippedDate: new Date().toLocaleString(),
+      estimatedDelivery: order?.deliveryTime as string,
+      courierName: "DHL",
+      trackingNumber: order?.trackingNumber as string,
+      trackingLink: `http://localhost:3000/profile/${orderId}`,
+
+      items: [
+        {
+          name: order?.banner?.name as string,
+          quantity: order?.quantity as number,
+          price: order?.banner?.price as number,
+          image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
+        },
+      ],
+      totalAmount: order?.total as number,
+      deliveryAddress: `${order?.addresses?.houseNumber || ""}, ${
+        order?.addresses?.street || ""
+      }, ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
+      supportLink: "", // optional
+    };
+
+    await orderShippedTemplate(
+      order.user.name,
+      order.user.email,
+      "Order Shipped",
+      shippedData,
+    );
+  }
   return order;
 };
 
@@ -358,21 +580,11 @@ const totalTransaction = async (
 };
 
 const createDecoration = async (data: any) => {
-  const { category } = JSON.parse(data.data);
+  const { categoryId } = JSON.parse(data.data);
   const decoration = await prisma.decoration.create({
     data: {
-      name:
-        category?.toLowerCase() === "ballon"
-          ? "Ballon Decoration"
-          : category?.toLowerCase() === "confetti"
-            ? "Confetti Decoration"
-            : category?.toLowerCase() === "drink"
-              ? "Drink Decoration"
-              : category?.toLowerCase() === "geslaagd"
-                ? "Flower Decoration"
-                : "General Decoration",
-      category: category,
-      element: data.element,
+      image: data.image,
+      categoryId,
     },
   });
   return decoration;
@@ -400,6 +612,9 @@ const getAllDecoration = async (
     orderBy: {
       [sortBy]: sortOrder,
     },
+    include: {
+      category: true,
+    },
     take: limit,
     skip,
   });
@@ -426,7 +641,7 @@ const createDecorationCategory = async (name: string) => {
   }
   const category = await prisma.decorationCategory.create({
     data: {
-      name,
+      name: name.toUpperCase(),
     },
   });
   return category;
@@ -435,6 +650,68 @@ const createDecorationCategory = async (name: string) => {
 const getAllDecorationCategory = async () => {
   const categories = await prisma.decorationCategory.findMany();
   return categories;
+};
+
+const updateDecorationCategory = async (id: string, name: string) => {
+  const isExist = await prisma.decorationCategory.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!isExist) {
+    throw new AppError("Decoration category not found");
+  }
+  const category = await prisma.decorationCategory.update({
+    where: {
+      id,
+    },
+    data: {
+      name,
+    },
+  });
+  return category;
+};
+
+const deleteDecorationCategory = async (id: string) => {
+  const isExist = await prisma.decorationCategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Decoration category not found");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.decoration.deleteMany({
+      where: {
+        categoryId: id,
+      },
+    });
+
+    await tx.decorationCategory.delete({
+      where: { id },
+    });
+  });
+
+  return true;
+};
+
+const getSingleOrder = async (orderId: string) => {
+  console.log("object")
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      user: true,
+      banner: true,
+      addresses: true,
+      payment: true,
+    },
+  });
+
+  return order;
 };
 
 export const adminService = {
@@ -449,4 +726,7 @@ export const adminService = {
   createDecorationCategory,
   getAllDecorationCategory,
   getAllDecoration,
+  updateDecorationCategory,
+  deleteDecorationCategory,
+  getSingleOrder,
 };

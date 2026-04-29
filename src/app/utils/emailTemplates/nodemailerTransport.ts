@@ -1,11 +1,11 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 import config from "../../../config";
 
 const sendEmail = async (
   to: string,
   subject: string,
   html: string,
-  text?: string
+  text?: string,
 ) => {
   // Create a transporter
   const transporter = nodemailer.createTransport({
@@ -19,13 +19,13 @@ const sendEmail = async (
       pass: config.smt.pass,
     },
     tls: {
-      rejectUnauthorized: false,  // Optional: Bypass SSL issues if needed
+      rejectUnauthorized: false, // Optional: Bypass SSL issues if needed
     },
   });
 
   // Email options
   const mailOptions = {
-    from: config.smt.email,
+    from: `Spandoek Print <${config.smt.email}>`,
     // from: "support@deepbluedeal.com",
     to,
     subject,
@@ -36,4 +36,3 @@ const sendEmail = async (
 };
 
 export default sendEmail;
-

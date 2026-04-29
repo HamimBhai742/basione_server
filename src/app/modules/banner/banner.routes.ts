@@ -21,4 +21,18 @@ router.get("/all-banners", bannerController.getAllbanners);
 
 router.get("/:id", bannerController.getSelectedBanner);
 
+router.post(
+  "/create-banner-by-template",
+  // checkAuth("user"),
+  upload.single("image"),
+  bannerController.createBannerByTemplate,
+);
+
+router.patch(
+  "/update-banner/:id",
+  // checkAuth("user"),
+  upload.single("image"),
+  bannerController.updateBanner,
+);
+
 export const bannerRoutes = router;

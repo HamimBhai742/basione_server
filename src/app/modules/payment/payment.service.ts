@@ -156,10 +156,10 @@ const paymentPaid = async (
     total: order?.total,
     shippingAddress: {
       address: order?.addresses?.address as string,
-      zipCode: order?.addresses?.postalCode as string,
-      country: order?.addresses?.country as string,
+      zipCode: order?.addresses?.zipCode as string,
+      country: order?.addresses?.city as string,
     },
-    paymentMethod: "Stripe",
+    paymentMethod: "Mollie",
   };
   await orderConfirmedTemplate(data);
 };

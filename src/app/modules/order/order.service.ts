@@ -9,6 +9,7 @@ import {
 } from "../../utils/emailTemplates/ordercanclled";
 import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
 import { createPayment } from "../payment/payment.service";
+import { getNextOrderNumber } from "../../utils/trackingNumber";
 
 const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
@@ -40,6 +41,8 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
   });
   const totalAmount = Number(banner.price * payload.quantity + deliveryFee);
 
+  const trackingNumber = await getNextOrderNumber();
+
   const order = await prisma.order.create({
     data: {
       ...payload,
@@ -48,6 +51,7 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
       total: totalAmount,
       userId,
       bannerId,
+      trackingNumber,
     },
   });
 
@@ -359,10 +363,10 @@ const orderConfirmationByAdmin = async (orderId: string) => {
     total: order?.total,
     shippingAddress: {
       address: order?.addresses?.address as string,
-      zipCode: order?.addresses?.postalCode as string,
-      country: order?.addresses?.country as string,
+      zipCode: order?.addresses?.zipCode as string,
+      country: order?.addresses?.city as string,
     },
-    paymentMethod: "Stripe",
+    paymentMethod: "Mollie",
   };
   await orderConfirmedTemplate(data);
 };

@@ -18,6 +18,32 @@ const createBanner = catchAsync(
   },
 );
 
+const createBannerByTemplate = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const banner = await bannerService.createBannerByTemplate(req);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Banner created successfully",
+      data: banner,
+    });
+  },
+);
+
+const updateBanner = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const banner = await bannerService.updateBanner(req, req.params.id as string);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Banner updated successfully",
+      data: banner,
+    });
+  },
+);
+
 const mybanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const banner = await bannerService.mybanner(req.user.id);
@@ -67,4 +93,6 @@ export const bannerController = {
   createBanner,
   getAllbanners,
   getSelectedBanner,
+  createBannerByTemplate,
+  updateBanner,
 };

@@ -33,4 +33,16 @@ router.post(
 
 router.get("/decoration-categories", adminController.getAllDecorationCategory);
 
+router.patch(
+  "/update-decoration-category/:id",
+  adminController.updateDecorationCategory,
+);
+
+router.delete(
+  "/delete-decoration-category/:id",
+  adminController.deleteDecorationCategory,
+);
+
+router.get("/single-order/:id", adminController.getSingleOrder);
+
 export const adminRoutes = router;

@@ -49,12 +49,12 @@ model Banner {
   occasion String
   style    String
   headline String
-  name     String
+  name     String?
   price    Float
 
   hobbies String[] // PostgreSQL array
 
-  description String
+  description String?
 
   sizeType  String
   sizeLabel String
@@ -94,21 +94,28 @@ enum Category {
   engagement
 }
 
+model Counter {
+  id  String @id @default(auto()) @map("_id") @db.ObjectId
+  key String @unique
+  seq Int
+}
+
 model Order {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  quantity      Float
-  deliveryType  DeliveryType  @default(standard)
-  deliveryTime  String        @default("3-5 days")
-  deliveryFee   Float         @default(5)
-  total         Float
-  status        OrderStatus   @default(pending)
-  paymentStatus PaymentStatus @default(pending)
-  bannerId      String
-  banner        Banner        @relation(fields: [bannerId], references: [id])
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  payment       Payment?
-  addresses     Address?
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  quantity       Float
+  deliveryType   DeliveryType  @default(standard)
+  deliveryTime   String        @default("3-5 days")
+  deliveryFee    Float         @default(5)
+  trackingNumber String?       @unique
+  total          Float
+  status         OrderStatus   @default(pending)
+  paymentStatus  PaymentStatus @default(pending)
+  bannerId       String
+  banner         Banner        @relation(fields: [bannerId], references: [id])
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  payment        Payment?
+  addresses      Address?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,6 +132,8 @@ enum PaymentStatus {
 enum OrderStatus {
   pending
   processing
+  ready
+  shipped
   delivered
   cancelled
   refunded
@@ -151,29 +160,29 @@ model Payment {
 }
 
 model Address {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  phone      String
-  email      String
-  country    String
-  postalCode String
-  address    String
-  lat        Float
-  lng        Float
-  userId     String
-  user       User   @relation(fields: [userId], references: [id])
-  orderId    String @unique
-  order      Order  @relation(fields: [orderId], references: [id])
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  phone       String
+  email       String
+  houseNumber String
+  street      String
+  city        String
+  zipCode     String
+  address     String?
+  userId      String
+  user        User    @relation(fields: [userId], references: [id])
+  orderId     String  @unique
+  order       Order   @relation(fields: [orderId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Decoration {
-  id       String  @id @default(auto()) @map("_id") @db.ObjectId
-  name     String?
-  category String
-  element  String
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  image      String
+  categoryId String
+  category   DecorationCategory @relation(fields: [categoryId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,6 +192,7 @@ model DecorationCategory {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  decorations Decoration[]
 }

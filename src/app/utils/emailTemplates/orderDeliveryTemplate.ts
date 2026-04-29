@@ -1,23 +1,21 @@
 import sendEmail from "./nodemailerTransport";
 
-export const orderConfirmationTemplate = async (
+export const orderDeliveryCompleteTemplate = async (
   userName: string,
   email: string,
   subject: string,
   data: {
     orderNumber: string;
-    orderDate: string;
+    deliveredDate: string;
     items: {
       name: string;
       quantity: number;
       price: number;
       image?: string;
     }[];
-    subtotal: number;
-    shippingFee: number;
     totalAmount: number;
     deliveryAddress: string;
-    paymentMethod: string;
+    reviewLink?: string;
   },
 ) => {
   const html = `
@@ -26,7 +24,7 @@ export const orderConfirmationTemplate = async (
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Order Confirmation</title>
+<title>Order Delivered</title>
 
 <style>
 body {
@@ -45,11 +43,21 @@ body {
 }
 
 .header {
-  background-color: #f57224;
+  background-color: #2ecc71;
   color: #ffffff;
   padding: 20px;
   text-align: center;
   font-size: 20px;
+  font-weight: bold;
+}
+
+.banner {
+  background-color: #eafaf1;
+  border-left: 4px solid #2ecc71;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #27ae60;
   font-weight: bold;
 }
 
@@ -92,6 +100,18 @@ body {
   margin-top: 10px;
 }
 
+.review-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 25px;
+  background-color: #f57224;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
 .footer {
   background: #fafafa;
   text-align: center;
@@ -107,30 +127,35 @@ body {
 <div class="container">
 
   <div class="header">
-    Order Confirmed ✔
+    Order Delivered 📦✅
   </div>
 
   <div class="content">
 
+    <div class="banner">
+      Great news! Your order has been successfully delivered.
+    </div>
+
     <p>Hello <strong>${userName}</strong>,</p>
 
     <p>
-      Thank you for shopping with us! Your order has been successfully placed.
+      We're happy to let you know that your order has been delivered to your address.
+      We hope you enjoy your purchase!
     </p>
 
     <div class="order-box">
       <strong>Order Number:</strong> ${data.orderNumber} <br/>
-      <strong>Order Date:</strong> ${data.orderDate} <br/>
-      <strong>Payment Method:</strong> ${data.paymentMethod}
+      <strong>Delivered On:</strong> ${data.deliveredDate} <br/>
+      <strong>Delivery Address:</strong> ${data.deliveryAddress}
     </div>
 
-    <h3>Items Ordered</h3>
+    <h3>Items Delivered</h3>
 
     ${data.items
       .map(
         (item) => `
       <div class="product">
-        <img src="${item.image}" />
+        <img src="${item.image}" alt="${item.name}" />
         <div>
           <div><strong>${item.name}</strong></div>
           <div>Quantity: ${item.quantity}</div>
@@ -142,16 +167,22 @@ body {
       .join("")}
 
     <div class="summary">
-      <p>Subtotal: $${data.subtotal}</p>
-      <p>Shipping Fee: $${data.shippingFee}</p>
-      <div class="total">Total: $${data.totalAmount}</div>
+      <div class="total">Order Total: $${data.totalAmount}</div>
     </div>
 
-    <h3>Delivery Address</h3>
-    <p>${data.deliveryAddress}</p>
+    ${
+      data.reviewLink
+        ? `
+    <p style="margin-top:25px;">
+      Enjoying your order? We'd love to hear from you!
+    </p>
+    <a href="${data.reviewLink}" class="review-btn">Leave a Review</a>
+    `
+        : ""
+    }
 
-    <p style="margin-top:20px;">
-      You will receive another notification once your order has been shipped.
+    <p style="margin-top:25px;">
+      If you have any issues with your order, please don't hesitate to reach out to our support team.
     </p>
 
   </div>

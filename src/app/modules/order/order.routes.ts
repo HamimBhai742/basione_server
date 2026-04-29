@@ -12,12 +12,14 @@ router.get("/my-orders", checkAuth("user"), orderController.getMyOrders);
 
 router.get("/my-designs", checkAuth("user"), orderController.getMyDesigns);
 
-router.get("/:id", checkAuth("user"), orderController.getSingleOrder);
+router.get("/:id", checkAuth("user", "admin"), orderController.getSingleOrder);
 
 router.patch("/cancel/:id", checkAuth("user"), orderController.cancledOrder);
 
-router.post("/confirm/:id", checkAuth("admin"), orderController.orderConfirmationByAdmin);
-
-
+router.post(
+  "/confirm/:id",
+  checkAuth("admin"),
+  orderController.orderConfirmationByAdmin,
+);
 
 export const orderRoutes = router;
