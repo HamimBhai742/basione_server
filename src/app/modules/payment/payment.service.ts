@@ -6,6 +6,7 @@ import { generateTransactionId } from "../../utils/generateTransactionId";
 import { paymentSuccessTemplate } from "../../utils/emailTemplates/paymentSuccess";
 import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
 import { cancledOrder } from "../order/order.service";
+import { formatLabel } from "../../utils/formatLable";
 
 export const createPayment = async (payload: any, userId: string) => {
   const { amount, orderId, customerName } = payload;
@@ -144,7 +145,7 @@ const paymentPaid = async (
     estimatedDelivery: order?.deliveryTime,
     items: [
       {
-        name: order?.banner.name as string,
+        name: formatLabel(order?.banner.occasion) as string,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
         imageUrl: order?.banner.imageUrl as string,

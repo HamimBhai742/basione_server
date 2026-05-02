@@ -10,6 +10,7 @@ import {
 import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirmation";
 import { createPayment } from "../payment/payment.service";
 import { getNextOrderNumber } from "../../utils/trackingNumber";
+import { formatLabel } from "../../utils/formatLable";
 
 const createOrder = async (userId: string, bannerId: string, payload: any) => {
   let deliveryFee = 0;
@@ -292,7 +293,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     cancelledDate: new Date().toLocaleString(),
     items: [
       {
-        name: order?.banner.headline as string,
+        name: formatLabel(order?.banner.occasion) as string,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
       },
@@ -351,7 +352,7 @@ const orderConfirmationByAdmin = async (orderId: string) => {
     estimatedDelivery: order?.deliveryTime,
     items: [
       {
-        name: order?.banner.name as string,
+        name: formatLabel(order?.banner.occasion) as string,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
         imageUrl: order?.banner.imageUrl as string,
