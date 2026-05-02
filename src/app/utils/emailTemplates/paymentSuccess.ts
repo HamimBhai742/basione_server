@@ -123,7 +123,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 <tr>
                   <td style="padding: 22px; text-align: center;">
                     <p style="margin: 0 0 4px; font-size: 13px; color: #6b7a9f; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Paid</p>
-                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #1a3faa; letter-spacing: -1px;">$${amount.toFixed(2)}</p>
+                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #1a3faa; letter-spacing: -1px;">€${amount.toFixed(2)}</p>
                   </td>
                 </tr>
               </table>

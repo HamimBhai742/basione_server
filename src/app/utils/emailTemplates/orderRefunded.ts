@@ -200,7 +200,7 @@ body {
         <div>
           <div><strong>${item.name}</strong></div>
           <div>Quantity: ${item.quantity}</div>
-          <div>Price: $${item.price}</div>
+          <div>Price: €${item.price}</div>
         </div>
       </div>
     `,

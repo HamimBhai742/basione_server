@@ -119,7 +119,7 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
                 line-height: 1.7;
               ">
                 We wanted to let you know that your payment of
-                <strong style="color:#4b5563;">$${amount.toFixed(2)}</strong>
+                <strong style="color:#4b5563;">€${amount.toFixed(2)}</strong>
                 to <strong style="color:#1a3faa;">Spandoek Print</strong> has been cancelled.
                 No charge has been made to your account.
               </p>

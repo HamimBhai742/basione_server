@@ -72,7 +72,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
         color: #374151;
         font-weight: 600;
         text-align: right;
-      ">$${(item.price * item.quantity).toFixed(2)}</td>
+      ">€${(item.price * item.quantity).toFixed(2)}</td>
     </tr>
   `,
     )
@@ -304,7 +304,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     color: #374151;
                     text-align: right;
                     font-weight: 600;
-                  ">$${subtotal.toFixed(2)}</td>
+                  ">€${subtotal.toFixed(2)}</td>
                 </tr>
 
                 <!-- Shipping -->
@@ -324,7 +324,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     color: #374151;
                     text-align: right;
                     font-weight: 600;
-                  ">${shippingCost === 0 ? '<span style="color:#16a34a;">FREE</span>' : `$${shippingCost.toFixed(2)}`}</td>
+                  ">${shippingCost === 0 ? '<span style="color:#16a34a;">FREE</span>' : `€${shippingCost.toFixed(2)}`}</td>
                 </tr>
 
                 <!-- Discount (conditional) -->
@@ -348,7 +348,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     color: #16a34a;
                     text-align: right;
                     font-weight: 700;
-                  ">- $${discount.toFixed(2)}</td>
+                  ">- €${discount.toFixed(2)}</td>
                 </tr>
                 `
                     : ""
@@ -375,7 +375,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     text-align: right;
                     font-weight: 800;
                     letter-spacing: -0.5px;
-                  ">$${total.toFixed(2)}</td>
+                  ">€${total.toFixed(2)}</td>
                 </tr>
               </table>
 

@@ -66,7 +66,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
         text-align: right;
         text-decoration: line-through;
         opacity: 0.6;
-      ">$${(item.price * item.quantity).toFixed(2)}</td>
+      ">€${(item.price * item.quantity).toFixed(2)}</td>
     </tr>
   `
     )
@@ -303,7 +303,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
                     text-align: right;
                     text-decoration: line-through;
                     opacity: 0.55;
-                  ">$${subtotal.toFixed(2)}</td>
+                  ">€${subtotal.toFixed(2)}</td>
                 </tr>
               </table>
 

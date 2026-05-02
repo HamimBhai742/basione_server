@@ -134,7 +134,7 @@ body {
         <div>
           <div><strong>${item.name}</strong></div>
           <div>Quantity: ${item.quantity}</div>
-          <div>Price: $${item.price}</div>
+          <div>Price: €${item.price}</div>
         </div>
       </div>
     `,
@@ -142,9 +142,9 @@ body {
       .join("")}
 
     <div class="summary">
-      <p>Subtotal: $${data.subtotal}</p>
-      <p>Shipping Fee: $${data.shippingFee}</p>
-      <div class="total">Total: $${data.totalAmount}</div>
+      <p>Subtotal: €${data.subtotal}</p>
+      <p>Shipping Fee: €${data.shippingFee}</p>
+      <div class="total">Total: €${data.totalAmount}</div>
     </div>
 
     <h3>Delivery Address</h3>

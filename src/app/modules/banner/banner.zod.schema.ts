@@ -10,12 +10,16 @@ export const bannerGenerateSchema = z.object({
 
   name: z.string().min(1),
 
-  age: z.string().optional(), // ✅ NEW
+  age: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val ?? undefined), // ✅ NEW
   occasion: z.string().min(1, "Please select occasion"), // ✅ NEW
 
   headline: z.string().optional(), // ✅ NEW
   subheadline: z.string().optional(), // ✅ NEW
 
-  hobbies : z.array(z.string()).optional(),
+  hobbies: z.array(z.string()).optional(),
   description: z.string().min(10),
 });

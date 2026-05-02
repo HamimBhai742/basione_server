@@ -388,7 +388,7 @@ body {
         <div class="product-info">
           <div class="product-name">${item.name}</div>
           <div class="product-meta">Quantity: ${item.quantity}</div>
-          <div class="product-meta">Price: ৳${item.price}</div>
+          <div class="product-meta">Price: €${item.price}</div>
         </div>
       </div>
     `,
@@ -396,7 +396,7 @@ body {
       .join("")}
 
     <div class="summary">
-      <div class="total">Order Total: ৳${data.totalAmount}</div>
+      <div class="total">Order Total: €${data.totalAmount}</div>
     </div>
 
     <hr class="divider" />
@@ -431,7 +431,7 @@ body {
 
   <div class="footer">
     Need help? Contact our support team anytime.<br/>
-    © ${new Date().getFullYear()} Your Store Name. All rights reserved.
+    © ${new Date().getFullYear()} Spandeok Print. All rights reserved.
   </div>
 
 </div>

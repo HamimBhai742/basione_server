@@ -63,7 +63,7 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_4", "");
 
   const response = await axios.post(
-    "https://basion-ai.aiteamtwo.com/generate",
+    "https://pennant-upswing-corny.ngrok-free.dev/generate",
     formData,
     {
       headers: {
@@ -112,7 +112,7 @@ const createBanner = async (req: AuthRequest) => {
       response.data.on("error", reject);
     });
 
-    throw new AppError(`AI server error ${response.status}: ${rawError}`);
+    throw new AppError(`AI server is shutting down`, 400);
   }
 
   return new Promise((resolve, reject) => {
@@ -690,12 +690,16 @@ const getAllbanners = async (
   category?: string,
   fetchFrom?: "home" | "gallery",
 ) => {
+  console.log(category)
   const banners = await prisma.banner.findMany({
     skip,
     take: fetchFrom === "home" ? 6 : limit,
     where: {
       occasion: category ? category : undefined,
     },
+    orderBy: {
+      createdAt: "desc",
+    }
   });
 
   const total = await prisma.banner.count({

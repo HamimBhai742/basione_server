@@ -121,7 +121,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
                 line-height: 1.7;
               ">
                 We're sorry to inform you that your recent payment of
-                <strong style="color:#b91c1c;">$${amount.toFixed(2)}</strong>
+                <strong style="color:#b91c1c;">€${amount.toFixed(2)}</strong>
                 to <strong style="color:#1a3faa;">Spandoek Print</strong> could not be completed.
                 Please review the details below and try again.
               </p>
@@ -136,7 +136,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
                 <tr>
                   <td style="padding: 22px; text-align: center;">
                     <p style="margin: 0 0 4px; font-size: 13px; color: #9b5555; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Due</p>
-                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #b91c1c; letter-spacing: -1px;">$${amount.toFixed(2)}</p>
+                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #b91c1c; letter-spacing: -1px;">€${amount.toFixed(2)}</p>
                   </td>
                 </tr>
               </table>
