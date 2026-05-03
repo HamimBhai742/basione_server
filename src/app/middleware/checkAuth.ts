@@ -14,9 +14,12 @@ export const checkAuth = (...role: string[]) => {
   ) => {
     try {
       const token = req.headers.authorization || req.cookies.accessToken;
-      console.log(token)
+      console.log(req.headers.authorization, req.cookies.accessToken);
       if (!token) {
-        throw new AppError("Token not found", httpStatus.UNAUTHORIZED);
+        throw new AppError(
+          "User is not authenticated to access this route",
+          httpStatus.UNAUTHORIZED,
+        );
       }
 
       const decoded = verifyToken(token, config.jwt.secret);

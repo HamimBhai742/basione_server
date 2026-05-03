@@ -48,7 +48,6 @@ const createBanner = async (req: AuthRequest) => {
     age: parsedData?.age || "",
     size: `${parsedData.size.width}x${parsedData.size.height}`,
     description: parsedData.description || "A banner for a wedding invitation",
-
   });
 
   if (req.file) {
@@ -63,7 +62,7 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_4", "");
 
   const response = await axios.post(
-    "https://pennant-upswing-corny.ngrok-free.dev/generate",
+    "http://206.162.244.175:8800/generate",
     formData,
     {
       headers: {
@@ -690,7 +689,7 @@ const getAllbanners = async (
   category?: string,
   fetchFrom?: "home" | "gallery",
 ) => {
-  console.log(category)
+  console.log(category);
   const banners = await prisma.banner.findMany({
     skip,
     take: fetchFrom === "home" ? 6 : limit,
@@ -699,7 +698,7 @@ const getAllbanners = async (
     },
     orderBy: {
       createdAt: "desc",
-    }
+    },
   });
 
   const total = await prisma.banner.count({

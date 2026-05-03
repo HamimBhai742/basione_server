@@ -8,12 +8,12 @@ import { setCookies } from "../../utils/setCookies";
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const user = await authService.loginUser(req.body);
 
-  setCookies(res, user);
+  // setCookies(res, user);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "User logged in successfully",
-    data: user.user,
+    data: user,
   });
 });
 
