@@ -7,6 +7,7 @@ import { cancledOrder } from "../order/order.service";
 import { orderRefundedTemplate } from "../../utils/emailTemplates/orderRefunded";
 import { orderReadyTemplate } from "../../utils/emailTemplates/orderReadyTemplate";
 import { orderShippedTemplate } from "../../utils/emailTemplates/orderShipped";
+import { stat } from "fs";
 
 type IOrderStatus =
   | "pending"
@@ -105,11 +106,14 @@ const totalOrder = async (
     });
   }
 
-  const where = andConditions.length > 0 ? { AND: andConditions } : {};
+  const where =
+    andConditions.length > 0
+      ? { AND: [...andConditions] }
+      : {}
 
   const [orders, total] = await prisma.$transaction([
     prisma.order.findMany({
-      where,
+      where: where,
       include: {
         banner: true,
         payment: true,
@@ -698,7 +702,7 @@ const deleteDecorationCategory = async (id: string) => {
 };
 
 const getSingleOrder = async (orderId: string) => {
-  console.log("object")
+  console.log("object");
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,

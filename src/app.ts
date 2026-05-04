@@ -25,6 +25,7 @@ const allowedOrigins = [
   "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
   "https://basione-client-zvf8yv2t9-tahsins-projects-38f8b810.vercel.app",
   "https://basione-client.vercel.app",
+  "http://10.0.70.135:3000",
 ];
 
 app.use(

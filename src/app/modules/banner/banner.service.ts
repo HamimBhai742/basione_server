@@ -362,14 +362,14 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   let price = banner.price;
 
   if (parsedData?.width && parsedData?.height) {
-    if (height < 80 && width < 120) {
-      price = 20;
-    } else if (height < 120 && width < 160) {
+    if (height <= 40 && width <= 80) {
       price = 30;
-    } else if (height < 160 && width < 200) {
-      price = 40;
-    } else if (height < 200 && width < 240) {
+    } else if (height <= 120 && width <= 160) {
       price = 50;
+    } else if (height <= 150 && width <= 200) {
+      price = 80;
+    } else if (height <= 200 && width <= 240) {
+      price = 100;
     } else {
       price = 60;
     }
