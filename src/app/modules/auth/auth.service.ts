@@ -111,6 +111,8 @@ const resetPassword = async (userId: string, password: string) => {
   });
   return null;
 };
+
+
 export const authService = {
   loginUser,
   resetPassword,

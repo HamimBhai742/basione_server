@@ -5,8 +5,10 @@ export const upload = multer({
   storage: multer.memoryStorage(),
   // storage,
   limits: {
-    // fileSize: 250 * 1024 * 1024, // ২৫০MB = 250 * 1024 * 1024 bytes
-    fileSize: 250 * 1024 * 1024, // 250MB limit
+    fileSize: 100 * 1024 * 1024, // 100MB file
+    fieldSize: 100 * 1024 * 1024, // 100MB text field
+    fields: 20,
+    files: 10,
   },
 
   fileFilter(req: Request, file: Express.Multer.File, cb: FileFilterCallback) {
