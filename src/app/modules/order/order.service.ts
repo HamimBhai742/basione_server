@@ -293,7 +293,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     cancelledDate: new Date().toLocaleString(),
     items: [
       {
-        name: formatLabel(order?.banner.occasion) as string,
+        name: `${formatLabel(order?.banner.occasion) as string} Banner`,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
       },
@@ -352,7 +352,7 @@ const orderConfirmationByAdmin = async (orderId: string) => {
     estimatedDelivery: order?.deliveryTime,
     items: [
       {
-        name: formatLabel(order?.banner.occasion) as string,
+        name:  `${formatLabel(order?.banner.occasion) as string} Banner`,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
         imageUrl: order?.banner.imageUrl as string,

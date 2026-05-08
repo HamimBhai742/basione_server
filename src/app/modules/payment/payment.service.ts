@@ -145,7 +145,7 @@ const paymentPaid = async (
     estimatedDelivery: order?.deliveryTime,
     items: [
       {
-        name: formatLabel(order?.banner.occasion) as string,
+        name:  `${formatLabel(order?.banner.occasion) as string} Banner`,
         quantity: order?.quantity as number,
         price: order?.banner.price as number,
         imageUrl: order?.banner.imageUrl as string,
