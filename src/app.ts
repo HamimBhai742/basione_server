@@ -21,6 +21,8 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   "http://localhost:3001",
+  "http://localhost:3000",
+
   "https://basione-client-8yhdgumhx-tahsins-projects-38f8b810.vercel.app",
   "https://basione-client-sage.vercel.app",
   "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
@@ -46,7 +48,7 @@ app.use(
         callback(new AppError("Not allowed by CORS"));
       }
     },
-    credentials: true
+    credentials: true,
   }),
 );
 
