@@ -1,3 +1,4 @@
+import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface OrderItem {
@@ -512,7 +513,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                 <tr>
                   <td align="center">
-                    <a href="https://your-frontend-url.com/orders/${orderId}" style="
+                    <a href="${config.client_url}/profile/${orderId}" style="
                       display: inline-block;
                       background: linear-gradient(135deg, #1a3faa, #2d63e2);
                       color: #ffffff;
@@ -526,7 +527,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                       margin-right: 10px;
                     ">Track My Order →</a>
 
-                    <a href="https://your-frontend-url.com/shop" style="
+                    <a href="${config.client_url}" style="
                       display: inline-block;
                       background: #f3f4f6;
                       color: #374151;
@@ -557,7 +558,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
                     <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
                       💬 <strong>Need help with your order?</strong> Our support team is available to assist you.
                       Reply to this email or visit our
-                      <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">Help Center</a>.
+                      <a href="${config.client_url}" style="color: #1a3faa; font-weight: 600;">Help Center</a>.
                     </p>
                   </td>
                 </tr>

@@ -1,3 +1,4 @@
+import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface ResetPasswordSuccessData {
@@ -344,7 +345,7 @@ export const resetPasswordSuccessTemplate = async (
                 <tr>
                   <td align="center">
                     <a
-                      href="https://your-frontend-url.com/login"
+                      href="${config.client_url}/signIn"
                       style="
                         display: inline-block;
                         background: linear-gradient(135deg, #059669, #10b981);
@@ -398,7 +399,7 @@ export const resetPasswordSuccessTemplate = async (
                   <td style="padding: 16px 18px;">
                     <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
                       💬 <strong>Need help?</strong> If you're having trouble logging in or have any concerns about your account security,
-                      <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">visit our Help Center</a> or reply to this email.
+                      <a href="${config.client_url}" style="color: #1a3faa; font-weight: 600;">visit our Help Center</a> or reply to this email.
                     </p>
                   </td>
                 </tr>

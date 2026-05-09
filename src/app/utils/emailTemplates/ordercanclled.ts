@@ -1,3 +1,4 @@
+import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 export interface OrderCancelledData {
@@ -35,8 +36,8 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
     cancelledBy === "admin"
       ? "Cancelled by Support Team"
       : cancelledBy === "system"
-      ? "Cancelled Automatically by System"
-      : "Cancelled by You";
+        ? "Cancelled Automatically by System"
+        : "Cancelled by You";
 
   const itemRows = items
     .map(
@@ -68,7 +69,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
         opacity: 0.6;
       ">€${(item.price * item.quantity).toFixed(2)}</td>
     </tr>
-  `
+  `,
     )
     .join("");
 
@@ -213,7 +214,9 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
               </table>
 
               <!-- ===== CANCEL REASON ===== -->
-              ${cancelReason ? `
+              ${
+                cancelReason
+                  ? `
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #fafafa;
                 border: 1px solid #d1d5db;
@@ -228,7 +231,9 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
                   </td>
                 </tr>
               </table>
-              ` : ""}
+              `
+                  : ""
+              }
 
               <!-- ===== ORDER ITEMS ===== -->
               <p style="
@@ -356,7 +361,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
                 <tr>
                   <td align="center">
                     <a
-                      href="https://your-frontend-url.com/shop"
+                      href="${config.client_url}"
                       style="
                         display: inline-block;
                         background: linear-gradient(135deg, #1a3faa, #2d63e2);
@@ -391,7 +396,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
                     <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
                       💬 <strong>Didn't request this cancellation?</strong> If you believe this was a mistake or need help,
                       please contact our support team immediately.
-                      <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">Visit Help Center</a>.
+                      <a href="${config.client_url}" style="color: #1a3faa; font-weight: 600;">Visit Help Center</a>.
                     </p>
                   </td>
                 </tr>

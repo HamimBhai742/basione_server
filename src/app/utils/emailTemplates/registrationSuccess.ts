@@ -1,3 +1,4 @@
+import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface RegistrationSuccessData {
@@ -361,7 +362,7 @@ export const registrationSuccessTemplate = async (
                     >Go to Dashboard →</a>
 
                     <a
-                      href="https://your-frontend-url.com/shop"
+                      href="${config.client_url}"
                       style="
                         display: inline-block;
                         background: #f3f4f6;

@@ -1,3 +1,4 @@
+import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface PaymentCancelledData {
@@ -292,7 +293,7 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
                 <tr>
                   <td align="center">
                     <a
-                      href="https://your-frontend-url.com/shop"
+                      href="${config.client_url}"
                       style="
                         display: inline-block;
                         background: linear-gradient(135deg, #1a3faa, #2d63e2);
@@ -328,7 +329,7 @@ export const paymentCancelledTemplate = async (data: PaymentCancelledData) => {
                     <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
                       💬 <strong>Have questions?</strong> If you didn't request this cancellation or need further assistance,
                       please contact our support team immediately.
-                      <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">Visit Help Center</a>.
+                      <a href="${config.client_url}" style="color: #1a3faa; font-weight: 600;">Visit Help Center</a>.
                     </p>
                   </td>
                 </tr>
