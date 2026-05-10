@@ -29,6 +29,8 @@ const allowedOrigins = [
   "https://basione-client-zvf8yv2t9-tahsins-projects-38f8b810.vercel.app",
   "https://basione-client.vercel.app",
   "http://10.0.70.135:3000",
+  "https://spandoekprint.nl",
+  "https://www.spandoekprint.nl"
 ];
 
 app.use(
