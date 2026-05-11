@@ -39,7 +39,6 @@ export const globalErrorHandler = (
       });
     }
   }
-  console.log(err);
 
   res.status(statusCode).json({ success: false, message, errorDetails });
 };

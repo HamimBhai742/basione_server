@@ -27,4 +27,13 @@ export default {
   baseUrl: process.env.BASE_URL as string,
   client_url: process.env.CLIENT_URL as string,
   NODE_ENV: process.env.NODE_ENV as string,
+  s3: {
+    region: process.env.S3_REGION as string,
+    endpoint: process.env.S3_ENDPOINT as string,
+    name: process.env.S3_BUCKET_NAME as string,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID as string,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
+    },
+  },
 };

@@ -8,6 +8,10 @@ import { generateToken } from "../../utils/generateToken";
 import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
 import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
+import { Request } from "express";
+import { uploadImageToS3 } from "../../utils/uploadAws";
+import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
+import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 
 interface IUserPayload {
   name: string;
@@ -420,8 +424,12 @@ const getMyProfile = async (id: string) => {
 };
 
 //user update profile
-const updateUser = async (id: string, payload: any) => {
-  console.log(payload);
+const updateUser = async (data: {
+  id: string;
+  payload: any;
+  file?: Express.Multer.File;
+}) => {
+  const { id, payload, file } = data;
   const user = await prisma.user.findUnique({
     where: {
       id,
@@ -432,11 +440,28 @@ const updateUser = async (id: string, payload: any) => {
     throw new AppError("User not found", httpStatus.NOT_FOUND);
   }
 
+  const oldImg = user.image;
+  let imgUrl = user?.image;
+  if (file) {
+    const result = await uploadImageToS3(file);
+    console.log(result);
+    if (result) {
+      imgUrl = result;
+    }
+    if (oldImg && file) {
+      const oldKey = getS3KeyFromUrl(oldImg);
+
+      if (oldKey) {
+        await deleteImageFromS3(oldKey);
+      }
+    }
+  }
+
   const result = await prisma.user.update({
     where: {
       id,
     },
-    data: payload,
+    data: { ...payload, image: imgUrl },
     select: {
       id: true,
       name: true,

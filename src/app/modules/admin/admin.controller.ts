@@ -6,8 +6,6 @@ import { Request, Response } from "express";
 import { adminService } from "./admin.service";
 import { excludeFiled } from "../../utils/constain";
 import { uploadImageToS3 } from "../../utils/uploadAws";
-import { uploadToCloudinary } from "../../utils/uploadCloudinary";
-import { CloudinaryUploadResponse } from "../user/user.controller";
 
 const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -135,11 +133,8 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
 const createDecoration = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   if (file) {
-    const fileUrl = (await uploadToCloudinary(
-      file,
-    )) as CloudinaryUploadResponse;
-    req.body.image = fileUrl?.secure_url;
-    console.log(fileUrl);
+    const fileUrl = await uploadImageToS3(file);
+    req.body.image = fileUrl;
   }
 
   const decoration = await adminService.createDecoration(req.body);
@@ -244,7 +239,6 @@ const deleteDecorationCategory = catchAsync(
 );
 
 const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.params.id, "fgdsgdfgdgfd");
   const order = await adminService.getSingleOrder(req.params.id as string);
   sendResponse(res, {
     statusCode: httpStatus.OK,

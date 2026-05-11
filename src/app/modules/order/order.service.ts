@@ -60,7 +60,6 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
 };
 
 const checkOut = async (orderId: string, userId: string, payload: any) => {
-  console.log(orderId, userId, payload);
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
@@ -87,7 +86,6 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
   if (order?.status === "cancelled") {
     throw new AppError("Order is canceled", httpStatus.BAD_REQUEST);
   }
-  console.log(pay);
   if (pay?.status === "paid") {
     throw new AppError("Order already paid", httpStatus.BAD_REQUEST);
   }
@@ -113,50 +111,6 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
       orderId,
     },
   });
-
-  // const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
-  // const payment = await prisma.payment.create({
-  //   data: {
-  //     orderId,
-  //     amount: order.total,
-  //     transactionId,
-  //     status: "pending",
-  //     userId,
-  //   },
-  // });
-
-  // const session = await stripe.checkout.sessions.create({
-  //   payment_method_types: ["card"],
-
-  //   line_items: [
-  //     {
-  //       price_data: {
-  //         currency: "usd",
-  //         product_data: {
-  //           name: banner?.name,
-  //         },
-  //         unit_amount: order.total * 100,
-  //       },
-  //       quantity: 1,
-  //     },
-  //   ],
-  //   customer_email: payload?.email,
-  //   mode: "payment",
-  //   success_url: `http://localhost:3000/success?orderId=${orderId}`,
-  //   cancel_url: `http://localhost:3000/cancel?orderId=${orderId}`,
-  //   metadata: {
-  //     orderId,
-  //     paymentId: payment.id,
-  //   },
-  //   payment_intent_data: {
-  //     metadata: {
-  //       orderId,
-  //       paymentId: payment.id,
-  //     },
-  //   },
-  //   expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Session expires in 30 minutes
-  // });
-  // console.log(session);
 
   const data = {
     orderId,

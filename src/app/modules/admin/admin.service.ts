@@ -533,7 +533,6 @@ const totalTransaction = async (
   sortOrder: "asc" | "desc",
   searchTerm?: string,
 ) => {
-  console.log(searchTerm);
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
@@ -702,7 +701,6 @@ const deleteDecorationCategory = async (id: string) => {
 };
 
 const getSingleOrder = async (orderId: string) => {
-  console.log("object");
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,

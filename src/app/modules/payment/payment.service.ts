@@ -49,21 +49,17 @@ const mollieWebhook = async (payId: string) => {
   }
 
   const payment = await mollieClient.payments.get(payId);
-  console.log(payment);
   const { orderId, paymentId, userId } = payment.metadata as any;
 
   if (payment.status === "paid") {
-    console.log("paid");
     await paymentPaid(orderId, paymentId, userId, payment);
   } else if (payment.status === "failed") {
     const reason = "Payment failed by mollie";
     await paymentFailed(orderId, paymentId, reason);
   } else if (payment.status === "canceled") {
-    console.log("canceled");
     const reason = "Payment canceled by user";
     await paymentCanceled(orderId, paymentId, reason);
   } else if (payment.status === "expired") {
-    console.log("expired");
     const reason = "Payment link expired";
     await paymentExpired(orderId, paymentId, reason);
   }
@@ -79,7 +75,6 @@ const paymentPaid = async (
   userId: string,
   payments: any,
 ) => {
-  console.log(orderId, paymentId);
   await prisma.$transaction(async (tx) => {
     await tx.order.update({
       where: {

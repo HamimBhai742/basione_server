@@ -3,9 +3,9 @@ import { prisma } from "../../lib/prisma";
 import axios from "axios";
 import FormData from "form-data";
 import { AppError } from "../../error/AppError";
-import config from "../../../config";
-import { uploadToCloudinary } from "../../utils/uploadCloudinary";
-import { CloudinaryUploadResponse } from "../user/user.controller";
+import { uploadImageToS3 } from "../../utils/uploadAws";
+import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
+import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 export enum ICategory {
   wedding = "wedding",
   birthday = "birthday",
@@ -21,7 +21,6 @@ type AuthRequest = Request & {
 
 const createBanner = async (req: AuthRequest) => {
   const parsedData = req.body;
-  console.log(parsedData);
 
   const formData = new FormData();
 
@@ -39,16 +38,6 @@ const createBanner = async (req: AuthRequest) => {
         parsedData.description || "A banner for a wedding invitation",
     }),
   );
-  console.log({
-    occasion: parsedData?.occasion,
-    style: parsedData?.style,
-    headline: parsedData?.headline || "",
-    subtext: parsedData?.subheadline || "",
-    name: parsedData?.name || "",
-    age: parsedData?.age || "",
-    size: `${parsedData.size.width}x${parsedData.size.height}`,
-    description: parsedData.description || "A banner for a wedding invitation",
-  });
 
   if (req.file) {
     formData.append("ref_image_1", req.file.buffer, {
@@ -198,9 +187,6 @@ const createBanner = async (req: AuthRequest) => {
 
         const event = data?.event?.trim?.();
 
-        console.log("EVENT:", event);
-        console.log("DATA:", data);
-
         if (event === "final") {
           finalVariants.push({
             variant: data?.variant ?? null,
@@ -251,8 +237,7 @@ const createBanner = async (req: AuthRequest) => {
 };
 
 const createBannerByTemplate = async (req: AuthRequest) => {
-  const parsedData = JSON.parse(req?.body.data);
-  console.log(parsedData, req.file);
+  const parsedData = JSON.parse(req?.body?.data);
   let occ = "";
   let headline = "";
   if (parsedData.size === "party-banner") {
@@ -283,7 +268,6 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   } else {
     price = 60;
   }
-  console.log(occ, headline, price, parsedData, height, width);
   const formatLabel = (text: string) => {
     return text
       .split("-")
@@ -292,10 +276,8 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   };
   let imgUrl = "";
   if (req?.file) {
-    const img = (await uploadToCloudinary(
-      req.file,
-    )) as CloudinaryUploadResponse;
-    imgUrl = img?.secure_url;
+    const img = await uploadImageToS3(req.file);
+    imgUrl = img;
   }
   const sizeLabel = formatLabel(parsedData.size);
   const banner = await prisma.banner.create({
@@ -375,14 +357,17 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     }
   }
 
-  let imageUrl = "";
-
+  let imageUrl = banner?.imageUrl;
+  const oldImg = banner?.imageUrl;
   if (req?.file) {
-    const img = (await uploadToCloudinary(
-      req.file,
-    )) as CloudinaryUploadResponse;
-
-    imageUrl = img?.secure_url;
+    const img = await uploadImageToS3(req.file);
+    imageUrl = img;
+    if (oldImg && req?.file) {
+      const oldKey = getS3KeyFromUrl(oldImg);
+      if (oldKey) {
+        await deleteImageFromS3(oldKey);
+      }
+    }
   }
 
   const updateData: any = {};
@@ -417,262 +402,6 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   return updatedBanner;
 };
 
-// const createBanner = async (req: AuthRequest) => {
-//   const parsedData = req.body;
-//   console.log(parsedData);
-
-//   let occ = "";
-//   let headline = "";
-
-//   if (parsedData.size.type === "party-banner") {
-//     occ = "party";
-//     headline = "Welcome to the party";
-//   } else if (parsedData.size.type === "blessing-sign") {
-//     occ = "wedding";
-//     headline = "We are getting married";
-//   } else if (parsedData.size.type === "birthday-banner") {
-//     occ = "birthday";
-//     headline = `Happy birthday ${parsedData.name}`;
-//   } else {
-//     occ = parsedData.occasion;
-//     headline = parsedData.headline;
-//   }
-
-//   console.log(occ, headline);
-
-//   const formData = new FormData();
-
-//   formData.append(
-//     "data",
-//     JSON.stringify({
-//       occasion: occ,
-//       style: parsedData?.style?.toLowerCase(),
-//       headline: headline || "",
-//       height: `${parsedData.size.height}cm`,
-//       width: `${parsedData.size.width}cm`,
-//       description:
-//         parsedData.description || "A banner for a wedding invitation",
-//     }),
-//   );
-
-//   if (req.file) {
-//     formData.append("ref_image_1", req.file.buffer, {
-//       filename: req.file.originalname,
-//       contentType: req.file.mimetype,
-//     });
-//   }
-
-//   formData.append("ref_image_2", "");
-//   formData.append("ref_image_3", "");
-//   formData.append("ref_image_4", "");
-
-//   const response = await axios.post(`${config.baseUrl}/generate`, formData, {
-//     headers: {
-//       ...formData.getHeaders(),
-//       accept: "text/event-stream",
-//     },
-//     responseType: "stream",
-//     validateStatus: () => true,
-//     maxBodyLength: Infinity,
-//     maxContentLength: Infinity,
-//     timeout: 1000 * 60 * 5,
-//   });
-
-//   let price = 0;
-//   const height = Number(parsedData.size.height);
-//   const width = Number(parsedData.size.width);
-
-//   if (height < 80 && width < 120) {
-//     price = 20;
-//   } else if (height < 120 && width < 160) {
-//     price = 30;
-//   } else if (height < 160 && width < 200) {
-//     price = 40;
-//   } else if (height < 200 && width < 240) {
-//     price = 50;
-//   } else {
-//     price = 60;
-//   }
-
-//   console.log("Banner price:", price);
-
-//   if (response.status >= 400) {
-//     let rawError = "";
-
-//     await new Promise<void>((resolve, reject) => {
-//       response.data.on("data", (chunk: Buffer) => {
-//         rawError += chunk.toString("utf-8");
-//       });
-
-//       response.data.on("end", () => resolve());
-//       response.data.on("error", reject);
-//     });
-
-//     throw new AppError(`AI server error ${response.status}: ${rawError}`);
-//   }
-
-//   return new Promise((resolve, reject) => {
-//     const finalVariants: {
-//       variant: number;
-//       url: string | null;
-//       image_b64?: string | null;
-//       revised_prompt?: string;
-//     }[] = [];
-
-//     let buffer = "";
-//     let isFinished = false;
-//     let receivedAllDone = false;
-
-//     const saveAndResolve = async () => {
-//       if (isFinished) return;
-
-//       if (!receivedAllDone) {
-//         throw new AppError(
-//           "Banner generation did not complete successfully. all_done event not received.",
-//         );
-//       }
-
-//       if (!finalVariants.length) {
-//         throw new AppError("No final banner variants were generated.");
-//       }
-
-//       isFinished = true;
-
-//       const sortedVariants = [...finalVariants].sort(
-//         (a, b) => a.variant - b.variant,
-//       );
-
-//       // optional duplicate protection
-//       const uniqueVariants = sortedVariants.filter(
-//         (item, index, self) =>
-//           index === self.findIndex((v) => v.variant === item.variant),
-//       );
-
-//       const savedBanners = await prisma.$transaction(
-//         uniqueVariants.map((item) =>
-//           prisma.banner.create({
-//             data: {
-//               userId: req.user?.id || null,
-
-//               occasion: occ,
-//               style: parsedData.style,
-//               headline: headline,
-//               name: parsedData.name,
-
-//               hobbies: parsedData.hobbies || [],
-//               description: parsedData.description,
-
-//               sizeType: parsedData.size.type,
-//               sizeLabel: parsedData.size.label,
-//               width: parsedData.size.width,
-//               height: parsedData.size.height,
-
-//               imageUrl: item.url ?? "",
-//               variant: item.variant,
-//               price,
-
-//               revisedPrompt: item.revised_prompt || null,
-//             },
-//           }),
-//         ),
-//       );
-
-//       resolve({
-//         variants: savedBanners,
-//       });
-//     };
-
-//     response.data.on("data", (chunk: Buffer) => {
-//       const text = chunk.toString("utf-8");
-//       buffer += text;
-
-//       const parts = buffer.split("\n\n");
-//       buffer = parts.pop() || "";
-
-//       for (const part of parts) {
-//         const lines = part.split("\n");
-//         const dataLines: string[] = [];
-
-//         for (const line of lines) {
-//           const trimmedLine = line.trim();
-
-//           if (trimmedLine.startsWith("data:")) {
-//             dataLines.push(trimmedLine.replace("data:", "").trim());
-//           }
-//         }
-
-//         const dataStr = dataLines.join("");
-//         if (!dataStr) continue;
-
-//         let data: any;
-
-//         try {
-//           data = JSON.parse(dataStr);
-//         } catch {
-//           data = dataStr;
-//         }
-
-//         const event = data?.event?.trim?.();
-
-//         console.log("EVENT:", event);
-//         console.log("DATA:", data);
-
-//         if (event === "final") {
-//           if (
-//             typeof data?.variant === "number" &&
-//             (data?.url || data?.image_b64)
-//           ) {
-//             finalVariants.push({
-//               variant: data.variant,
-//               url: data.url ?? null,
-//               image_b64: data.image_b64 ?? null,
-//               revised_prompt: data.revised_prompt ?? "",
-//             });
-//           }
-//         }
-
-//         if (event === "error") {
-//           if (!isFinished) {
-//             isFinished = true;
-//             reject(
-//               new AppError(data?.message || "AI server returned an error"),
-//             );
-//           }
-//           return;
-//         }
-
-//         if (event === "all_done") {
-//           receivedAllDone = true;
-
-//           saveAndResolve().catch((err) => {
-//             if (!isFinished) {
-//               isFinished = true;
-//               reject(err);
-//             }
-//           });
-//           return;
-//         }
-//       }
-//     });
-
-//     response.data.on("end", () => {
-//       if (!receivedAllDone && !isFinished) {
-//         isFinished = true;
-//         reject(
-//           new AppError("Connection ended before banner generation completed."),
-//         );
-//       }
-//     });
-
-//     response.data.on("error", (err: Error) => {
-//       if (!isFinished) {
-//         isFinished = true;
-//         console.log(err.name,"gfgfgfg")
-//         reject(new AppError(err.message || "Stream connection failed"));
-//       }
-//     });
-//   });
-// };
 const mybanner = async (id: string) => {
   const banner = await prisma.banner.findMany({
     where: {
@@ -689,7 +418,6 @@ const getAllbanners = async (
   category?: string,
   fetchFrom?: "home" | "gallery",
 ) => {
-  console.log(category);
   const banners = await prisma.banner.findMany({
     skip,
     take: fetchFrom === "home" ? 6 : limit,

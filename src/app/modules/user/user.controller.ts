@@ -3,7 +3,7 @@ import { catchAsync } from "../../utils/catchAsync";
 import { userService } from "./user.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
-import { uploadToCloudinary } from "../../utils/uploadCloudinary";
+import { uploadImageToS3 } from "../../utils/uploadAws";
 
 export interface CloudinaryUploadResponse {
   asset_id: string;
@@ -114,15 +114,12 @@ const getMyProfile = catchAsync(
 
 const updateUser = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
-    if (req.file) {
-      const result = (await uploadToCloudinary(
-        req.file as Express.Multer.File,
-      )) as CloudinaryUploadResponse;
-      if (result?.secure_url) {
-        req.body.image = result.secure_url;
-      }
-    }
-    const user = await userService.updateUser(req.user.id, req.body);
+    const file = req.file as Express.Multer.File;
+    const user = await userService.updateUser({
+      id: req.user.id,
+      payload: req.body,
+      file,
+    });
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -132,7 +129,6 @@ const updateUser = catchAsync(
     });
   },
 );
-
 
 const getTotalActiveUsers = catchAsync(async (req: Request, res: Response) => {
   const totalActiveUsers = await userService.getTotalActiveUsers();
