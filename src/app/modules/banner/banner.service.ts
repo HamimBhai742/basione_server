@@ -51,7 +51,7 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_4", "");
 
   const response = await axios.post(
-    "http://206.162.244.175:8800/generate",
+    "https://ai.spandoekprint.nl/generate",
     formData,
     {
       headers: {
