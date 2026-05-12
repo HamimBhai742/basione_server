@@ -1,37 +1,40 @@
 import nodemailer from "nodemailer";
 import config from "../../../config";
 
+type EmailAttachment = {
+  filename: string;
+  path?: string;
+  content?: Buffer | string;
+  contentType?: string;
+};
+
 const sendEmail = async (
   to: string,
   subject: string,
   html: string,
   text?: string,
+  attachments?: EmailAttachment[],
 ) => {
-  // Create a transporter
   const transporter = nodemailer.createTransport({
-    // host: "mail.newmodina.com",
     service: "gmail",
-    // port: 465,
-    // port: 587,
-    // secure: true,
     auth: {
       user: config.smt.email,
       pass: config.smt.pass,
     },
     tls: {
-      rejectUnauthorized: false, // Optional: Bypass SSL issues if needed
+      rejectUnauthorized: false,
     },
   });
 
-  // Email options
   const mailOptions = {
     from: `Spandoek Print <${config.smt.email}>`,
-    // from: "support@deepbluedeal.com",
     to,
     subject,
     html,
     text,
+    attachments: attachments || [],
   };
+
   await transporter.sendMail(mailOptions);
 };
 

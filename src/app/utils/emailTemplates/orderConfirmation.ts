@@ -1,607 +1,341 @@
-import config from "../../../config";
+import { OrderConfirmedEmailData } from "../../../type/interface";
 import sendEmail from "./nodemailerTransport";
 
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-  imageUrl?: string;
-}
 
-interface OrderConfirmedData {
-  userName: string;
-  email: string;
-  orderId: string;
-  orderDate: string;
-  estimatedDelivery: string;
-  items: OrderItem[];
-  subtotal: number;
-  shippingCost: number;
-  discount?: number;
-  total: number;
-  shippingAddress: {
-    address: string;
-    zipCode: string;
-    country: string;
-  };
-  paymentMethod: string;
-}
 
-export const orderConfirmedTemplate = async (data: OrderConfirmedData) => {
-  const {
-    userName,
-    email,
-    orderId,
-    orderDate,
-    estimatedDelivery,
-    items,
-    subtotal,
-    shippingCost,
-    discount = 0,
-    total,
-    shippingAddress,
-    paymentMethod,
-  } = data;
+const formatCurrency = (amount: number) => {
+  return `€${Number(amount || 0).toFixed(2)}`;
+};
 
-  const subject = `🎉 Order Confirmed — #${orderId} is Being Processed!`;
+const safeText = (value?: string | null) => {
+  return value && value.trim() ? value : "-";
+};
 
-  const itemRows = items
-    .map(
-      (item, index) => `
-    <tr>
-      <td style="
-        padding: 14px 18px;
-        background: ${index % 2 === 0 ? "#f8f9fc" : "#ffffff"};
-        border-bottom: 1px solid #e8ecf5;
-        font-size: 13.5px;
-        color: #1a1a2e;
-        font-weight: 500;
-      ">${item.name}</td>
-      <td style="
-        padding: 14px 18px;
-        background: ${index % 2 === 0 ? "#f8f9fc" : "#ffffff"};
-        border-bottom: 1px solid #e8ecf5;
-        font-size: 13.5px;
-        color: #6b7a9f;
-        text-align: center;
-      ">x${item.quantity}</td>
-      <td style="
-        padding: 14px 18px;
-        background: ${index % 2 === 0 ? "#f8f9fc" : "#ffffff"};
-        border-bottom: 1px solid #e8ecf5;
-        font-size: 13.5px;
-        color: #374151;
-        font-weight: 600;
-        text-align: right;
-      ">€${(item.price * item.quantity).toFixed(2)}</td>
-    </tr>
-  `,
-    )
-    .join("");
+export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
+  const subject = `Bestelling bevestigd - ${data.orderId}`;
+
+  const deliveryAddress = `
+    ${safeText(data.shippingAddress.name)}<br/>
+    ${
+      data.shippingAddress.companyName
+        ? `${data.shippingAddress.companyName}<br/>`
+        : ""
+    }
+    ${safeText(data.shippingAddress.street)} ${safeText(
+      data.shippingAddress.houseNumber,
+    )}<br/>
+    ${
+      data.shippingAddress.address ? `${data.shippingAddress.address}<br/>` : ""
+    }
+    ${safeText(data.shippingAddress.zipCode)} ${safeText(
+      data.shippingAddress.city,
+    )}<br/>
+    ${data.shippingAddress.phone ? `Tel: ${data.shippingAddress.phone}<br/>` : ""}
+    ${data.shippingAddress.email ? `Email: ${data.shippingAddress.email}` : ""}
+  `;
 
   const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Order Confirmed</title>
-</head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bestelling bevestigd</title>
 
-<body style="
+<style>
+body {
   margin: 0;
   padding: 0;
-  background-color: #eef2f7;
-  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-">
+  background-color: #f5f5f5;
+  font-family: Arial, sans-serif;
+}
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eef2f7; padding: 40px 16px;">
-    <tr>
-      <td align="center">
+.container {
+  max-width: 700px;
+  margin: 20px auto;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
 
-        <!-- Card -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="
-          max-width: 600px;
-          width: 100%;
-          background: #ffffff;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        ">
+.header {
+  background-color: #2563eb;
+  color: #ffffff;
+  padding: 24px;
+  text-align: center;
+}
 
-          <!-- ===== HEADER ===== -->
-          <tr>
-            <td style="
-              background: linear-gradient(135deg, #1a3faa 0%, #2d63e2 60%, #3b82f6 100%);
-              padding: 40px 40px 32px;
-              text-align: center;
-            ">
-              <img
-                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
-                width="300"
-                alt="Spandoek Print"
-                style="display:block; margin: 0 auto 24px; border-radius: 8px;"
-              />
+.header h1 {
+  margin: 0;
+  font-size: 22px;
+}
 
-              <div style="
-                display: inline-block;
-                background: rgba(255,255,255,0.15);
-                border: 3px solid rgba(255,255,255,0.4);
-                border-radius: 50%;
-                width: 72px;
-                height: 72px;
-                line-height: 72px;
-                text-align: center;
-                font-size: 32px;
-                margin-bottom: 20px;
-              ">🎉</div>
+.header p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  opacity: 0.95;
+}
 
-              <h1 style="
-                margin: 0 0 8px;
-                color: #ffffff;
-                font-size: 26px;
-                font-weight: 700;
-                letter-spacing: -0.3px;
-              ">Order Confirmed!</h1>
+.content {
+  padding: 28px 30px;
+  color: #333333;
+}
 
-              <p style="
-                margin: 0 0 18px;
-                color: rgba(255,255,255,0.82);
-                font-size: 15px;
-              ">Thank you for your order. We're getting it ready for you!</p>
+.order-box {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 20px 0;
+  font-size: 14px;
+  border: 1px solid #e5e7eb;
+}
 
-              <!-- Order ID pill -->
-              <div style="
-                display: inline-block;
-                background: rgba(255,255,255,0.18);
-                border: 1px solid rgba(255,255,255,0.35);
-                border-radius: 99px;
-                padding: 7px 22px;
-                font-size: 13px;
-                color: #ffffff;
-                font-weight: 700;
-                letter-spacing: 0.5px;
-              ">Order #${orderId}</div>
-            </td>
-          </tr>
+.section-title {
+  font-size: 17px;
+  margin: 24px 0 12px;
+  color: #111827;
+}
 
-          <!-- ===== BODY ===== -->
-          <tr>
-            <td style="padding: 36px 40px 0;">
+.product {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 15px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
 
-              <!-- Greeting -->
-              <p style="margin: 0 0 8px; font-size: 16px; color: #1a1a2e; font-weight: 600;">
-                Hello, ${userName} 👋
-              </p>
-              <p style="margin: 0 0 28px; font-size: 15px; color: #555e7a; line-height: 1.75;">
-                We've received your order and it's currently being processed by our team.
-                You'll receive another email once your order has been shipped.
-              </p>
+.product img {
+  width: 78px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
 
-              <!-- ===== ORDER META CARDS ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 28px;">
-                <tr>
-                  <!-- Order Date -->
-                  <td style="width: 33.33%; padding-right: 6px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                      background: #f8f9fc;
-                      border: 1px solid #e8ecf5;
-                      border-radius: 10px;
-                      text-align: center;
-                    ">
-                      <tr>
-                        <td style="padding: 14px 10px;">
-                          <p style="margin: 0 0 5px; font-size: 20px;">📅</p>
-                          <p style="margin: 0 0 4px; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Order Date</p>
-                          <p style="margin: 0; font-size: 12.5px; font-weight: 700; color: #1a1a2e;">${orderDate}</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  <!-- Order Status -->
-                  <td style="width: 33.33%; padding: 0 3px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                      background: #f0fdf4;
-                      border: 1px solid #bbf7d0;
-                      border-radius: 10px;
-                      text-align: center;
-                    ">
-                      <tr>
-                        <td style="padding: 14px 10px;">
-                          <p style="margin: 0 0 5px; font-size: 20px;">⚙️</p>
-                          <p style="margin: 0 0 4px; font-size: 11px; color: #15803d; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Status</p>
-                          <p style="margin: 0; font-size: 12.5px; font-weight: 700; color: #166534;">Processing</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  <!-- Estimated Delivery -->
-                  <td style="width: 33.33%; padding-left: 6px;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                      background: #fff7ed;
-                      border: 1px solid #fed7aa;
-                      border-radius: 10px;
-                      text-align: center;
-                    ">
-                      <tr>
-                        <td style="padding: 14px 10px;">
-                          <p style="margin: 0 0 5px; font-size: 20px;">🚚</p>
-                          <p style="margin: 0 0 4px; font-size: 11px; color: #c2410c; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Est. Delivery</p>
-                          <p style="margin: 0; font-size: 12.5px; font-weight: 700; color: #9a3412;">${estimatedDelivery}</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+.product-info {
+  font-size: 14px;
+  line-height: 1.6;
+}
 
-              <!-- ===== ORDER ITEMS TABLE ===== -->
-              <p style="
-                margin: 0 0 12px;
-                font-size: 13px;
-                color: #6b7a9f;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                font-weight: 700;
-              ">Order Summary</p>
+.summary {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+  margin-top: 18px;
+  font-size: 14px;
+}
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                border-collapse: collapse;
-                border-radius: 10px;
-                overflow: hidden;
-                border: 1px solid #e8ecf5;
-                margin-bottom: 0;
-              ">
-                <!-- Table header -->
-                <tr>
-                  <td style="
-                    padding: 11px 18px;
-                    background: #1a3faa;
-                    font-size: 12px;
-                    color: rgba(255,255,255,0.75);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.8px;
-                  ">Item</td>
-                  <td style="
-                    padding: 11px 18px;
-                    background: #1a3faa;
-                    font-size: 12px;
-                    color: rgba(255,255,255,0.75);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.8px;
-                    text-align: center;
-                  ">Qty</td>
-                  <td style="
-                    padding: 11px 18px;
-                    background: #1a3faa;
-                    font-size: 12px;
-                    color: rgba(255,255,255,0.75);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.8px;
-                    text-align: right;
-                  ">Price</td>
-                </tr>
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+}
 
-                ${itemRows}
+.total {
+  font-size: 17px;
+  font-weight: bold;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
 
-                <!-- Subtotal -->
-                <tr>
-                  <td colspan="2" style="
-                    padding: 12px 18px;
-                    background: #f8f9fc;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #6b7a9f;
-                  ">Subtotal</td>
-                  <td style="
-                    padding: 12px 18px;
-                    background: #f8f9fc;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #374151;
-                    text-align: right;
-                    font-weight: 600;
-                  ">€${subtotal.toFixed(2)}</td>
-                </tr>
+.address-box {
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  line-height: 1.7;
+}
 
-                <!-- Shipping -->
-                <tr>
-                  <td colspan="2" style="
-                    padding: 12px 18px;
-                    background: #ffffff;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #6b7a9f;
-                  ">🚚 Shipping</td>
-                  <td style="
-                    padding: 12px 18px;
-                    background: #ffffff;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #374151;
-                    text-align: right;
-                    font-weight: 600;
-                  ">${shippingCost === 0 ? '<span style="color:#16a34a;">FREE</span>' : `€${shippingCost.toFixed(2)}`}</td>
-                </tr>
+.invoice-box {
+  background: #eff6ff;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  margin-top: 20px;
+  font-size: 14px;
+}
 
-                <!-- Discount (conditional) -->
-                ${
-                  discount > 0
-                    ? `
-                <tr>
-                  <td colspan="2" style="
-                    padding: 12px 18px;
-                    background: #f0fdf4;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #16a34a;
-                    font-weight: 600;
-                  ">🏷️ Discount</td>
-                  <td style="
-                    padding: 12px 18px;
-                    background: #f0fdf4;
-                    border-top: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #16a34a;
-                    text-align: right;
-                    font-weight: 700;
-                  ">- €${discount.toFixed(2)}</td>
-                </tr>
-                `
-                    : ""
-                }
+.invoice-button {
+  display: inline-block;
+  margin-top: 10px;
+  background: #2563eb;
+  color: #ffffff !important;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+}
 
-                <!-- Grand Total -->
-                <tr>
-                  <td colspan="2" style="
-                    padding: 15px 18px;
-                    background: #1a3faa;
-                    border-top: 2px solid #1a3faa;
-                    font-size: 14px;
-                    color: rgba(255,255,255,0.85);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                  ">Grand Total</td>
-                  <td style="
-                    padding: 15px 18px;
-                    background: #1a3faa;
-                    border-top: 2px solid #1a3faa;
-                    font-size: 18px;
-                    color: #ffffff;
-                    text-align: right;
-                    font-weight: 800;
-                    letter-spacing: -0.5px;
-                  ">€${total.toFixed(2)}</td>
-                </tr>
-              </table>
+.footer {
+  background: #f9fafb;
+  text-align: center;
+  padding: 18px;
+  font-size: 12px;
+  color: #777777;
+  border-top: 1px solid #e5e7eb;
+}
 
-              <!-- ===== SHIPPING & PAYMENT INFO ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px; margin-bottom: 28px;">
-                <tr>
-                  <!-- Shipping Address -->
-                  <td style="width: 55%; padding-right: 10px; vertical-align: top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                      background: #f8f9fc;
-                      border: 1px solid #e8ecf5;
-                      border-radius: 10px;
-                    ">
-                      <tr>
-                        <td style="padding: 16px 18px;">
-                          <p style="margin: 0 0 10px; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">📦 Shipping Address</p>
-                          <p style="margin: 0; font-size: 13.5px; color: #374151; line-height: 1.8;">
-                            ${shippingAddress.address}<br/>
-                            ${shippingAddress.country}
-                          </p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                  <!-- Payment Method -->
-                  <td style="width: 45%; padding-left: 10px; vertical-align: top;">
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                      background: #f8f9fc;
-                      border: 1px solid #e8ecf5;
-                      border-radius: 10px;
-                    ">
-                      <tr>
-                        <td style="padding: 16px 18px;">
-                          <p style="margin: 0 0 10px; font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">💳 Payment Method</p>
-                          <p style="margin: 0; font-size: 13.5px; color: #374151; line-height: 1.8; font-weight: 600;">
-                            ${paymentMethod}
-                          </p>
-                          <p style="margin: 6px 0 0; font-size: 12px; color: #16a34a; font-weight: 600;">✔ Payment Verified</p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+@media only screen and (max-width: 600px) {
+  .container {
+    margin: 0;
+    border-radius: 0;
+  }
 
-              <!-- ===== ORDER PROGRESS TRACKER ===== -->
-              <p style="
-                margin: 0 0 14px;
-                font-size: 13px;
-                color: #6b7a9f;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                font-weight: 700;
-              ">Order Progress</p>
+  .content {
+    padding: 22px 18px;
+  }
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
-                <tr>
-                  <!-- Step 1: Confirmed (active) -->
-                  <td style="text-align: center; width: 25%;">
-                    <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: #1a3faa;
-                      border-radius: 50%;
-                      line-height: 36px;
-                      text-align: center;
-                      font-size: 16px;
-                      margin: 0 auto 8px;
-                      color: white;
-                    ">✓</div>
-                    <p style="margin: 0; font-size: 11.5px; font-weight: 700; color: #1a3faa;">Confirmed</p>
-                  </td>
-                  <!-- Connector -->
-                  <td style="padding-bottom: 22px;">
-                    <div style="height: 2px; background: linear-gradient(to right, #1a3faa, #d1d5db);"></div>
-                  </td>
-                  <!-- Step 2: Processing (active) -->
-                  <td style="text-align: center; width: 25%;">
-                    <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: #2d63e2;
-                      border-radius: 50%;
-                      line-height: 36px;
-                      text-align: center;
-                      font-size: 15px;
-                      margin: 0 auto 8px;
-                      color: white;
-                    ">⚙</div>
-                    <p style="margin: 0; font-size: 11.5px; font-weight: 700; color: #2d63e2;">Processing</p>
-                  </td>
-                  <!-- Connector -->
-                  <td style="padding-bottom: 22px;">
-                    <div style="height: 2px; background: #d1d5db;"></div>
-                  </td>
-                  <!-- Step 3: Shipped -->
-                  <td style="text-align: center; width: 25%;">
-                    <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: #e5e7eb;
-                      border-radius: 50%;
-                      line-height: 36px;
-                      text-align: center;
-                      font-size: 15px;
-                      margin: 0 auto 8px;
-                      color: #9ca3af;
-                    ">🚚</div>
-                    <p style="margin: 0; font-size: 11.5px; font-weight: 600; color: #9ca3af;">Shipped</p>
-                  </td>
-                  <!-- Connector -->
-                  <td style="padding-bottom: 22px;">
-                    <div style="height: 2px; background: #d1d5db;"></div>
-                  </td>
-                  <!-- Step 4: Delivered -->
-                  <td style="text-align: center; width: 25%;">
-                    <div style="
-                      width: 36px;
-                      height: 36px;
-                      background: #e5e7eb;
-                      border-radius: 50%;
-                      line-height: 36px;
-                      text-align: center;
-                      font-size: 15px;
-                      margin: 0 auto 8px;
-                      color: #9ca3af;
-                    ">🏠</div>
-                    <p style="margin: 0; font-size: 11.5px; font-weight: 600; color: #9ca3af;">Delivered</p>
-                  </td>
-                </tr>
-              </table>
+  .product {
+    flex-direction: column;
+  }
 
-              <!-- ===== CTA BUTTONS ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
-                <tr>
-                  <td align="center">
-                    <a href="${config.client_url}/profile/${orderId}" style="
-                      display: inline-block;
-                      background: linear-gradient(135deg, #1a3faa, #2d63e2);
-                      color: #ffffff;
-                      text-decoration: none;
-                      font-size: 15px;
-                      font-weight: 700;
-                      padding: 14px 32px;
-                      border-radius: 10px;
-                      letter-spacing: 0.3px;
-                      box-shadow: 0 4px 14px rgba(34,92,228,0.3);
-                      margin-right: 10px;
-                    ">Track My Order →</a>
+  .product img {
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+  }
+}
+</style>
+</head>
 
-                    <a href="${config.client_url}" style="
-                      display: inline-block;
-                      background: #f3f4f6;
-                      color: #374151;
-                      text-decoration: none;
-                      font-size: 15px;
-                      font-weight: 700;
-                      padding: 14px 32px;
-                      border-radius: 10px;
-                      letter-spacing: 0.3px;
-                      border: 1px solid #d1d5db;
-                    ">Continue Shopping</a>
-                  </td>
-                </tr>
-              </table>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Bestelling bevestigd ✔</h1>
+      <p>Bedankt voor uw bestelling. Wij hebben uw betaling ontvangen.</p>
+    </div>
 
-              <!-- ===== DIVIDER ===== -->
-              <hr style="border: none; border-top: 1px solid #e8ecf5; margin: 0 0 24px;" />
+    <div class="content">
+      <p>Hallo <strong>${data.userName}</strong>,</p>
 
-              <!-- ===== SUPPORT NOTE ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: #fffbeb;
-                border: 1px solid #fde68a;
-                border-radius: 10px;
-                margin-bottom: 32px;
-              ">
-                <tr>
-                  <td style="padding: 16px 18px;">
-                    <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
-                      💬 <strong>Need help with your order?</strong> Our support team is available to assist you.
-                      Reply to this email or visit our
-                      <a href="${config.client_url}" style="color: #1a3faa; font-weight: 600;">Help Center</a>.
-                    </p>
-                  </td>
-                </tr>
-              </table>
+      <p>
+        Uw bestelling is succesvol geplaatst en wordt nu verwerkt.
+      </p>
 
-            </td>
-          </tr>
+      <div class="order-box">
+        <strong>Order ID:</strong> ${data.orderId}<br/>
+        <strong>Orderdatum:</strong> ${data.orderDate}<br/>
+        <strong>Betaalmethode:</strong> ${data.paymentMethod}<br/>
+        <strong>Geschatte levering/afhalen:</strong> ${safeText(
+          data.estimatedDelivery,
+        )}
+        ${
+          data.invoiceNumber
+            ? `<br/><strong>Factuurnummer:</strong> ${data.invoiceNumber}`
+            : ""
+        }
+      </div>
 
-          <!-- ===== FOOTER ===== -->
-          <tr>
-            <td style="
-              background: #f8f9fc;
-              border-top: 1px solid #e8ecf5;
-              text-align: center;
-              padding: 28px 40px;
-            ">
-              <img
-                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
-                width="200"
-                alt="Spandoek Print"
-                style="display:block; margin: 0 auto 12px; opacity: 0.7;"
-              />
-              <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #1a3faa;">Spandoek Print</p>
-              <p style="margin: 0 0 12px; font-size: 12px; color: #9ca3b8; line-height: 1.6;">
-                123 Print Avenue, Amsterdam, Netherlands<br/>
-                <a href="mailto:support@spandoekprint.com" style="color: #9ca3b8;">support@spandoekprint.com</a>
-              </p>
-              <p style="margin: 0; font-size: 11.5px; color: #b0b8cc; line-height: 1.6;">
-                This email was sent to <strong>${email}</strong> to confirm your order on Spandoek Print.<br/>
-                © ${new Date().getFullYear()} Spandoek Print. All rights reserved.
-              </p>
-            </td>
-          </tr>
+      <h3 class="section-title">Bestelde items</h3>
 
-        </table>
+      ${data.items
+        .map(
+          (item) => `
+        <div class="product">
+          ${
+            item.imageUrl
+              ? `<img src="${item.imageUrl}" alt="${item.name}" />`
+              : ""
+          }
 
-      </td>
-    </tr>
-  </table>
+          <div class="product-info">
+            <div><strong>${item.name}</strong></div>
+            <div>Aantal: ${item.quantity}</div>
+            <div>Prijs per stuk: ${formatCurrency(item.price)}</div>
+            <div>Totaal item: ${formatCurrency(item.price * item.quantity)}</div>
+          </div>
+        </div>
+      `,
+        )
+        .join("")}
 
+      <h3 class="section-title">Prijsberekening</h3>
+
+      <div class="summary">
+        <div class="summary-row">
+          <span>Subtotaal</span>
+          <strong>${formatCurrency(data.subtotal)}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Levering / Afhalen</span>
+          <strong>${formatCurrency(data.deliveryFee)}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Ringen / Eyelets</span>
+          <strong>${formatCurrency(data.eyeletsFee || 0)}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Prijs excl. 21% BTW</span>
+          <strong>${formatCurrency(data.priceExcludingVat)}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>BTW ${Math.round((data.vatRate || 0.21) * 100)}%</span>
+          <strong>${formatCurrency(data.vatAmount)}</strong>
+        </div>
+
+        <div class="summary-row total">
+          <span>Totaal incl. BTW</span>
+          <strong>${formatCurrency(data.total)}</strong>
+        </div>
+      </div>
+
+      <h3 class="section-title">Adresgegevens</h3>
+
+      <div class="address-box">
+        ${deliveryAddress}
+      </div>
+
+      ${
+        data.invoiceUrl
+          ? `
+        <div class="invoice-box">
+          <strong>Factuur beschikbaar</strong><br/>
+          Uw PDF-factuur is aangemaakt en beschikbaar via onderstaande link.
+          <br/>
+          <a href="${data.invoiceUrl}" class="invoice-button" target="_blank">
+            Factuur downloaden
+          </a>
+        </div>
+      `
+          : ""
+      }
+
+      <p style="margin-top: 24px;">
+        U ontvangt opnieuw bericht zodra uw bestelling verder wordt verwerkt of klaar is voor levering/afhalen.
+      </p>
+    </div>
+
+    <div class="footer">
+      Hulp nodig? Neem contact op met onze klantenservice.<br/>
+      © ${new Date().getFullYear()} Spandoek Print. Alle rechten voorbehouden.
+    </div>
+  </div>
 </body>
 </html>
-  `;
+`;
 
-  await sendEmail(email, subject, html);
+  await sendEmail(
+    data.email,
+    subject,
+    html,
+    undefined,
+    data.invoiceFilePath
+      ? [
+          {
+            filename: `${data.invoiceNumber || "invoice"}.pdf`,
+            path: data.invoiceFilePath,
+            contentType: "application/pdf",
+          },
+        ]
+      : [],
+  );
 };

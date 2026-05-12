@@ -1,8 +1,6 @@
 import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
-import { stripe } from "../../lib/stripe";
-import crypto from "crypto";
 import {
   OrderCancelledData,
   orderCancelledTemplate,
@@ -11,16 +9,136 @@ import { orderConfirmedTemplate } from "../../utils/emailTemplates/orderConfirma
 import { createPayment } from "../payment/payment.service";
 import { getNextOrderNumber } from "../../utils/trackingNumber";
 import { formatLabel } from "../../utils/formatLable";
+import { DeliveryMethod, DeliveryType } from "@prisma/client";
 
-const createOrder = async (userId: string, bannerId: string, payload: any) => {
-  let deliveryFee = 0;
-  let deliveryTime = "";
-  if (payload.deliveryType === "standard") {
-    deliveryFee = 5;
-    deliveryTime = "3-5 days";
-  } else if (payload.deliveryType === "express") {
-    deliveryFee = 15;
-    deliveryTime = "1-2 days";
+type FrontendDeliveryType =
+  | "standard-delivery"
+  | "express-delivery"
+  | "express-pickup"
+  | "standard-pickup";
+
+interface CreateOrderPayload {
+  deliveryType: FrontendDeliveryType;
+  deliveryMethod?: "delivery" | "pickup";
+  quantity: number;
+  bannerId?: string;
+  termsAccepted: boolean;
+  hasEyelets?: boolean;
+}
+
+const VAT_RATE = 0.21;
+const EYELETS_FEE = 3.5;
+
+const DELIVERY_OPTIONS: Record<
+  FrontendDeliveryType,
+  {
+    prismaDeliveryType: DeliveryType;
+    method: DeliveryMethod;
+    fee: number;
+    time: string;
+    label: string;
+  }
+> = {
+  "standard-delivery": {
+    prismaDeliveryType: DeliveryType.standard_delivery,
+    method: DeliveryMethod.delivery,
+    fee: 5,
+    time: "3-5 werkdagen",
+    label: "Standaard levering",
+  },
+
+  "express-delivery": {
+    prismaDeliveryType: DeliveryType.express_delivery,
+    method: DeliveryMethod.delivery,
+    fee: 15,
+    time: "1-2 werkdagen",
+    label: "Express levering",
+  },
+
+  "express-pickup": {
+    prismaDeliveryType: DeliveryType.express_pickup,
+    method: DeliveryMethod.pickup,
+    fee: 15,
+    time: "Vandaag afhalen bij bestelling vóór 12:00",
+    label: "Express afhalen",
+  },
+
+  "standard-pickup": {
+    prismaDeliveryType: DeliveryType.standard_pickup,
+    method: DeliveryMethod.pickup,
+    fee: 0,
+    time: "Klaar binnen 2-3 werkdagen",
+    label: "Standaard afhalen",
+  },
+};
+
+const roundToTwo = (value: number): number => {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+};
+
+const calculateOrderPrice = ({
+  bannerPrice,
+  quantity,
+  deliveryFee,
+  eyeletsFee,
+}: {
+  bannerPrice: number;
+  quantity: number;
+  deliveryFee: number;
+  eyeletsFee: number;
+}) => {
+  const subtotal = roundToTwo(bannerPrice * quantity);
+
+  const priceExcludingVat = roundToTwo(subtotal + deliveryFee + eyeletsFee);
+
+  const vatAmount = roundToTwo(priceExcludingVat * VAT_RATE);
+
+  const total = roundToTwo(priceExcludingVat + vatAmount);
+
+  return {
+    subtotal,
+    deliveryFee: roundToTwo(deliveryFee),
+    eyeletsFee: roundToTwo(eyeletsFee),
+    priceExcludingVat,
+    vatRate: VAT_RATE,
+    vatAmount,
+    total,
+  };
+};
+
+const createOrder = async (
+  userId: string,
+  bannerId: string,
+  payload: CreateOrderPayload,
+) => {
+  const { deliveryType, quantity, termsAccepted, hasEyelets = false } = payload;
+
+  if (!userId) {
+    throw new AppError("User id is required.", httpStatus.UNAUTHORIZED);
+  }
+
+  if (!bannerId) {
+    throw new AppError("Banner id is required.", httpStatus.BAD_REQUEST);
+  }
+
+  if (!termsAccepted) {
+    throw new AppError(
+      "You must accept the terms and conditions before placing an order.",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  if (!quantity || !Number.isInteger(quantity) || quantity < 1) {
+    throw new AppError("Quantity must be at least 1.", httpStatus.BAD_REQUEST);
+  }
+
+  const selectedDeliveryOption = DELIVERY_OPTIONS[deliveryType];
+
+  if (!selectedDeliveryOption) {
+    throw new AppError(
+      "Invalid delivery or pickup option.",
+      httpStatus.BAD_REQUEST,
+    );
   }
 
   const banner = await prisma.banner.findUnique({
@@ -30,42 +148,190 @@ const createOrder = async (userId: string, bannerId: string, payload: any) => {
   });
 
   if (!banner) {
-    throw new AppError("banner not found", httpStatus.NOT_FOUND);
+    throw new AppError("Banner not found.", httpStatus.NOT_FOUND);
   }
-  await prisma.banner.update({
-    where: {
-      id: bannerId,
-    },
-    data: {
-      userId,
-    },
+
+  const bannerPrice = Number(banner.price);
+
+  if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
+    throw new AppError("Invalid banner price.", httpStatus.BAD_REQUEST);
+  }
+
+  const eyeletsFee = hasEyelets ? EYELETS_FEE : 0;
+
+  const priceCalculation = calculateOrderPrice({
+    bannerPrice,
+    quantity,
+    deliveryFee: selectedDeliveryOption.fee,
+    eyeletsFee,
   });
-  const totalAmount = Number(banner.price * payload.quantity + deliveryFee);
 
   const trackingNumber = await getNextOrderNumber();
+  console.log({
+    quantity,
 
-  const order = await prisma.order.create({
-    data: {
-      ...payload,
-      deliveryFee,
-      deliveryTime,
-      total: totalAmount,
-      userId,
-      bannerId,
-      trackingNumber,
-    },
+    deliveryType: selectedDeliveryOption.prismaDeliveryType,
+    deliveryMethod: selectedDeliveryOption.method,
+    deliveryLabel: selectedDeliveryOption.label,
+    deliveryFee: priceCalculation.deliveryFee,
+    deliveryTime: selectedDeliveryOption.time,
+
+    hasEyelets,
+    eyeletsFee: priceCalculation.eyeletsFee,
+
+    termsAccepted,
+
+    subtotal: priceCalculation.subtotal,
+    priceExcludingVat: priceCalculation.priceExcludingVat,
+    vatRate: priceCalculation.vatRate,
+    vatAmount: priceCalculation.vatAmount,
+    total: priceCalculation.total,
+
+    userId,
+    bannerId,
+    trackingNumber,
+  });
+  const order = await prisma.$transaction(async (tx) => {
+    await tx.banner.update({
+      where: {
+        id: bannerId,
+      },
+      data: {
+        userId,
+      },
+    });
+
+    return tx.order.create({
+      data: {
+        quantity,
+
+        deliveryType: selectedDeliveryOption.prismaDeliveryType,
+        deliveryMethod: selectedDeliveryOption.method,
+        deliveryLabel: selectedDeliveryOption.label,
+        deliveryFee: priceCalculation.deliveryFee,
+        deliveryTime: selectedDeliveryOption.time,
+
+        hasEyelets,
+        eyeletsFee: priceCalculation.eyeletsFee,
+
+        termsAccepted,
+
+        subtotal: priceCalculation.subtotal,
+        priceExcludingVat: priceCalculation.priceExcludingVat,
+        vatRate: priceCalculation.vatRate,
+        vatAmount: priceCalculation.vatAmount,
+        total: priceCalculation.total,
+
+        userId,
+        bannerId,
+        trackingNumber,
+      },
+    });
   });
 
   return order;
 };
 
-const checkOut = async (orderId: string, userId: string, payload: any) => {
+interface CheckOutPayload {
+  name: string;
+  companyName?: string;
+  phone: string;
+  email: string;
+  street: string;
+  houseNumber: string;
+  address?: string;
+  zipCode: string;
+  city: string;
+  orderId?: string;
+}
+
+const sanitizeString = (value?: string) => {
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const validateCheckoutPayload = (payload: CheckOutPayload) => {
+  const name = sanitizeString(payload.name);
+  const companyName = sanitizeString(payload.companyName);
+  const phone = sanitizeString(payload.phone);
+  const email = sanitizeString(payload.email);
+  const street = sanitizeString(payload.street);
+  const houseNumber = sanitizeString(payload.houseNumber);
+  const address = sanitizeString(payload.address);
+  const zipCode = sanitizeString(payload.zipCode);
+  const city = sanitizeString(payload.city);
+
+  if (!name) {
+    throw new AppError("Name is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!phone) {
+    throw new AppError("Phone number is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!/^\+?[0-9\s-]{7,20}$/.test(phone)) {
+    throw new AppError("Invalid phone number", httpStatus.BAD_REQUEST);
+  }
+
+  if (!email) {
+    throw new AppError("Email is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    throw new AppError("Invalid email address", httpStatus.BAD_REQUEST);
+  }
+
+  if (!street) {
+    throw new AppError("Street is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!houseNumber) {
+    throw new AppError("House number is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!zipCode) {
+    throw new AppError("Zip code is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!city) {
+    throw new AppError("City is required", httpStatus.BAD_REQUEST);
+  }
+
+  return {
+    name,
+    companyName: companyName || null,
+    phone,
+    email,
+    street,
+    houseNumber,
+    address: address || null,
+    zipCode,
+    city,
+  };
+};
+
+const checkOut = async (
+  orderId: string,
+  userId: string,
+  payload: CheckOutPayload,
+) => {
+  if (!orderId) {
+    throw new AppError("Order id is required", httpStatus.BAD_REQUEST);
+  }
+
+  if (!userId) {
+    throw new AppError("User id is required", httpStatus.UNAUTHORIZED);
+  }
+
+  const validatedAddress = validateCheckoutPayload(payload);
+
   const order = await prisma.order.findUnique({
     where: {
       id: orderId,
     },
     include: {
       user: true,
+      payment: true,
+      addresses: true,
     },
   });
 
@@ -77,48 +343,90 @@ const checkOut = async (orderId: string, userId: string, payload: any) => {
     throw new AppError("You are not authorized", httpStatus.UNAUTHORIZED);
   }
 
-  const pay = await prisma.payment.findUnique({
-    where: {
-      orderId,
-    },
-  });
-
-  if (order?.status === "cancelled") {
-    throw new AppError("Order is canceled", httpStatus.BAD_REQUEST);
+  if (order.status === "cancelled") {
+    throw new AppError("Order is cancelled", httpStatus.BAD_REQUEST);
   }
-  if (pay?.status === "paid") {
+
+  if (order.payment?.status === "paid") {
     throw new AppError("Order already paid", httpStatus.BAD_REQUEST);
+  }
+
+  if (order.total <= 0) {
+    throw new AppError("Invalid order amount", httpStatus.BAD_REQUEST);
   }
 
   const banner = await prisma.banner.findUnique({
     where: {
-      id: order?.bannerId,
+      id: order.bannerId,
     },
   });
 
   if (!banner) {
-    throw new AppError("banner not found", httpStatus.NOT_FOUND);
+    throw new AppError("Banner not found", httpStatus.NOT_FOUND);
   }
 
-  if (order.userId !== userId) {
-    throw new AppError("You are not authorized", httpStatus.UNAUTHORIZED);
-  }
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.address.upsert({
+      where: {
+        orderId,
+      },
+      update: {
+        name: validatedAddress.name,
+        companyName: validatedAddress.companyName,
+        phone: validatedAddress.phone,
+        email: validatedAddress.email,
+        street: validatedAddress.street,
+        houseNumber: validatedAddress.houseNumber,
+        address: validatedAddress.address,
+        zipCode: validatedAddress.zipCode,
+        city: validatedAddress.city,
+        userId,
+      },
+      create: {
+        name: validatedAddress.name,
+        companyName: validatedAddress.companyName,
+        phone: validatedAddress.phone,
+        email: validatedAddress.email,
+        street: validatedAddress.street,
+        houseNumber: validatedAddress.houseNumber,
+        address: validatedAddress.address,
+        zipCode: validatedAddress.zipCode,
+        city: validatedAddress.city,
+        userId,
+        orderId,
+      },
+    });
 
-  await prisma.address.create({
-    data: {
-      ...payload,
+    const paymentSession = await createPayment(
+      {
+        orderId,
+        amount: order.total,
+        customerName: validatedAddress.name,
+        companyName: validatedAddress.companyName,
+        customerEmail: validatedAddress.email,
+      },
       userId,
-      orderId,
-    },
+      tx,
+    );
+
+    return paymentSession;
   });
 
-  const data = {
+  console.log({
+    name: validatedAddress.name,
+    companyName: validatedAddress.companyName,
+    phone: validatedAddress.phone,
+    email: validatedAddress.email,
+    street: validatedAddress.street,
+    houseNumber: validatedAddress.houseNumber,
+    address: validatedAddress.address,
+    zipCode: validatedAddress.zipCode,
+    city: validatedAddress.city,
+    userId,
     orderId,
-    amount: order.total,
-    customerName: order.user.name,
-  };
-  const session = await createPayment(data, userId);
-  return session.checkoutUrl;
+  });
+
+  return result.checkoutUrl;
 };
 
 const getMyOrders = async (
@@ -259,79 +567,11 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
   await orderCancelledTemplate(data as OrderCancelledData);
 };
 
-const orderConfirmationByAdmin = async (orderId: string) => {
-  const order = await prisma.order.findUnique({
-    where: {
-      id: orderId,
-    },
-    include: {
-      user: true,
-      banner: true,
-      addresses: true,
-    },
-  });
-
-  if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
-  }
-
-  if (order.status !== "pending") {
-    throw new AppError(
-      "Only pending orders can be confirmed",
-      httpStatus.BAD_REQUEST,
-    );
-  }
-
-  if (order.paymentStatus !== "paid") {
-    throw new AppError(
-      "Only paid orders can be confirmed",
-      httpStatus.BAD_REQUEST,
-    );
-  }
-
-  await prisma.order.update({
-    where: {
-      id: orderId,
-    },
-    data: {
-      status: "processing",
-    },
-  });
-
-  const data = {
-    userName: order?.user.name as string,
-    email: order?.user.email as string,
-    orderId,
-    orderDate: order?.createdAt.toLocaleString(),
-    estimatedDelivery: order?.deliveryTime,
-    items: [
-      {
-        name:  `${formatLabel(order?.banner.occasion) as string} Banner`,
-        quantity: order?.quantity as number,
-        price: order?.banner.price as number,
-        imageUrl: order?.banner.imageUrl as string,
-      },
-    ],
-    subtotal: order?.total - order?.deliveryFee,
-    shippingCost: order?.deliveryFee,
-    discount: 0,
-    total: order?.total,
-    shippingAddress: {
-      address: order?.addresses?.address as string,
-      zipCode: order?.addresses?.zipCode as string,
-      country: order?.addresses?.city as string,
-    },
-    paymentMethod: "Mollie",
-  };
-  await orderConfirmedTemplate(data);
-};
-
 export const orderService = {
   createOrder,
   checkOut,
   getMyOrders,
   getSingleOrder,
   cancledOrder,
-  orderConfirmationByAdmin,
   getMyDesigns,
 };

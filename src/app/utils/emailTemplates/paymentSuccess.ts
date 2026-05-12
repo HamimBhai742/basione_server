@@ -7,10 +7,23 @@ interface PaymentSuccessData {
   transactionId: string;
   orderId: string;
   date: string;
+  invoiceUrl?: string | null;
+  invoiceNumber?: string | null;
+  invoiceFilePath?: string | null;
 }
 
 export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
-  const { userName, email, amount, transactionId, orderId, date } = data;
+  const {
+    userName,
+    email,
+    amount,
+    transactionId,
+    orderId,
+    date,
+    invoiceUrl,
+    invoiceNumber,
+    invoiceFilePath,
+  } = data;
 
   const subject = "✅ Payment Confirmed — Your Order is On Its Way!";
 
@@ -30,13 +43,9 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
   font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 ">
-
-  <!-- Outer wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eef2f7; padding: 40px 16px;">
     <tr>
       <td align="center">
-
-        <!-- Card -->
         <table width="600" cellpadding="0" cellspacing="0" border="0" style="
           max-width: 600px;
           width: 100%;
@@ -45,15 +54,12 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
           overflow: hidden;
           box-shadow: 0 4px 24px rgba(0,0,0,0.08);
         ">
-
-          <!-- ===== HEADER BANNER ===== -->
           <tr>
             <td style="
               background: linear-gradient(135deg, #1a3faa 0%, #2d63e2 60%, #3b82f6 100%);
               padding: 40px 40px 32px;
               text-align: center;
             ">
-              <!-- Logo -->
               <img
                 src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
                 width="300"
@@ -61,7 +67,6 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 style="display:block; margin: 0 auto 24px; border-radius: 8px;"
               />
 
-              <!-- Success icon circle -->
               <div style="
                 display: inline-block;
                 background: rgba(255,255,255,0.15);
@@ -91,11 +96,8 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
             </td>
           </tr>
 
-          <!-- ===== BODY CONTENT ===== -->
           <tr>
             <td style="padding: 36px 40px 0;">
-
-              <!-- Greeting -->
               <p style="
                 margin: 0 0 8px;
                 font-size: 16px;
@@ -113,7 +115,6 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 Your payment was received and processed successfully. Below is a summary of your transaction for your records.
               </p>
 
-              <!-- ===== AMOUNT HIGHLIGHT ===== -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
                 border-radius: 12px;
@@ -123,12 +124,11 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 <tr>
                   <td style="padding: 22px; text-align: center;">
                     <p style="margin: 0 0 4px; font-size: 13px; color: #6b7a9f; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Paid</p>
-                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #1a3faa; letter-spacing: -1px;">€${amount.toFixed(2)}</p>
+                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #1a3faa; letter-spacing: -1px;">€${Number(amount || 0).toFixed(2)}</p>
                   </td>
                 </tr>
               </table>
 
-              <!-- ===== ORDER DETAILS TABLE ===== -->
               <p style="
                 margin: 0 0 12px;
                 font-size: 13px;
@@ -145,68 +145,34 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 border: 1px solid #e8ecf5;
                 margin-bottom: 32px;
               ">
-                <!-- Row 1 -->
                 <tr>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #f8f9fc;
-                    border-bottom: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #6b7a9f;
-                    font-weight: 600;
-                    width: 40%;
-                  ">🔖 Order ID</td>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #f8f9fc;
-                    border-bottom: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #1a1a2e;
-                    font-weight: 500;
-                    font-family: 'Courier New', monospace;
-                  ">${orderId}</td>
+                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600; width: 40%;">🔖 Order ID</td>
+                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${orderId}</td>
                 </tr>
-                <!-- Row 2 -->
+
                 <tr>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #ffffff;
-                    border-bottom: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #6b7a9f;
-                    font-weight: 600;
-                  ">💳 Transaction ID</td>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #ffffff;
-                    border-bottom: 1px solid #e8ecf5;
-                    font-size: 13px;
-                    color: #1a1a2e;
-                    font-weight: 500;
-                    font-family: 'Courier New', monospace;
-                  ">${transactionId}</td>
+                  <td style="padding: 14px 18px; background: #ffffff; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600;">💳 Transaction ID</td>
+                  <td style="padding: 14px 18px; background: #ffffff; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${transactionId}</td>
                 </tr>
-                <!-- Row 3 -->
+
+                ${
+                  invoiceNumber
+                    ? `
                 <tr>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #f8f9fc;
-                    font-size: 13px;
-                    color: #6b7a9f;
-                    font-weight: 600;
-                  ">📅 Date & Time</td>
-                  <td style="
-                    padding: 14px 18px;
-                    background: #f8f9fc;
-                    font-size: 13px;
-                    color: #1a1a2e;
-                    font-weight: 500;
-                  ">${date}</td>
+                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600;">🧾 Invoice Number</td>
+                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${invoiceNumber}</td>
+                </tr>
+                    `
+                    : ""
+                }
+
+                <tr>
+                  <td style="padding: 14px 18px; background: #ffffff; font-size: 13px; color: #6b7a9f; font-weight: 600;">📅 Date & Time</td>
+                  <td style="padding: 14px 18px; background: #ffffff; font-size: 13px; color: #1a1a2e; font-weight: 500;">${date}</td>
                 </tr>
               </table>
 
-              <!-- ===== STATUS BADGE ===== -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
                 <tr>
                   <td>
                     <table cellpadding="0" cellspacing="0" border="0">
@@ -225,7 +191,45 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 </tr>
               </table>
 
-              <!-- ===== CTA BUTTON ===== -->
+              ${
+                invoiceUrl
+                  ? `
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 10px;
+                margin-bottom: 32px;
+              ">
+                <tr>
+                  <td style="padding: 18px;">
+                    <p style="margin: 0 0 10px; font-size: 14px; color: #1e3a8a; line-height: 1.6;">
+                      🧾 <strong>Your invoice is ready.</strong><br/>
+                      You can download your PDF invoice using the button below.
+                    </p>
+
+                    <a
+                      href="${invoiceUrl}"
+                      target="_blank"
+                      style="
+                        display: inline-block;
+                        background: #2563eb;
+                        color: #ffffff;
+                        text-decoration: none;
+                        font-size: 14px;
+                        font-weight: 700;
+                        padding: 11px 18px;
+                        border-radius: 8px;
+                      "
+                    >
+                      Download Invoice
+                    </a>
+                  </td>
+                </tr>
+              </table>
+                  `
+                  : ""
+              }
+
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
                 <tr>
                   <td align="center">
@@ -250,10 +254,8 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 </tr>
               </table>
 
-              <!-- ===== DIVIDER ===== -->
               <hr style="border: none; border-top: 1px solid #e8ecf5; margin: 0 0 24px;" />
 
-              <!-- ===== SUPPORT NOTE ===== -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #fffbeb;
                 border: 1px solid #fde68a;
@@ -266,16 +268,14 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                       💬 <strong>Need help?</strong> If you have any questions about your order or payment,
                       our support team is here for you.
                       Reply to this email or visit our
-                      <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">Help Center</a>.
+                      <a href="https://your-frontend-url.com/customer-service" style="color: #1a3faa; font-weight: 600;">Customer Service</a>.
                     </p>
                   </td>
                 </tr>
               </table>
-
             </td>
           </tr>
 
-          <!-- ===== FOOTER ===== -->
           <tr>
             <td style="
               background: #f8f9fc;
@@ -300,17 +300,27 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
               </p>
             </td>
           </tr>
-
         </table>
-        <!-- End card -->
-
       </td>
     </tr>
   </table>
-
 </body>
 </html>
   `;
 
-  await sendEmail(email, subject, html);
+  await sendEmail(
+    email,
+    subject,
+    html,
+    undefined,
+    invoiceFilePath
+      ? [
+          {
+            filename: `${invoiceNumber || "invoice"}.pdf`,
+            path: invoiceFilePath,
+            contentType: "application/pdf",
+          },
+        ]
+      : [],
+  );
 };

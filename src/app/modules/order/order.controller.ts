@@ -90,16 +90,7 @@ const cancledOrder = async (req: Request, res: Response) => {
   });
 };
 
-const orderConfirmationByAdmin = async (req: Request, res: Response) => {
-  await orderService.orderConfirmationByAdmin(req.params.id as string);
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Order confirmed successfully",
-    data: null,
-  });
-};
 
 export const orderController = {
   createOrder,
@@ -107,6 +98,5 @@ export const orderController = {
   getMyOrders,
   getSingleOrder,
   cancledOrder,
-  orderConfirmationByAdmin,
   getMyDesigns
 };
