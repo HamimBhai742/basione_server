@@ -94,7 +94,6 @@ export const createPayment = async (
 };
 
 const mollieWebhook = async (payId: string) => {
-  console.log("dfgdfxgxgf");
   if (!payId) {
     throw new AppError("Payment ID not found", httpStatus.BAD_REQUEST);
   }
@@ -126,13 +125,6 @@ const paymentPaid = async (
   userId: string,
   molliePayment: any,
 ) => {
-  console.log("paymentPaid function called:", {
-    orderId,
-    paymentId,
-    userId,
-    molliePaymentId: molliePayment?.id,
-    mollieStatus: molliePayment?.status,
-  });
 
   const cleanPayment = JSON.parse(JSON.stringify(molliePayment));
 

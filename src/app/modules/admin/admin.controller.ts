@@ -22,7 +22,7 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
     skip,
     filter,
     sortBy,
-    sortOrder as "asc" | "desc",
+     "asc" ,
     req.query.searchTerm as string,
   );
 

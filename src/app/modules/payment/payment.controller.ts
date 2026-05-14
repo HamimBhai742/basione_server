@@ -21,17 +21,13 @@ const createPayment = catchAsync(
 );
 
 const mollieWebhook = catchAsync(async (req: Request, res: Response) => {
-  console.log("Mollie webhook body:", req.body);
-
   const payId = req.body.id;
 
   if (!payId) {
-    console.log("Mollie payment id missing");
     return res.status(400).send("Missing payment id");
   }
 
   const result = await paymentService.mollieWebhook(payId);
-  console.log(result);
   return res.status(200).send("OK");
 });
 

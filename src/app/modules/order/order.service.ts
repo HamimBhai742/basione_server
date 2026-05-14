@@ -111,8 +111,7 @@ const createOrder = async (
   bannerId: string,
   payload: CreateOrderPayload,
 ) => {
-  const { deliveryType, quantity, termsAccepted, hasEyelets = false } = payload;
-
+  const { deliveryType, quantity, hasEyelets = false } = payload;
   if (!userId) {
     throw new AppError("User id is required.", httpStatus.UNAUTHORIZED);
   }
@@ -121,12 +120,6 @@ const createOrder = async (
     throw new AppError("Banner id is required.", httpStatus.BAD_REQUEST);
   }
 
-  if (!termsAccepted) {
-    throw new AppError(
-      "You must accept the terms and conditions before placing an order.",
-      httpStatus.BAD_REQUEST,
-    );
-  }
 
   if (!quantity || !Number.isInteger(quantity) || quantity < 1) {
     throw new AppError("Quantity must be at least 1.", httpStatus.BAD_REQUEST);
@@ -167,30 +160,7 @@ const createOrder = async (
   });
 
   const trackingNumber = await getNextOrderNumber();
-  console.log({
-    quantity,
 
-    deliveryType: selectedDeliveryOption.prismaDeliveryType,
-    deliveryMethod: selectedDeliveryOption.method,
-    deliveryLabel: selectedDeliveryOption.label,
-    deliveryFee: priceCalculation.deliveryFee,
-    deliveryTime: selectedDeliveryOption.time,
-
-    hasEyelets,
-    eyeletsFee: priceCalculation.eyeletsFee,
-
-    termsAccepted,
-
-    subtotal: priceCalculation.subtotal,
-    priceExcludingVat: priceCalculation.priceExcludingVat,
-    vatRate: priceCalculation.vatRate,
-    vatAmount: priceCalculation.vatAmount,
-    total: priceCalculation.total,
-
-    userId,
-    bannerId,
-    trackingNumber,
-  });
   const order = await prisma.$transaction(async (tx) => {
     await tx.banner.update({
       where: {
@@ -214,7 +184,6 @@ const createOrder = async (
         hasEyelets,
         eyeletsFee: priceCalculation.eyeletsFee,
 
-        termsAccepted,
 
         subtotal: priceCalculation.subtotal,
         priceExcludingVat: priceCalculation.priceExcludingVat,
@@ -410,20 +379,6 @@ const checkOut = async (
     );
 
     return paymentSession;
-  });
-
-  console.log({
-    name: validatedAddress.name,
-    companyName: validatedAddress.companyName,
-    phone: validatedAddress.phone,
-    email: validatedAddress.email,
-    street: validatedAddress.street,
-    houseNumber: validatedAddress.houseNumber,
-    address: validatedAddress.address,
-    zipCode: validatedAddress.zipCode,
-    city: validatedAddress.city,
-    userId,
-    orderId,
   });
 
   return result.checkoutUrl;

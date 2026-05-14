@@ -115,8 +115,6 @@ model Order {
   hasEyelets Boolean @default(false)
   eyeletsFee Float   @default(0)
 
-  termsAccepted Boolean @default(false)
-
   subtotal          Float @default(0)
   priceExcludingVat Float @default(0)
   vatRate           Float @default(0.21)
