@@ -11,25 +11,13 @@ const app: Application = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads"))
-);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(cookieParser());
 
 const allowedOrigins = [
-  "http://localhost:3001",
   "http://localhost:3000",
-  "http://187.127.83.15:3000",
-  "https://basione-client-8yhdgumhx-tahsins-projects-38f8b810.vercel.app",
-  "https://basione-client-sage.vercel.app",
-  "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
-  "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
-  "https://basione-client-zvf8yv2t9-tahsins-projects-38f8b810.vercel.app",
-  "https://basione-client.vercel.app",
-  "http://10.0.70.135:3000",
   "https://spandoekprint.nl",
-  "https://www.spandoekprint.nl"
+  "https://www.spandoekprint.nl",
 ];
 
 app.use(
@@ -41,6 +29,7 @@ app.use(
         allowedOrigins.includes(origin) ||
         origin.endsWith(".vercel.app") ||
         origin.includes("ngrok");
+      origin.includes(".nl");
 
       if (isAllowed) {
         callback(null, true);
