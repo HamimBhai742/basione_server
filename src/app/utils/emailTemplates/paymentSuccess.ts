@@ -398,7 +398,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 <tr>
                   <td align="center">
                     <a
-                      href="https://your-frontend-url.com/dashboard"
+                      href="https://spandoekprint.nl/profile/${data.orderId}"
                       class="dashboard-button"
                       style="
                         display: inline-block;
@@ -436,7 +436,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                       💬 <strong>Need help?</strong> If you have any questions about your order or payment,
                       our support team is here for you.
                       Reply to this email or visit our
-                      <a href="https://your-frontend-url.com/customer-service" style="
+                      <a href="https://spandoekprint.nl" style="
                         color: #1d4ed8;
                         font-weight: 700;
                         text-decoration: none;
