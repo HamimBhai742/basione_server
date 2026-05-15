@@ -1,41 +1,76 @@
 import nodemailer from "nodemailer";
-import config from "../../../config";
 
-type EmailAttachment = {
+type Attachment = {
   filename: string;
-  path?: string;
-  content?: Buffer | string;
+  path: string;
   contentType?: string;
 };
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: Number(process.env.SMTP_PORT) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
 
 const sendEmail = async (
   to: string,
   subject: string,
   html: string,
   text?: string,
-  attachments?: EmailAttachment[],
+  attachments: Attachment[] = [],
 ) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: config.smt.email,
-      pass: config.smt.pass,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
+  if (!to) {
+    throw new Error("Email recipient is missing");
+  }
 
-  const mailOptions = {
-    from: `Spandoek Print <${config.smt.email}>`,
-    to,
-    subject,
-    html,
-    text,
-    attachments: attachments || [],
-  };
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("SMTP configuration is missing");
+  }
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.verify();
+
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || `"Spandoek Print" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+      text,
+      attachments,
+    });
+
+    console.log("Email sent successfully:", {
+      to,
+      subject,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    });
+
+    return info;
+  } catch (error: any) {
+    console.error("sendEmail failed:", {
+      to,
+      subject,
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+      stack: error.stack,
+    });
+
+    throw error;
+  }
 };
 
 export default sendEmail;

@@ -76,33 +76,65 @@ const roundToTwo = (value: number): number => {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 };
 
+const getPriceExcludingVatFromIncludedVat = (priceIncludingVat: number) => {
+  return roundToTwo(priceIncludingVat / (1 + VAT_RATE));
+};
+
+const getVatAmountFromIncludedVat = (priceIncludingVat: number) => {
+  const priceExcludingVat = getPriceExcludingVatFromIncludedVat(priceIncludingVat);
+  return roundToTwo(priceIncludingVat - priceExcludingVat);
+};
+
 const calculateOrderPrice = ({
   bannerPrice,
   quantity,
   deliveryFee,
   eyeletsFee,
 }: {
-  bannerPrice: number;
+  bannerPrice: number; // banner price is already including VAT
   quantity: number;
   deliveryFee: number;
   eyeletsFee: number;
 }) => {
-  const subtotal = roundToTwo(bannerPrice * quantity);
+  // Banner total price is already INCLUDING VAT
+  const bannerSubtotalIncludingVat = roundToTwo(bannerPrice * quantity);
 
-  const priceExcludingVat = roundToTwo(subtotal + deliveryFee + eyeletsFee);
+  // VAT breakdown only for banner/spandoek price
+  const bannerPriceExcludingVat = getPriceExcludingVatFromIncludedVat(
+    bannerSubtotalIncludingVat,
+  );
 
-  const vatAmount = roundToTwo(priceExcludingVat * VAT_RATE);
+  const vatAmount = getVatAmountFromIncludedVat(bannerSubtotalIncludingVat);
 
-  const total = roundToTwo(priceExcludingVat + vatAmount);
+  // Delivery and eyelets are added separately, no VAT calculation on them
+  const deliveryFeeRounded = roundToTwo(deliveryFee);
+  const eyeletsFeeRounded = roundToTwo(eyeletsFee);
+
+  const total = roundToTwo(
+    bannerSubtotalIncludingVat + deliveryFeeRounded + eyeletsFeeRounded,
+  );
 
   return {
-    subtotal,
-    deliveryFee: roundToTwo(deliveryFee),
-    eyeletsFee: roundToTwo(eyeletsFee),
-    priceExcludingVat,
+    // Keep subtotal as banner price including VAT
+    subtotal: bannerSubtotalIncludingVat,
+
+    deliveryFee: deliveryFeeRounded,
+    eyeletsFee: eyeletsFeeRounded,
+
+    // This is only banner/spandoek excluding VAT
+    priceExcludingVat: bannerPriceExcludingVat,
+
     vatRate: VAT_RATE,
+
+    // VAT amount only from banner/spandoek
     vatAmount,
+
+    // Final payable amount
     total,
+
+    // Optional clear fields if schema supports later
+    bannerPriceIncludingVat: bannerSubtotalIncludingVat,
+    bannerPriceExcludingVat,
   };
 };
 
@@ -112,6 +144,7 @@ const createOrder = async (
   payload: CreateOrderPayload,
 ) => {
   const { deliveryType, quantity, hasEyelets = false } = payload;
+
   if (!userId) {
     throw new AppError("User id is required.", httpStatus.UNAUTHORIZED);
   }
@@ -119,7 +152,6 @@ const createOrder = async (
   if (!bannerId) {
     throw new AppError("Banner id is required.", httpStatus.BAD_REQUEST);
   }
-
 
   if (!quantity || !Number.isInteger(quantity) || quantity < 1) {
     throw new AppError("Quantity must be at least 1.", httpStatus.BAD_REQUEST);
@@ -144,6 +176,7 @@ const createOrder = async (
     throw new AppError("Banner not found.", httpStatus.NOT_FOUND);
   }
 
+  // banner.price is already INCLUDING VAT
   const bannerPrice = Number(banner.price);
 
   if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
@@ -184,11 +217,15 @@ const createOrder = async (
         hasEyelets,
         eyeletsFee: priceCalculation.eyeletsFee,
 
-
+        // Banner price including VAT
         subtotal: priceCalculation.subtotal,
+
+        // VAT breakdown only for banner/spandoek price
         priceExcludingVat: priceCalculation.priceExcludingVat,
         vatRate: priceCalculation.vatRate,
         vatAmount: priceCalculation.vatAmount,
+
+        // Final total = banner incl. VAT + delivery + eyelets
         total: priceCalculation.total,
 
         userId,

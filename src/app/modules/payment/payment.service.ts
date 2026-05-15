@@ -73,7 +73,7 @@ export const createPayment = async (
 
     redirectUrl: `http://localhost:3000/payment/success?paymentId=${payment.id}&orderId=${orderId}`,
 
-    webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
+    webhookUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/api/v1/payment/mollie/webhook`,
 
     cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
 
@@ -101,6 +101,15 @@ const mollieWebhook = async (payId: string) => {
   const payment = await mollieClient.payments.get(payId);
   const { orderId, paymentId, userId } = payment.metadata as any;
 
+  const localPayment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+  });
+
+  if (localPayment && localPayment.status === payment.status) {
+    console.log(`Payment ${paymentId} already processed with status ${payment.status}, ignoring webhook duplicate.`);
+    return { message: "Already processed" };
+  }
+
   if (payment.status === "paid") {
     await paymentPaid(orderId, paymentId, userId, payment);
   } else if (payment.status === "failed") {
@@ -125,7 +134,7 @@ const paymentPaid = async (
   userId: string,
   molliePayment: any,
 ) => {
-
+console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   const cleanPayment = JSON.parse(JSON.stringify(molliePayment));
 
   /**

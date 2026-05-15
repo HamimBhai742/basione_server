@@ -19,6 +19,46 @@ type AuthRequest = Request & {
   file?: Express.Multer.File;
 };
 
+const VAT_RATE = 0.21;
+
+// Client confirmed: these prices are INCLUDING VAT
+const MIN_PRICE_INCL_VAT = 12;
+const PRICE_PER_M2_UNDER_1_INCL_VAT = 25;
+const PRICE_PER_M2_FROM_1_INCL_VAT = 20;
+
+const calculateAreaM2 = (widthCm: number, heightCm: number) => {
+  return (widthCm / 100) * (heightCm / 100);
+};
+
+const getPricePerM2InclVat = (areaM2: number) => {
+  return areaM2 < 1
+    ? PRICE_PER_M2_UNDER_1_INCL_VAT
+    : PRICE_PER_M2_FROM_1_INCL_VAT;
+};
+
+const calculatePriceInclVat = (widthCm: number, heightCm: number) => {
+  const areaM2 = calculateAreaM2(widthCm, heightCm);
+  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
+  const calculatedPrice = areaM2 * pricePerM2InclVat;
+
+  return Math.max(calculatedPrice, MIN_PRICE_INCL_VAT);
+};
+
+const calculatePriceExclVat = (priceInclVat: number) => {
+  return priceInclVat / (1 + VAT_RATE);
+};
+
+const calculateVatAmount = (priceInclVat: number) => {
+  return priceInclVat - calculatePriceExclVat(priceInclVat);
+};
+
+const formatLabel = (text: string) => {
+  return text
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 const createBanner = async (req: AuthRequest) => {
   const parsedData = req.body;
 
@@ -235,11 +275,12 @@ const createBanner = async (req: AuthRequest) => {
     });
   });
 };
-
 const createBannerByTemplate = async (req: AuthRequest) => {
   const parsedData = JSON.parse(req?.body?.data);
+
   let occ = "";
   let headline = "";
+
   if (parsedData.size === "party-banner") {
     occ = "party";
     headline = "Welcome to the party";
@@ -248,52 +289,68 @@ const createBannerByTemplate = async (req: AuthRequest) => {
     headline = "We are getting married";
   } else if (parsedData.size === "birthday-backdrop") {
     occ = "birthday";
-    headline = `Happy birthday`;
+    headline = "Happy birthday";
   } else {
     occ = "custom";
     headline = "Custom Banner";
   }
 
-  let price = 0;
   const height = Number(parsedData.height);
   const width = Number(parsedData.width);
-  if (height <= 40 && width <= 80) {
-    price = 30;
-  } else if (height <= 120 && width <= 160) {
-    price = 50;
-  } else if (height <= 150 && width <= 200) {
-    price = 80;
-  } else if (height <= 200 && width <= 240) {
-    price = 100;
-  } else {
-    price = 60;
+
+  if (
+    Number.isNaN(width) ||
+    Number.isNaN(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    throw new Error("Invalid banner width or height");
   }
-  const formatLabel = (text: string) => {
-    return text
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+
+  const areaM2 = calculateAreaM2(width, height);
+  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
+
+  // Final price is already INCLUDING VAT
+  const priceInclVat = calculatePriceInclVat(width, height);
+  const priceExclVat = calculatePriceExclVat(priceInclVat);
+  const vatAmount = calculateVatAmount(priceInclVat);
+
   let imgUrl = "";
+
   if (req?.file) {
     const img = await uploadImageToS3(req.file);
     imgUrl = img;
   }
+
   const sizeLabel = formatLabel(parsedData.size);
+
   const banner = await prisma.banner.create({
     data: {
       headline,
       occasion: occ,
       imageUrl: imgUrl,
-      price,
+
+      // Main price field should store VAT-included final price
+      price: Number(priceInclVat.toFixed(2)),
+
       width,
       height,
       sizeType: parsedData.size,
       sizeLabel,
       style: "Template",
       variant: 0,
+
+      // Uncomment these only if these fields exist in your Prisma schema
+      // areaM2: Number(areaM2.toFixed(2)),
+      // pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
+      // priceInclVat: Number(priceInclVat.toFixed(2)),
+      // priceExclVat: Number(priceExclVat.toFixed(2)),
+      // vatAmount: Number(vatAmount.toFixed(2)),
+      // vatRate: VAT_RATE,
+      // isVatIncluded: true,
     },
   });
+
   return banner;
 };
 
@@ -317,13 +374,6 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         : req.body.data;
   }
 
-  const formatLabel = (text: string) => {
-    return text
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
   let occasion = banner.occasion;
   let headline = banner.headline;
 
@@ -335,35 +385,55 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     headline = "We are getting married";
   } else if (parsedData?.size === "birthday-backdrop") {
     occasion = "birthday";
-    headline = `Happy birthday ${banner.name}`;
+    headline = `Happy birthday ${banner.name || ""}`.trim();
   }
 
-  const width = Number(parsedData?.width);
-  const height = Number(parsedData?.height);
+  const width = parsedData?.width
+    ? Number(parsedData.width)
+    : Number(banner.width);
+  const height = parsedData?.height
+    ? Number(parsedData.height)
+    : Number(banner.height);
 
   let price = banner.price;
 
+  let areaM2 = 0;
+  let pricePerM2InclVat = 0;
+  let priceInclVat = Number(banner.price);
+  let priceExclVat = 0;
+  let vatAmount = 0;
+
   if (parsedData?.width && parsedData?.height) {
-    if (height <= 40 && width <= 80) {
-      price = 30;
-    } else if (height <= 120 && width <= 160) {
-      price = 50;
-    } else if (height <= 150 && width <= 200) {
-      price = 80;
-    } else if (height <= 200 && width <= 240) {
-      price = 100;
-    } else {
-      price = 60;
+    if (
+      Number.isNaN(width) ||
+      Number.isNaN(height) ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      throw new Error("Invalid banner width or height");
     }
+
+    areaM2 = calculateAreaM2(width, height);
+    pricePerM2InclVat = getPricePerM2InclVat(areaM2);
+
+    // Final price is already INCLUDING VAT
+    priceInclVat = calculatePriceInclVat(width, height);
+    priceExclVat = calculatePriceExclVat(priceInclVat);
+    vatAmount = calculateVatAmount(priceInclVat);
+
+    price = Number(priceInclVat.toFixed(2));
   }
 
   let imageUrl = banner?.imageUrl;
   const oldImg = banner?.imageUrl;
+
   if (req?.file) {
     const img = await uploadImageToS3(req.file);
     imageUrl = img;
-    if (oldImg && req?.file) {
+
+    if (oldImg) {
       const oldKey = getS3KeyFromUrl(oldImg);
+
       if (oldKey) {
         await deleteImageFromS3(oldKey);
       }
@@ -391,6 +461,17 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   if (parsedData?.height) {
     updateData.height = height;
   }
+
+  // Uncomment only if these fields exist in your Prisma schema
+  // if (parsedData?.width && parsedData?.height) {
+  //   updateData.areaM2 = Number(areaM2.toFixed(2));
+  //   updateData.pricePerM2 = Number(pricePerM2InclVat.toFixed(2));
+  //   updateData.priceInclVat = Number(priceInclVat.toFixed(2));
+  //   updateData.priceExclVat = Number(priceExclVat.toFixed(2));
+  //   updateData.vatAmount = Number(vatAmount.toFixed(2));
+  //   updateData.vatRate = VAT_RATE;
+  //   updateData.isVatIncluded = true;
+  // }
 
   const updatedBanner = await prisma.banner.update({
     where: {

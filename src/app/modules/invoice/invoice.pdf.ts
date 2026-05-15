@@ -1,6 +1,9 @@
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
+import fetch from "node-fetch";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type InvoicePdfPayload = {
   invoiceNumber: string;
@@ -40,39 +43,227 @@ type InvoicePdfPayload = {
   };
 };
 
-const formatCurrency = (amount: number) => {
-  return `€${Number(amount || 0).toFixed(2)}`;
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const LOGO_URL =
+  "https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png";
+
+const COLOR = {
+  brand: "#17365D",
+  brandDark: "#102745",
+  accent: "#2563EB",
+  accentLight: "#DBEAFE",
+  light: "#F5F7FB",
+  lightBlue: "#EFF6FF",
+  grey: "#6B7280",
+  muted: "#94A3B8",
+  dark: "#111827",
+  body: "#374151",
+  divider: "#D7DEE9",
+  white: "#FFFFFF",
+  green: "#16A34A",
+} as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatCurrency = (amount: number): string =>
+  `€${Number(amount || 0).toFixed(2)}`;
+
+const formatVatRate = (rate: number): string => {
+  if (!rate) return "21";
+  return rate <= 1 ? String(Math.round(rate * 100)) : String(rate);
 };
 
-const addRow = (
+async function fetchImageBuffer(url?: string | null): Promise<Buffer | null> {
+  if (!url) return null;
+
+  try {
+    if (url.includes("/uploads/")) {
+      const uploadsIndex = url.indexOf("/uploads/");
+      const relativePath = url.substring(uploadsIndex);
+      const cleanPath = relativePath.split("?")[0];
+      const localPath = path.join(process.cwd(), cleanPath);
+
+      if (fs.existsSync(localPath)) {
+        return fs.readFileSync(localPath);
+      }
+    }
+
+    let fetchUrl = url;
+
+    if (!fetchUrl.startsWith("http")) {
+      const baseUrl =
+        process.env.BACKEND_BASE_URL || "https://api.spandoekprint.nl";
+      fetchUrl = fetchUrl.startsWith("/")
+        ? `${baseUrl}${fetchUrl}`
+        : `${baseUrl}/${fetchUrl}`;
+    }
+
+    const res = await fetch(fetchUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        Accept: "image/png,image/jpeg,image/jpg,image/webp,*/*",
+      },
+    });
+
+    if (!res.ok) {
+      console.log("Image fetch failed:", res.status, fetchUrl);
+      return null;
+    }
+
+    const contentType = res.headers.get("content-type");
+
+    if (!contentType || !contentType.startsWith("image/")) {
+      console.log("Invalid image content type:", contentType, fetchUrl);
+      return null;
+    }
+
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch (error) {
+    console.log("Image fetch error:", error);
+    return null;
+  }
+}
+
+function hRule(
+  doc: PDFKit.PDFDocument,
+  y: number,
+  color: string = COLOR.divider,
+  x1 = 40,
+  x2 = 555,
+) {
+  doc.moveTo(x1, y).lineTo(x2, y).strokeColor(color).lineWidth(0.7).stroke();
+}
+
+function sectionTitle(doc: PDFKit.PDFDocument, title: string, y: number) {
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(11.5)
+    .fillColor(COLOR.brand)
+    .text(title, 40, y);
+
+  hRule(doc, y + 16, COLOR.accent);
+}
+
+function drawLabelValueCard(params: {
+  doc: PDFKit.PDFDocument;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  title: string;
+  lines: string[];
+}) {
+  const { doc, x, y, w, h, title, lines } = params;
+
+  doc.roundedRect(x, y, w, h, 8).fill(COLOR.light);
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(7.5)
+    .fillColor(COLOR.accent)
+    .text(title.toUpperCase(), x + 16, y + 14);
+
+  let currentY = y + 34;
+
+  if (lines.length > 0) {
+    lines.forEach((line, index) => {
+      doc
+        .font(index === 0 ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(9.3)
+        .fillColor(index === 0 ? COLOR.dark : COLOR.body)
+        .text(line, x + 16, currentY, {
+          width: w - 32,
+          ellipsis: true,
+        });
+
+      currentY += 14;
+    });
+  } else {
+    doc
+      .font("Helvetica")
+      .fontSize(9.3)
+      .fillColor(COLOR.body)
+      .text("-", x + 16, currentY);
+  }
+}
+
+function pricingRow(
   doc: PDFKit.PDFDocument,
   label: string,
   value: string,
   y: number,
-  bold = false,
-) => {
+) {
   doc
-    .font(bold ? "Helvetica-Bold" : "Helvetica")
-    .fontSize(10)
-    .fillColor("#111827")
-    .text(label, 50, y);
+    .font("Helvetica")
+    .fontSize(9.5)
+    .fillColor(COLOR.body)
+    .text(label, 48, y);
 
   doc
-    .font(bold ? "Helvetica-Bold" : "Helvetica")
-    .text(value, 400, y, {
+    .font("Helvetica-Bold")
+    .fontSize(9.5)
+    .fillColor(COLOR.dark)
+    .text(value, 390, y, {
       align: "right",
-      width: 140,
+      width: 155,
     });
-};
+}
+
+function drawImageFallback(
+  doc: PDFKit.PDFDocument,
+  y: number,
+  url?: string | null,
+) {
+  doc
+    .roundedRect(40, y, 515, 58, 8)
+    .strokeColor(COLOR.divider)
+    .lineWidth(1)
+    .stroke();
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(8.5)
+    .fillColor(COLOR.grey)
+    .text("Afbeelding kon niet worden geladen", 55, y + 14);
+
+  doc
+    .font("Helvetica")
+    .fontSize(7.5)
+    .fillColor(COLOR.accent)
+    .text(url ?? "Geen afbeelding beschikbaar", 55, y + 31, {
+      width: 480,
+      ellipsis: true,
+    });
+}
+
+function drawSafeText(
+  doc: PDFKit.PDFDocument,
+  text: string | null | undefined,
+  x: number,
+  y: number,
+  options?: PDFKit.Mixins.TextOptions,
+) {
+  doc.text(text || "-", x, y, options);
+}
+
+// ─── Main PDF Generator ───────────────────────────────────────────────────────
 
 export const generateInvoicePdf = async (
   payload: InvoicePdfPayload,
 ): Promise<Buffer> => {
+  const [logoBuffer, bannerBuffer] = await Promise.all([
+    fetchImageBuffer(LOGO_URL),
+    fetchImageBuffer(payload.banner.imageUrl),
+  ]);
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: "A4",
-        margin: 50,
+        margin: 0,
+        bufferPages: true,
       });
 
       const chunks: Buffer[] = [];
@@ -81,219 +272,317 @@ export const generateInvoicePdf = async (
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
-      // Header
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(24)
-        .fillColor("#111827")
-        .text("Factuur", 50, 50);
+      const PAGE_W = 595;
+      const PAGE_H = 842;
 
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#6B7280")
-        .text(`Factuurnummer: ${payload.invoiceNumber}`, 50, 85)
-        .text(`Order ID: ${payload.orderId}`, 50, 100)
-        .text(`Datum: ${payload.orderDate}`, 50, 115);
+      // ── Page Background ────────────────────────────────────────────────────
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(14)
-        .fillColor("#111827")
-        .text("Spandoek Print", 380, 50, {
-          align: "right",
-          width: 160,
-        });
+      doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLOR.white);
 
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#6B7280")
-        .text("Nederland", 380, 72, {
-          align: "right",
-          width: 160,
-        });
+      // ── Header ─────────────────────────────────────────────────────────────
 
-      doc.moveTo(50, 145).lineTo(545, 145).strokeColor("#E5E7EB").stroke();
+      doc.rect(0, 0, PAGE_W, 104).fill(COLOR.brand);
 
-      // Customer info
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Klantgegevens", 50, 170);
+      doc.rect(0, 0, PAGE_W, 104).fillOpacity(0.12).fill(COLOR.accent);
+      doc.fillOpacity(1);
 
-      let customerY = 195;
+      // Logo white box
+      doc.roundedRect(40, 24, 160, 50, 6).fill(COLOR.white);
 
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#374151")
-        .text(`Naam: ${payload.customer.name}`, 50, customerY);
+      if (logoBuffer) {
+        try {
+          doc.image(logoBuffer, 58, 34, {
+            fit: [124, 30],
+            align: "center",
+            valign: "center",
+          });
+        } catch (error) {
+          console.log("Logo render failed:", error);
 
-      customerY += 16;
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(15)
+            .fillColor(COLOR.brand)
+            .text("Spandoek", 60, 34);
 
-      if (payload.customer.companyName) {
-        doc.text(`Bedrijfsnaam: ${payload.customer.companyName}`, 50, customerY);
-        customerY += 16;
-      }
-
-      doc.text(`E-mail: ${payload.customer.email}`, 50, customerY);
-      customerY += 16;
-
-      if (payload.customer.phone) {
-        doc.text(`Telefoon: ${payload.customer.phone}`, 50, customerY);
-        customerY += 16;
-      }
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Adres", 320, 170);
-
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#374151")
-        .text(
-          `${payload.shippingAddress.street || ""} ${
-            payload.shippingAddress.houseNumber || ""
-          }`,
-          320,
-          195,
-        )
-        .text(payload.shippingAddress.address || "", 320, 211)
-        .text(
-          `${payload.shippingAddress.zipCode || ""} ${
-            payload.shippingAddress.city || ""
-          }`,
-          320,
-          227,
-        );
-
-      doc.moveTo(50, 270).lineTo(545, 270).strokeColor("#E5E7EB").stroke();
-
-      // Product
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Bestelling", 50, 295);
-
-      const tableTop = 325;
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(10)
-        .fillColor("#111827")
-        .text("Product", 50, tableTop)
-        .text("Aantal", 300, tableTop)
-        .text("Prijs", 400, tableTop, {
-          align: "right",
-          width: 140,
-        });
-
-      doc.moveTo(50, tableTop + 18).lineTo(545, tableTop + 18).strokeColor("#E5E7EB").stroke();
-
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#374151")
-        .text(payload.banner.name, 50, tableTop + 35)
-        .text(String(payload.banner.quantity), 300, tableTop + 35)
-        .text(formatCurrency(payload.banner.unitPrice), 400, tableTop + 35, {
-          align: "right",
-          width: 140,
-        });
-
-      // Design preview image
-      const previewTop = tableTop + 80;
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Ontwerpvoorbeeld", 50, previewTop);
-
-      doc
-        .font("Helvetica")
-        .fontSize(9)
-        .fillColor("#6B7280")
-        .text(
-          "Het voorbeeld van het ontwerp/de bestelling wordt hieronder weergegeven.",
-          50,
-          previewTop + 20,
-        );
-
-      // Note: pdfkit cannot directly load remote image URL without fetching it.
-      // For remote images, download the image first as Buffer, then doc.image(buffer).
-      // Here we show image URL as fallback.
-      if (payload.banner.imageUrl) {
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(10)
+            .fillColor(COLOR.accent)
+            .text("print", 142, 51);
+        }
+      } else {
         doc
-          .roundedRect(50, previewTop + 45, 220, 90, 8)
-          .strokeColor("#D1D5DB")
-          .stroke();
+          .font("Helvetica-Bold")
+          .fontSize(15)
+          .fillColor(COLOR.brand)
+          .text("Spandoek", 60, 34);
 
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(10)
+          .fillColor(COLOR.accent)
+          .text("print", 142, 51);
+      }
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(29)
+        .fillColor(COLOR.white)
+        .text("FACTUUR", 310, 24, {
+          align: "right",
+          width: 245,
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
+        .text(`Nr: ${payload.invoiceNumber}`, 310, 60, {
+          align: "right",
+          width: 245,
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
+        .text(`Order: ${payload.orderId}`, 310, 73, {
+          align: "right",
+          width: 245,
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
+        .text(`Datum: ${payload.orderDate}`, 310, 86, {
+          align: "right",
+          width: 245,
+        });
+
+      doc.rect(0, 100, PAGE_W, 4).fill(COLOR.accent);
+
+      // ── Info Cards ─────────────────────────────────────────────────────────
+
+      const CARD_TOP = 124;
+      const CARD_H = 108;
+
+      const customerLines = [
+        payload.customer.name,
+        payload.customer.companyName,
+        payload.customer.email,
+        payload.customer.phone,
+      ].filter(Boolean) as string[];
+
+      const addr = payload.shippingAddress;
+
+      const addrLines = [
+        `${addr.street ?? ""} ${addr.houseNumber ?? ""}`.trim(),
+        addr.address,
+        `${addr.zipCode ?? ""} ${addr.city ?? ""}`.trim(),
+      ].filter(Boolean) as string[];
+
+      drawLabelValueCard({
+        doc,
+        x: 40,
+        y: CARD_TOP,
+        w: 245,
+        h: CARD_H,
+        title: "Klantgegevens",
+        lines: customerLines,
+      });
+
+      drawLabelValueCard({
+        doc,
+        x: 310,
+        y: CARD_TOP,
+        w: 245,
+        h: CARD_H,
+        title: "Verzendadres",
+        lines: addrLines,
+      });
+
+      // ── Order Section ──────────────────────────────────────────────────────
+
+      let y = CARD_TOP + CARD_H + 24;
+
+      sectionTitle(doc, "BESTELLING", y);
+      y += 28;
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(8)
+        .fillColor(COLOR.grey)
+        .text("PRODUCT", 40, y)
+        .text("AANTAL", 365, y)
+        .text("STUKPRIJS", 430, y, {
+          align: "right",
+          width: 125,
+        });
+
+      y += 14;
+      hRule(doc, y);
+      y += 13;
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .fillColor(COLOR.dark)
+        .text(payload.banner.name || "-", 40, y, {
+          width: 310,
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(10)
+        .fillColor(COLOR.body)
+        .text(String(payload.banner.quantity || 0), 365, y)
+        .text(formatCurrency(payload.banner.unitPrice), 430, y, {
+          align: "right",
+          width: 125,
+        });
+
+      y += 18;
+      hRule(doc, y);
+      y += 22;
+
+      // ── Banner Image Preview ───────────────────────────────────────────────
+
+      sectionTitle(doc, "ONTWERPVOORBEELD", y);
+      y += 30;
+
+      if (bannerBuffer) {
+        try {
+          doc
+            .roundedRect(40, y, 515, 142, 10)
+            .fillAndStroke(COLOR.white, COLOR.divider);
+
+          doc
+            .roundedRect(48, y + 8, 499, 126, 8)
+            .fill("#FAFBFF");
+
+          doc.image(bannerBuffer, 48, y + 8, {
+            fit: [499, 126],
+            align: "center",
+            valign: "center",
+          });
+
+          y += 158;
+        } catch (error) {
+          console.log("Banner image render failed:", error);
+          drawImageFallback(doc, y, payload.banner.imageUrl);
+          y += 76;
+        }
+      } else if (payload.banner.imageUrl) {
+        drawImageFallback(doc, y, payload.banner.imageUrl);
+        y += 76;
+      } else {
         doc
           .font("Helvetica")
-          .fontSize(8)
-          .fillColor("#2563EB")
-          .text(payload.banner.imageUrl, 60, previewTop + 80, {
-            width: 200,
-          });
+          .fontSize(9)
+          .fillColor(COLOR.grey)
+          .text("Geen afbeelding beschikbaar.", 40, y);
+
+        y += 24;
       }
 
-      // Pricing
-      const priceY = previewTop + 165;
+      // ── Pricing Section ────────────────────────────────────────────────────
+
+      y += 4;
+
+      sectionTitle(doc, "PRIJSBEREKENING", y);
+      y += 30;
+
+      const priceRows: [string, number][] = [
+        ["Subtotaal", payload.pricing.subtotal],
+        ["Levering / Afhalen", payload.pricing.deliveryFee],
+        ["Ringen / Eyelets", payload.pricing.eyeletsFee],
+        ["Prijs excl. BTW", payload.pricing.priceExcludingVat],
+        [
+          `BTW (${formatVatRate(payload.pricing.vatRate)}%)`,
+          payload.pricing.vatAmount,
+        ],
+      ];
+
+      priceRows.forEach(([label, amount]) => {
+        pricingRow(doc, label, formatCurrency(amount), y);
+        y += 15;
+      });
+
+      y += 2;
+      hRule(doc, y);
+      y += 9;
+
+      doc.roundedRect(40, y, 515, 34, 6).fill(COLOR.brand);
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Prijsberekening", 50, priceY);
+        .fontSize(11)
+        .fillColor(COLOR.white)
+        .text("Totaal incl. BTW", 56, y + 11);
 
-      addRow(doc, "Subtotaal", formatCurrency(payload.pricing.subtotal), priceY + 30);
-      addRow(doc, "Levering / Afhalen", formatCurrency(payload.pricing.deliveryFee), priceY + 50);
-      addRow(doc, "Ringen / Eyelets", formatCurrency(payload.pricing.eyeletsFee), priceY + 70);
-      addRow(
-        doc,
-        "Prijs excl. 21% BTW",
-        formatCurrency(payload.pricing.priceExcludingVat),
-        priceY + 90,
-      );
-      addRow(doc, "BTW 21%", formatCurrency(payload.pricing.vatAmount), priceY + 110);
-
-      doc.moveTo(50, priceY + 135).lineTo(545, priceY + 135).strokeColor("#E5E7EB").stroke();
-
-      addRow(doc, "Totaal incl. BTW", formatCurrency(payload.pricing.total), priceY + 150, true);
-
-      // Payment
       doc
         .font("Helvetica-Bold")
-        .fontSize(13)
-        .fillColor("#111827")
-        .text("Betaling", 50, priceY + 190);
+        .fontSize(11)
+        .fillColor(COLOR.white)
+        .text(formatCurrency(payload.pricing.total), 390, y + 11, {
+          align: "right",
+          width: 150,
+        });
+
+      y += 48;
+
+      // ── Payment Section ────────────────────────────────────────────────────
+
+      sectionTitle(doc, "BETALING", y);
+      y += 30;
+
+      doc.roundedRect(40, y, 245, 56, 8).fill(COLOR.light);
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(7.5)
+        .fillColor(COLOR.grey)
+        .text("BETAALMETHODE", 56, y + 13);
+
+      doc.font("Helvetica").fontSize(10).fillColor(COLOR.dark);
+
+      drawSafeText(doc, payload.payment.method, 56, y + 30, {
+        width: 205,
+        ellipsis: true,
+      });
+
+      doc.roundedRect(310, y, 245, 56, 8).fill(COLOR.light);
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(7.5)
+        .fillColor(COLOR.grey)
+        .text("TRANSACTIE ID", 326, y + 13);
+
+      doc.font("Helvetica").fontSize(10).fillColor(COLOR.dark);
+
+      drawSafeText(doc, payload.payment.transactionId, 326, y + 30, {
+        width: 205,
+        ellipsis: true,
+      });
+
+      // ── Footer ─────────────────────────────────────────────────────────────
+
+      doc.rect(0, PAGE_H - 46, PAGE_W, 46).fill(COLOR.brand);
 
       doc
         .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#374151")
-        .text(`Betaalmethode: ${payload.payment.method}`, 50, priceY + 215)
-        .text(`Transactie ID: ${payload.payment.transactionId}`, 50, priceY + 231);
-
-      // Footer
-      doc
-        .font("Helvetica")
-        .fontSize(9)
-        .fillColor("#6B7280")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
         .text(
-          "Bedankt voor uw bestelling. Neem contact op met onze klantenservice als u vragen heeft over deze factuur.",
-          50,
-          760,
+          "Bedankt voor uw bestelling bij Spandoek Print · Vragen? Neem gerust contact met ons op.",
+          40,
+          PAGE_H - 28,
           {
             align: "center",
-            width: 495,
+            width: PAGE_W - 80,
           },
         );
 
@@ -303,6 +592,8 @@ export const generateInvoicePdf = async (
     }
   });
 };
+
+// ─── Save PDF Locally ─────────────────────────────────────────────────────────
 
 export const saveInvoicePdfLocally = async ({
   pdfBuffer,

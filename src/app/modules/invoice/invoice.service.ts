@@ -24,83 +24,124 @@ export const generateAndSaveInvoice = async ({
   order,
   payment,
 }: GenerateInvoicePayload) => {
-  const existingInvoice = await prisma.invoice.findUnique({
-    where: {
-      orderId: order.id,
-    },
-  });
+  try {
+    console.log("generateAndSaveInvoice started:", {
+      orderId: order?.id,
+      userId: user?.id,
+      paymentId: payment?.id,
+    });
 
-  if (existingInvoice) {
-    return existingInvoice;
-  }
+    const existingInvoice = await prisma.invoice.findUnique({
+      where: {
+        orderId: order.id,
+      },
+    });
 
-  const invoiceNumber = await generateInvoiceNumber();
+    if (existingInvoice) {
+      console.log("Existing invoice found:", {
+        invoiceId: existingInvoice.id,
+        invoiceNumber: existingInvoice.invoiceNumber,
+      });
 
-  const pdfBuffer = await generateInvoicePdf({
-    invoiceNumber,
-    orderId: order.id,
-    orderDate: order.createdAt.toLocaleString(),
+      return existingInvoice;
+    }
 
-    customer: {
-      name: order.addresses?.name || user.name,
-      companyName: order.addresses?.companyName || null,
-      email: order.addresses?.email || user.email,
-      phone: order.addresses?.phone || null,
-    },
+    const invoiceNumber = await generateInvoiceNumber();
 
-    shippingAddress: {
-      street: order.addresses?.street || "",
-      houseNumber: order.addresses?.houseNumber || "",
-      address: order.addresses?.address || "",
-      zipCode: order.addresses?.zipCode || "",
-      city: order.addresses?.city || "",
-    },
+    console.log("Invoice number generated:", invoiceNumber);
 
-    banner: {
-      name: `${formatLabel(order.banner?.occasion)} Banner`,
-      quantity: order.quantity,
-      unitPrice: Number(order.banner?.price || 0),
-      imageUrl: order.banner?.imageUrl || null,
-    },
-
-    pricing: {
-      subtotal: Number(order.subtotal || 0),
-      deliveryFee: Number(order.deliveryFee || 0),
-      eyeletsFee: Number(order.eyeletsFee || 0),
-      priceExcludingVat: Number(order.priceExcludingVat || 0),
-      vatRate: Number(order.vatRate || 0.21),
-      vatAmount: Number(order.vatAmount || 0),
-      total: Number(order.total || 0),
-    },
-
-    payment: {
-      method: "Mollie",
-      transactionId: payment.transactionId,
-    },
-  });
-
-  const savedPdf = await saveInvoicePdfLocally({
-    pdfBuffer,
-    invoiceNumber,
-  });
-
-  const invoice = await prisma.invoice.create({
-    data: {
+    const pdfBuffer = await generateInvoicePdf({
       invoiceNumber,
-      invoiceUrl: savedPdf.fileUrl,
-      invoiceFilePath: savedPdf.filePath,
       orderId: order.id,
-      userId: user.id,
-      order: order, // Add the order property
-      user: user, // Add the user property
-      payment: payment, // Add the payment property
-      amount: Number(order.total || 0),
-      vatAmount: Number(order.vatAmount || 0),
-      status: "generated",
-    },
-  });
+      orderDate: order.createdAt.toLocaleString(),
 
-  return invoice;
+      customer: {
+        name: order.addresses?.name || user.name || "Customer",
+        companyName: order.addresses?.companyName || null,
+        email: order.addresses?.email || user.email,
+        phone: order.addresses?.phone || null,
+      },
+
+      shippingAddress: {
+        street: order.addresses?.street || "",
+        houseNumber: order.addresses?.houseNumber || "",
+        address: order.addresses?.address || "",
+        zipCode: order.addresses?.zipCode || "",
+        city: order.addresses?.city || "",
+      },
+
+      banner: {
+        name: `${formatLabel(order.banner?.occasion)} Banner`,
+        quantity: Number(order.quantity || 1),
+        unitPrice: Number(order.banner?.price || 0),
+        imageUrl: order.banner?.imageUrl || null,
+      },
+
+      pricing: {
+        subtotal: Number(order.subtotal || 0),
+        deliveryFee: Number(order.deliveryFee || 0),
+        eyeletsFee: Number(order.eyeletsFee || 0),
+        priceExcludingVat: Number(order.priceExcludingVat || 0),
+        vatRate: Number(order.vatRate || 0.21),
+        vatAmount: Number(order.vatAmount || 0),
+        total: Number(order.total || 0),
+      },
+
+      payment: {
+        method: "Mollie",
+        transactionId: payment.transactionId || payment.id || "",
+      },
+    });
+
+    console.log("Invoice PDF generated:", {
+      bufferSize: pdfBuffer?.length,
+    });
+
+    const savedPdf = await saveInvoicePdfLocally({
+      pdfBuffer,
+      invoiceNumber,
+    });
+
+    console.log("Invoice PDF saved:", {
+      fileUrl: savedPdf.fileUrl,
+      filePath: savedPdf.filePath,
+    });
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        invoiceNumber,
+        invoiceUrl: savedPdf.fileUrl,
+        invoiceFilePath: savedPdf.filePath,
+
+        orderId: order.id,
+        userId: user.id,
+
+        // Uncomment only if your Invoice model has paymentId field
+        paymentId: payment?.id||"",
+
+        amount: Number(order.total || 0),
+        vatAmount: Number(order.vatAmount || 0),
+        status: "generated",
+      },
+    });
+
+    console.log("Invoice created in database:", {
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+    });
+
+    return invoice;
+  } catch (error: any) {
+    console.error("generateAndSaveInvoice failed:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    });
+
+    throw error;
+  }
 };
 
 export const markInvoiceAsSent = async (invoiceId: string) => {

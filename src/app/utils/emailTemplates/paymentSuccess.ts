@@ -34,6 +34,77 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Payment Successful</title>
+
+  <style>
+    @media only screen and (max-width: 640px) {
+      .email-wrapper {
+        padding: 20px 10px !important;
+      }
+
+      .email-container {
+        width: 100% !important;
+        border-radius: 12px !important;
+      }
+
+      .header-section {
+        padding: 28px 20px 26px !important;
+      }
+
+      .content-section {
+        padding: 28px 18px 0 !important;
+      }
+
+      .footer-section {
+        padding: 24px 18px !important;
+      }
+
+      .main-logo {
+        width: 170px !important;
+      }
+
+      .footer-logo {
+        width: 135px !important;
+      }
+
+      .success-icon {
+        width: 58px !important;
+        height: 58px !important;
+        line-height: 58px !important;
+        font-size: 28px !important;
+      }
+
+      .main-title {
+        font-size: 22px !important;
+      }
+
+      .amount-text {
+        font-size: 30px !important;
+      }
+
+      .table-label,
+      .table-value {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      .table-label {
+        padding-bottom: 6px !important;
+        border-bottom: none !important;
+      }
+
+      .table-value {
+        padding-top: 0 !important;
+      }
+
+      .dashboard-button {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+      }
+    }
+  </style>
 </head>
 
 <body style="
@@ -43,10 +114,13 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
   font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 ">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eef2f7; padding: 40px 16px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" class="email-wrapper" style="
+    background-color: #eef2f7;
+    padding: 40px 16px;
+  ">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="
+        <table width="600" cellpadding="0" cellspacing="0" border="0" class="email-container" style="
           max-width: 600px;
           width: 100%;
           background: #ffffff;
@@ -55,174 +129,264 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
           box-shadow: 0 4px 24px rgba(0,0,0,0.08);
         ">
           <tr>
-            <td style="
-              background: linear-gradient(135deg, #1a3faa 0%, #2d63e2 60%, #3b82f6 100%);
-              padding: 40px 40px 32px;
+            <td class="header-section" style="
+              background: linear-gradient(135deg, #14213d 0%, #1d4ed8 100%);
+              padding: 34px 34px 30px;
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
-                width="300"
+                src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+                width="220"
                 alt="Spandoek Print"
-                style="display:block; margin: 0 auto 24px; border-radius: 8px;"
+                class="main-logo"
+                style="
+                  display: block;
+                  margin: 0 auto 22px;
+                  border-radius: 8px;
+                  max-width: 220px;
+                  width: 220px;
+                  height: auto;
+                "
               />
 
-              <div style="
+              <div class="success-icon" style="
                 display: inline-block;
                 background: rgba(255,255,255,0.15);
-                border: 3px solid rgba(255,255,255,0.4);
+                border: 3px solid rgba(255,255,255,0.35);
                 border-radius: 50%;
-                width: 72px;
-                height: 72px;
-                line-height: 72px;
+                width: 68px;
+                height: 68px;
+                line-height: 68px;
                 text-align: center;
-                font-size: 34px;
-                margin-bottom: 20px;
+                font-size: 32px;
+                margin-bottom: 18px;
               ">✅</div>
 
-              <h1 style="
-                margin: 0 0 8px;
+              <h1 class="main-title" style="
+                margin: 0 0 10px;
                 color: #ffffff;
-                font-size: 26px;
+                font-size: 25px;
+                line-height: 1.25;
                 font-weight: 700;
                 letter-spacing: -0.3px;
               ">Payment Successful!</h1>
 
               <p style="
-                margin: 0;
-                color: rgba(255,255,255,0.82);
+                margin: 0 auto;
+                color: rgba(255,255,255,0.86);
                 font-size: 15px;
+                line-height: 1.6;
+                max-width: 430px;
               ">Your order has been confirmed and is now being processed.</p>
             </td>
           </tr>
 
           <tr>
-            <td style="padding: 36px 40px 0;">
+            <td class="content-section" style="padding: 34px 38px 0;">
               <p style="
-                margin: 0 0 8px;
+                margin: 0 0 10px;
                 font-size: 16px;
-                color: #1a1a2e;
-                font-weight: 600;
+                color: #111827;
+                font-weight: 700;
               ">Hello, ${userName} 👋</p>
 
               <p style="
-                margin: 0 0 28px;
+                margin: 0 0 26px;
                 font-size: 15px;
-                color: #555e7a;
+                color: #4b5563;
                 line-height: 1.7;
               ">
-                Thank you for shopping with <strong style="color:#1a3faa;">Spandoek Print</strong>.
+                Thank you for shopping with <strong style="color:#1d4ed8;">Spandoek Print</strong>.
                 Your payment was received and processed successfully. Below is a summary of your transaction for your records.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
+                background: #eff6ff;
                 border-radius: 12px;
                 margin-bottom: 28px;
-                border: 1px solid #d0dcf8;
+                border: 1px solid #bfdbfe;
               ">
                 <tr>
-                  <td style="padding: 22px; text-align: center;">
-                    <p style="margin: 0 0 4px; font-size: 13px; color: #6b7a9f; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Amount Paid</p>
-                    <p style="margin: 0; font-size: 38px; font-weight: 800; color: #1a3faa; letter-spacing: -1px;">€${Number(amount || 0).toFixed(2)}</p>
+                  <td style="padding: 24px 18px; text-align: center;">
+                    <p style="
+                      margin: 0 0 8px;
+                      font-size: 12px;
+                      color: #64748b;
+                      text-transform: uppercase;
+                      letter-spacing: 1px;
+                      font-weight: 700;
+                    ">Amount Paid</p>
+
+                    <p class="amount-text" style="
+                      margin: 0;
+                      font-size: 36px;
+                      line-height: 1.1;
+                      font-weight: 800;
+                      color: #1d4ed8;
+                      letter-spacing: -1px;
+                    ">€${Number(amount || 0).toFixed(2)}</p>
                   </td>
                 </tr>
               </table>
 
               <p style="
-                margin: 0 0 12px;
+                margin: 0 0 14px;
                 font-size: 13px;
-                color: #6b7a9f;
+                color: #64748b;
                 text-transform: uppercase;
                 letter-spacing: 1px;
-                font-weight: 700;
+                font-weight: 800;
               ">Transaction Details</p>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
-                border-collapse: collapse;
-                border-radius: 10px;
+                border-collapse: separate;
+                border-spacing: 0;
+                border-radius: 12px;
                 overflow: hidden;
-                border: 1px solid #e8ecf5;
-                margin-bottom: 32px;
+                border: 1px solid #e5e7eb;
+                margin-bottom: 24px;
               ">
                 <tr>
-                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600; width: 40%;">🔖 Order ID</td>
-                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${orderId}</td>
+                  <td class="table-label" style="
+                    padding: 15px 18px;
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #64748b;
+                    font-weight: 700;
+                    width: 40%;
+                    vertical-align: top;
+                  ">🔖 Order ID</td>
+
+                  <td class="table-value" style="
+                    padding: 15px 18px;
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #111827;
+                    font-weight: 600;
+                    font-family: 'Courier New', monospace;
+                    word-break: break-word;
+                    vertical-align: top;
+                  ">${orderId}</td>
                 </tr>
 
                 <tr>
-                  <td style="padding: 14px 18px; background: #ffffff; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600;">💳 Transaction ID</td>
-                  <td style="padding: 14px 18px; background: #ffffff; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${transactionId}</td>
+                  <td class="table-label" style="
+                    padding: 15px 18px;
+                    background: #ffffff;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #64748b;
+                    font-weight: 700;
+                    width: 40%;
+                    vertical-align: top;
+                  ">💳 Transaction ID</td>
+
+                  <td class="table-value" style="
+                    padding: 15px 18px;
+                    background: #ffffff;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #111827;
+                    font-weight: 600;
+                    font-family: 'Courier New', monospace;
+                    word-break: break-word;
+                    vertical-align: top;
+                  ">${transactionId}</td>
                 </tr>
 
                 ${
                   invoiceNumber
                     ? `
                 <tr>
-                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #6b7a9f; font-weight: 600;">🧾 Invoice Number</td>
-                  <td style="padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf5; font-size: 13px; color: #1a1a2e; font-weight: 500; font-family: 'Courier New', monospace;">${invoiceNumber}</td>
+                  <td class="table-label" style="
+                    padding: 15px 18px;
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #64748b;
+                    font-weight: 700;
+                    width: 40%;
+                    vertical-align: top;
+                  ">🧾 Invoice Number</td>
+
+                  <td class="table-value" style="
+                    padding: 15px 18px;
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 13px;
+                    color: #111827;
+                    font-weight: 600;
+                    font-family: 'Courier New', monospace;
+                    word-break: break-word;
+                    vertical-align: top;
+                  ">${invoiceNumber}</td>
                 </tr>
                     `
                     : ""
                 }
 
                 <tr>
-                  <td style="padding: 14px 18px; background: #ffffff; font-size: 13px; color: #6b7a9f; font-weight: 600;">📅 Date & Time</td>
-                  <td style="padding: 14px 18px; background: #ffffff; font-size: 13px; color: #1a1a2e; font-weight: 500;">${date}</td>
+                  <td class="table-label" style="
+                    padding: 15px 18px;
+                    background: #ffffff;
+                    font-size: 13px;
+                    color: #64748b;
+                    font-weight: 700;
+                    width: 40%;
+                    vertical-align: top;
+                  ">📅 Date & Time</td>
+
+                  <td class="table-value" style="
+                    padding: 15px 18px;
+                    background: #ffffff;
+                    font-size: 13px;
+                    color: #111827;
+                    font-weight: 600;
+                    word-break: break-word;
+                    vertical-align: top;
+                  ">${date}</td>
                 </tr>
               </table>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
                 <tr>
                   <td>
-                    <table cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td style="
-                          background: #d1fae5;
-                          border: 1px solid #6ee7b7;
-                          border-radius: 99px;
-                          padding: 6px 16px;
-                        ">
-                          <span style="font-size: 13px; color: #065f46; font-weight: 700;">● Payment Status: Paid</span>
-                        </td>
-                      </tr>
-                    </table>
+                    <span style="
+                      display: inline-block;
+                      background: #dcfce7;
+                      border: 1px solid #86efac;
+                      border-radius: 999px;
+                      padding: 8px 16px;
+                      font-size: 13px;
+                      color: #166534;
+                      font-weight: 800;
+                    ">● Payment Status: Paid</span>
                   </td>
                 </tr>
               </table>
 
               ${
-                invoiceUrl
+                invoiceUrl || invoiceFilePath
                   ? `
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #eff6ff;
                 border: 1px solid #bfdbfe;
-                border-radius: 10px;
-                margin-bottom: 32px;
+                border-radius: 12px;
+                margin-bottom: 28px;
               ">
                 <tr>
-                  <td style="padding: 18px;">
-                    <p style="margin: 0 0 10px; font-size: 14px; color: #1e3a8a; line-height: 1.6;">
+                  <td style="padding: 18px 20px;">
+                    <p style="
+                      margin: 0;
+                      font-size: 14px;
+                      color: #1e3a8a;
+                      line-height: 1.7;
+                    ">
                       🧾 <strong>Your invoice is ready.</strong><br/>
-                      You can download your PDF invoice using the button below.
+                      We have attached your PDF invoice with this email for your records.
                     </p>
-
-                    <a
-                      href="${invoiceUrl}"
-                      target="_blank"
-                      style="
-                        display: inline-block;
-                        background: #2563eb;
-                        color: #ffffff;
-                        text-decoration: none;
-                        font-size: 14px;
-                        font-weight: 700;
-                        padding: 11px 18px;
-                        border-radius: 8px;
-                      "
-                    >
-                      Download Invoice
-                    </a>
                   </td>
                 </tr>
               </table>
@@ -230,22 +394,23 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                   : ""
               }
 
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
                 <tr>
                   <td align="center">
                     <a
                       href="https://your-frontend-url.com/dashboard"
+                      class="dashboard-button"
                       style="
                         display: inline-block;
-                        background: linear-gradient(135deg, #1a3faa, #2d63e2);
+                        background: linear-gradient(135deg, #1d4ed8, #2563eb);
                         color: #ffffff;
                         text-decoration: none;
                         font-size: 15px;
-                        font-weight: 700;
-                        padding: 14px 36px;
+                        font-weight: 800;
+                        padding: 14px 34px;
                         border-radius: 10px;
-                        letter-spacing: 0.3px;
-                        box-shadow: 0 4px 14px rgba(34,92,228,0.35);
+                        letter-spacing: 0.2px;
+                        box-shadow: 0 4px 14px rgba(37,99,235,0.28);
                       "
                     >
                       View Your Order →
@@ -254,21 +419,28 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
                 </tr>
               </table>
 
-              <hr style="border: none; border-top: 1px solid #e8ecf5; margin: 0 0 24px;" />
-
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
                 background: #fffbeb;
                 border: 1px solid #fde68a;
-                border-radius: 10px;
-                margin-bottom: 32px;
+                border-radius: 12px;
+                margin-bottom: 34px;
               ">
                 <tr>
-                  <td style="padding: 16px 18px;">
-                    <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
+                  <td style="padding: 18px 20px;">
+                    <p style="
+                      margin: 0;
+                      font-size: 13.5px;
+                      color: #78350f;
+                      line-height: 1.7;
+                    ">
                       💬 <strong>Need help?</strong> If you have any questions about your order or payment,
                       our support team is here for you.
                       Reply to this email or visit our
-                      <a href="https://your-frontend-url.com/customer-service" style="color: #1a3faa; font-weight: 600;">Customer Service</a>.
+                      <a href="https://your-frontend-url.com/customer-service" style="
+                        color: #1d4ed8;
+                        font-weight: 700;
+                        text-decoration: none;
+                      ">Customer Service</a>.
                     </p>
                   </td>
                 </tr>
@@ -277,24 +449,53 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
           </tr>
 
           <tr>
-            <td style="
-              background: #f8f9fc;
-              border-top: 1px solid #e8ecf5;
-              padding: 28px 40px;
+            <td class="footer-section" style="
+              background: #111827;
+              border-top: 1px solid #1f2937;
+              padding: 28px 38px;
               text-align: center;
             ">
               <img
-                src="https://i.ibb.co.com/bjqdZXJm/spandoek-print-logo.png"
-                width="200"
+                src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+                width="150"
                 alt="Spandoek Print"
-                style="display:block; margin: 0 auto 12px; opacity: 0.7;"
+                class="footer-logo"
+                style="
+                  display: block;
+                  margin: 0 auto 16px;
+                  max-width: 150px;
+                  width: 150px;
+                  height: auto;
+                  opacity: 0.9;
+                "
               />
-              <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #1a3faa;">Spandoek Print</p>
-              <p style="margin: 0 0 12px; font-size: 12px; color: #9ca3b8; line-height: 1.6;">
+
+              <p style="
+                margin: 0 0 8px;
+                font-size: 13px;
+                font-weight: 800;
+                color: #ffffff;
+              ">Spandoek Print</p>
+
+              <p style="
+                margin: 0 0 14px;
+                font-size: 12px;
+                color: #cbd5e1;
+                line-height: 1.7;
+              ">
                 123 Print Avenue, Amsterdam, Netherlands<br/>
-                <a href="mailto:support@spandoekprint.com" style="color: #9ca3b8;">support@spandoekprint.com</a>
+                <a href="mailto:support@spandoekprint.com" style="
+                  color: #cbd5e1;
+                  text-decoration: none;
+                ">support@spandoekprint.com</a>
               </p>
-              <p style="margin: 0; font-size: 11.5px; color: #b0b8cc; line-height: 1.6;">
+
+              <p style="
+                margin: 0;
+                font-size: 11.5px;
+                color: #94a3b8;
+                line-height: 1.7;
+              ">
                 This email was sent to <strong>${email}</strong> because you made a purchase on Spandoek Print.<br/>
                 © ${new Date().getFullYear()} Spandoek Print. All rights reserved.
               </p>
@@ -308,19 +509,5 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
 </html>
   `;
 
-  await sendEmail(
-    email,
-    subject,
-    html,
-    undefined,
-    invoiceFilePath
-      ? [
-          {
-            filename: `${invoiceNumber || "invoice"}.pdf`,
-            path: invoiceFilePath,
-            contentType: "application/pdf",
-          },
-        ]
-      : [],
-  );
+  await sendEmail(email, subject, html);
 };
