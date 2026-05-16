@@ -202,11 +202,7 @@ function pricingRow(
   value: string,
   y: number,
 ) {
-  doc
-    .font("Helvetica")
-    .fontSize(9.5)
-    .fillColor(COLOR.body)
-    .text(label, 48, y);
+  doc.font("Helvetica").fontSize(9.5).fillColor(COLOR.body).text(label, 48, y);
 
   doc
     .font("Helvetica-Bold")
@@ -253,49 +249,6 @@ function drawSafeText(
   options?: PDFKit.Mixins.TextOptions,
 ) {
   doc.text(text || "-", x, y, options);
-}
-
-function drawFooter(doc: PDFKit.PDFDocument, PAGE_W: number, PAGE_H: number) {
-  doc.rect(0, PAGE_H - 46, PAGE_W, 46).fill(COLOR.brand);
-
-  doc
-    .font("Helvetica")
-    .fontSize(8)
-    .fillColor("#DCE7F7")
-    .text(
-      "Bedankt voor uw bestelling bij Spandoek Print · Vragen? Neem gerust contact met ons op.",
-      40,
-      PAGE_H - 28,
-      {
-        align: "center",
-        width: PAGE_W - 80,
-      },
-    );
-}
-
-function ensureSpaceForSection(
-  doc: PDFKit.PDFDocument,
-  currentY: number,
-  requiredHeight: number,
-  PAGE_W: number,
-  PAGE_H: number,
-) {
-  const FOOTER_SAFE_TOP = PAGE_H - 70;
-
-  if (currentY + requiredHeight > FOOTER_SAFE_TOP) {
-    drawFooter(doc, PAGE_W, PAGE_H);
-
-    doc.addPage({
-      size: "A4",
-      margin: 0,
-    });
-
-    doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLOR.white);
-
-    return 50;
-  }
-
-  return currentY;
 }
 
 // ─── Main PDF Generator ───────────────────────────────────────────────────────
@@ -505,20 +458,18 @@ export const generateInvoicePdf = async (
       if (bannerBuffer) {
         try {
           doc
-            .roundedRect(40, y, 515, 122, 10)
+            .roundedRect(40, y, 515, 142, 10)
             .fillAndStroke(COLOR.white, COLOR.divider);
 
-          doc
-            .roundedRect(48, y + 8, 499, 106, 8)
-            .fill("#FAFBFF");
+          doc.roundedRect(48, y + 8, 499, 126, 8).fill("#FAFBFF");
 
           doc.image(bannerBuffer, 48, y + 8, {
-            fit: [499, 106],
+            fit: [499, 126],
             align: "center",
             valign: "center",
           });
 
-          y += 138;
+          y += 158;
         } catch (error) {
           console.log("Banner image render failed:", error);
           drawImageFallback(doc, y, payload.banner.imageUrl);
@@ -605,47 +556,23 @@ export const generateInvoicePdf = async (
 
       y += 38;
 
-      // ── Payment Section ────────────────────────────────────────────────────
-      // Footer overlap fix: keep enough space before drawing payment section.
-
-      y = ensureSpaceForSection(doc, y, 120, PAGE_W, PAGE_H);
-
-      sectionTitle(doc, "BETALING", y);
-      y += 30;
-
-      doc.roundedRect(40, y, 245, 56, 8).fill(COLOR.light);
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(7.5)
-        .fillColor(COLOR.grey)
-        .text("BETAALMETHODE", 56, y + 13);
-
-      doc.font("Helvetica").fontSize(10).fillColor(COLOR.dark);
-
-      drawSafeText(doc, payload.payment.method, 56, y + 30, {
-        width: 205,
-        ellipsis: true,
-      });
-
-      doc.roundedRect(310, y, 245, 56, 8).fill(COLOR.light);
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(7.5)
-        .fillColor(COLOR.grey)
-        .text("TRANSACTIE ID", 326, y + 13);
-
-      doc.font("Helvetica").fontSize(10).fillColor(COLOR.dark);
-
-      drawSafeText(doc, payload.payment.transactionId, 326, y + 30, {
-        width: 205,
-        ellipsis: true,
-      });
-
       // ── Footer ─────────────────────────────────────────────────────────────
 
-      drawFooter(doc, PAGE_W, PAGE_H);
+      doc.rect(0, PAGE_H - 46, PAGE_W, 46).fill(COLOR.brand);
+
+      doc
+        .font("Helvetica")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
+        .text(
+          "Bedankt voor uw bestelling bij Spandoek Print · Vragen? Neem gerust contact met ons op.",
+          40,
+          PAGE_H - 28,
+          {
+            align: "center",
+            width: PAGE_W - 80,
+          },
+        );
 
       doc.end();
     } catch (error) {
