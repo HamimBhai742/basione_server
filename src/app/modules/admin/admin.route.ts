@@ -45,4 +45,9 @@ router.delete(
 
 router.get("/single-order/:id", adminController.getSingleOrder);
 
+router.get("/faqs", adminController.getFaqs);
+router.post("/create-faq", adminController.createFaq);
+router.patch("/update-faq/:id", adminController.updateFaq);
+router.delete("/delete-faq/:id", adminController.deleteFaq);
+
 export const adminRoutes = router;

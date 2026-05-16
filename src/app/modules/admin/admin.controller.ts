@@ -22,7 +22,7 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
     skip,
     filter,
     sortBy,
-     "asc" ,
+    sortOrder as "asc" | "desc",
     req.query.searchTerm as string,
   );
 
@@ -248,6 +248,50 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createFaq = catchAsync(async (req: Request, res: Response) => {
+  const faq = await adminService.createFaq(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "FAQ created successfully",
+    data: faq,
+  });
+});
+
+const updateFaq = catchAsync(async (req: Request, res: Response) => {
+  const faq = await adminService.updateFaq(req.params.id as string, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "FAQ updated successfully",
+    data: faq,
+  });
+});
+
+const deleteFaq = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteFaq(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "FAQ deleted successfully",
+    data: null,
+  });
+});
+
+const getFaqs = catchAsync(async (req: Request, res: Response) => {
+  const faqs = await adminService.getFaqs();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "FAQs fetched successfully",
+    data: faqs,
+  });
+});
+
 export const adminController = {
   totalOrder,
   manageOrder,
@@ -263,4 +307,8 @@ export const adminController = {
   updateDecorationCategory,
   deleteDecorationCategory,
   getSingleOrder,
+  createFaq,
+  updateFaq,
+  deleteFaq,
+  getFaqs,
 };

@@ -19,7 +19,7 @@ export const calculatePagination = (options: IOptions): IOptionsResult => {
   const skip: number = (Number(page) - 1) * limit;
 
   const sortBy: string = options.sortBy || "createdAt";
-  const sortOrder: string = options.sortOrder || "desc";
+  const sortOrder: string = options.sortOrder || "asc";
 
   return {
     page,

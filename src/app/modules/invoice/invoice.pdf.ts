@@ -25,17 +25,17 @@ type InvoicePdfPayload = {
   banner: {
     name: string;
     quantity: number;
-    unitPrice: number;
+    unitPrice: number; // already INCLUDING VAT
     imageUrl?: string | null;
   };
   pricing: {
-    subtotal: number;
-    deliveryFee: number;
-    eyeletsFee: number;
-    priceExcludingVat: number;
+    subtotal: number; // banner total including VAT
+    deliveryFee: number; // including VAT
+    eyeletsFee: number; // including VAT
+    priceExcludingVat: number; // full order excluding VAT
     vatRate: number;
-    vatAmount: number;
-    total: number;
+    vatAmount: number; // full order VAT amount
+    total: number; // full order including VAT
   };
   payment: {
     method: string;
@@ -66,8 +66,14 @@ const COLOR = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const formatCurrency = (amount: number): string =>
-  `€${Number(amount || 0).toFixed(2)}`;
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("nl-NL", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount || 0));
+};
 
 const formatVatRate = (rate: number): string => {
   if (!rate) return "21";
@@ -94,6 +100,7 @@ async function fetchImageBuffer(url?: string | null): Promise<Buffer | null> {
     if (!fetchUrl.startsWith("http")) {
       const baseUrl =
         process.env.BACKEND_BASE_URL || "https://api.spandoekprint.nl";
+
       fetchUrl = fetchUrl.startsWith("/")
         ? `${baseUrl}${fetchUrl}`
         : `${baseUrl}/${fetchUrl}`;
@@ -416,9 +423,9 @@ export const generateInvoicePdf = async (
         .fillColor(COLOR.grey)
         .text("PRODUCT", 40, y)
         .text("AANTAL", 365, y)
-        .text("STUKPRIJS", 430, y, {
+        .text("STUKPRIJS INCL. BTW", 405, y, {
           align: "right",
-          width: 125,
+          width: 150,
         });
 
       y += 14;
@@ -438,9 +445,9 @@ export const generateInvoicePdf = async (
         .fontSize(10)
         .fillColor(COLOR.body)
         .text(String(payload.banner.quantity || 0), 365, y)
-        .text(formatCurrency(payload.banner.unitPrice), 430, y, {
+        .text(formatCurrency(payload.banner.unitPrice), 405, y, {
           align: "right",
-          width: 125,
+          width: 150,
         });
 
       y += 18;
@@ -494,15 +501,21 @@ export const generateInvoicePdf = async (
       sectionTitle(doc, "PRIJSBEREKENING", y);
       y += 30;
 
+      const vatRate = formatVatRate(payload.pricing.vatRate);
+
+      /**
+       * Important:
+       * All prices are already including VAT.
+       * We do not add VAT again.
+       * priceExcludingVat and vatAmount should come from backend as full order breakdown:
+       * banner + delivery + eyelets.
+       */
       const priceRows: [string, number][] = [
-        ["Subtotaal", payload.pricing.subtotal],
-        ["Levering / Afhalen", payload.pricing.deliveryFee],
-        ["Ringen / Eyelets", payload.pricing.eyeletsFee],
-        ["Prijs excl. BTW", payload.pricing.priceExcludingVat],
-        [
-          `BTW (${formatVatRate(payload.pricing.vatRate)}%)`,
-          payload.pricing.vatAmount,
-        ],
+        ["Spandoek incl. BTW", payload.pricing.subtotal],
+        ["Levering / Afhalen incl. BTW", payload.pricing.deliveryFee],
+        ["Ringen / Eyelets incl. BTW", payload.pricing.eyeletsFee],
+        [`Totaal excl. ${vatRate}% BTW`, payload.pricing.priceExcludingVat],
+        [`BTW ${vatRate}% inbegrepen`, payload.pricing.vatAmount],
       ];
 
       priceRows.forEach(([label, amount]) => {
@@ -531,7 +544,23 @@ export const generateInvoicePdf = async (
           width: 150,
         });
 
-      y += 48;
+      y += 45;
+
+      doc
+        .font("Helvetica")
+        .fontSize(7.8)
+        .fillColor(COLOR.grey)
+        .text(
+          `Alle bedragen zijn inclusief ${vatRate}% BTW. De BTW is berekend over het spandoek, levering/afhalen en ringen/eyelets.`,
+          48,
+          y,
+          {
+            width: 500,
+            lineGap: 2,
+          },
+        );
+
+      y += 38;
 
       // ── Payment Section ────────────────────────────────────────────────────
 

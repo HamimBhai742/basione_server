@@ -26,6 +26,9 @@ const MIN_PRICE_INCL_VAT = 12;
 const PRICE_PER_M2_UNDER_1_INCL_VAT = 25;
 const PRICE_PER_M2_FROM_1_INCL_VAT = 20;
 
+const MAX_WIDTH_CM = 240;
+const MAX_HEIGHT_CM = 160;
+
 const calculateAreaM2 = (widthCm: number, heightCm: number) => {
   return (widthCm / 100) * (heightCm / 100);
 };
@@ -59,8 +62,49 @@ const formatLabel = (text: string) => {
     .join(" ");
 };
 
+const calculateBannerPriceInclVat = (widthCm: number, heightCm: number) => {
+  const areaM2 = calculateAreaM2(widthCm, heightCm);
+  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
+  const calculatedPrice = areaM2 * pricePerM2InclVat;
+
+  return roundToTwo(Math.max(calculatedPrice, MIN_PRICE_INCL_VAT));
+};
+
+const roundToTwo = (value: number): number => {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+};
+
 const createBanner = async (req: AuthRequest) => {
   const parsedData = req.body;
+
+  const width = Number(parsedData?.size?.width);
+  const height = Number(parsedData?.size?.height);
+
+  if (
+    Number.isNaN(width) ||
+    Number.isNaN(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    throw new AppError("Invalid banner size.", 400);
+  }
+
+  if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
+    throw new AppError(
+      `Maximum banner size is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
+      400,
+    );
+  }
+
+  /**
+   * Price calculation
+   * All prices are INCLUDING VAT.
+   */
+  const areaM2 = calculateAreaM2(width, height);
+  const price = calculateBannerPriceInclVat(width, height);
+  const priceExclVat = calculatePriceExclVat(price);
+  const vatAmount = calculateVatAmount(price);
+  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
 
   const formData = new FormData();
 
@@ -73,7 +117,6 @@ const createBanner = async (req: AuthRequest) => {
       subtext: parsedData?.subheadline || "",
       name: parsedData?.name || "",
       age: parsedData?.age || "",
-      // size: ` ${parsedData.size.width}x${parsedData.size.height}`,
       description:
         parsedData.description || "A banner for a wedding invitation",
     }),
@@ -90,6 +133,14 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_3", "");
   formData.append("ref_image_4", "");
 
+  // const banners = await prisma.banner.findMany({
+  //   take: 4,
+  //   orderBy: { createdAt: "desc" },
+  // });
+  // return {
+  //   variants: banners,
+  // };
+
   const response = await axios.post(
     "https://ai.spandoekprint.nl/generate",
     formData,
@@ -105,29 +156,6 @@ const createBanner = async (req: AuthRequest) => {
     },
   );
 
-  let price = 0;
-  const height = Number(parsedData.size.height);
-  const width = Number(parsedData.size.width);
-  if (height <= 40 && width <= 80) {
-    price = 30;
-  } else if (height <= 75 && width <= 150) {
-    price = 50;
-  } else if (height <= 160 && width <= 200) {
-    price = 80;
-  } else if (height <= 200 && width <= 240) {
-    price = 100;
-  } else {
-    price = 60;
-  }
-
-  // const banners = await prisma.banner.findMany({
-  //   take: 4,
-  //   orderBy: { createdAt: "desc" }
-  // });
-  // return {
-  //   variants: banners,
-  // };
-
   if (response.status >= 400) {
     let rawError = "";
 
@@ -140,7 +168,9 @@ const createBanner = async (req: AuthRequest) => {
       response.data.on("error", reject);
     });
 
-    throw new AppError(`AI server is shutting down`, 400);
+    console.error("AI server error:", rawError);
+
+    throw new AppError("AI server is shutting down", 400);
   }
 
   return new Promise((resolve, reject) => {
@@ -156,6 +186,7 @@ const createBanner = async (req: AuthRequest) => {
 
     const saveAndResolve = async () => {
       if (isFinished) return;
+
       isFinished = true;
 
       const sortedVariants = [...finalVariants].sort(
@@ -183,6 +214,7 @@ const createBanner = async (req: AuthRequest) => {
 
               imageUrl: item.url ?? "",
               variant: item.variant,
+
               price,
 
               revisedPrompt: item.revised_prompt || null,
@@ -193,6 +225,19 @@ const createBanner = async (req: AuthRequest) => {
 
       resolve({
         variants: savedBanners,
+
+        /**
+         * Optional response summary.
+         * Useful for debugging/testing frontend.
+         */
+        pricing: {
+          areaM2: roundToTwo(areaM2),
+          pricePerM2InclVat,
+          priceInclVat: price,
+          priceExclVat,
+          vatAmount,
+          vatRate: VAT_RATE,
+        },
       });
     };
 
@@ -216,9 +261,11 @@ const createBanner = async (req: AuthRequest) => {
         }
 
         const dataStr = dataLines.join("");
+
         if (!dataStr) continue;
 
         let data: any;
+
         try {
           data = JSON.parse(dataStr);
         } catch {
@@ -239,10 +286,12 @@ const createBanner = async (req: AuthRequest) => {
         if (event === "error") {
           if (!isFinished) {
             isFinished = true;
+
             reject(
-              new AppError(data?.message || "AI server returned an error"),
+              new AppError(data?.message || "AI server returned an error", 400),
             );
           }
+
           return;
         }
 
@@ -253,6 +302,7 @@ const createBanner = async (req: AuthRequest) => {
               reject(err);
             }
           });
+
           return;
         }
       }
@@ -275,6 +325,7 @@ const createBanner = async (req: AuthRequest) => {
     });
   });
 };
+
 const createBannerByTemplate = async (req: AuthRequest) => {
   const parsedData = JSON.parse(req?.body?.data);
 

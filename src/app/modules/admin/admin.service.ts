@@ -118,6 +118,7 @@ const totalOrder = async (
         banner: true,
         payment: true,
         addresses: true,
+        invoice: true,
         user: {
           select: {
             id: true,
@@ -716,6 +717,53 @@ const getSingleOrder = async (orderId: string) => {
   return order;
 };
 
+const createFaq = async (data: { category: string; question: string; answer: string }) => {
+  const faq = await prisma.faq.create({
+    data,
+  });
+  return faq;
+};
+
+const updateFaq = async (id: string, data: Partial<{ category: string; question: string; answer: string }>) => {
+  const isExist = await prisma.faq.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Faq not found", httpStatus.NOT_FOUND);
+  }
+
+  const faq = await prisma.faq.update({
+    where: { id },
+    data,
+  });
+  return faq;
+};
+
+const deleteFaq = async (id: string) => {
+  const isExist = await prisma.faq.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Faq not found", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.faq.delete({
+    where: { id },
+  });
+  return true;
+};
+
+const getFaqs = async () => {
+  const faqs = await prisma.faq.findMany({
+    orderBy: {
+      createdAt: "desc"
+    }
+  });
+  return faqs;
+};
+
 export const adminService = {
   totalOrder,
   manageOrder,
@@ -731,4 +779,8 @@ export const adminService = {
   updateDecorationCategory,
   deleteDecorationCategory,
   getSingleOrder,
+  createFaq,
+  updateFaq,
+  deleteFaq,
+  getFaqs,
 };

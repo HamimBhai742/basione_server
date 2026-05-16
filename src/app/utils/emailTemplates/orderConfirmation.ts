@@ -2,7 +2,12 @@ import { OrderConfirmedEmailData } from "../../../type/interface";
 import sendEmail from "./nodemailerTransport";
 
 const formatCurrency = (amount: number) => {
-  return `€${Number(amount || 0).toFixed(2)}`;
+  return new Intl.NumberFormat("nl-NL", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(amount || 0));
 };
 
 const safeText = (value?: string | null) => {
@@ -11,6 +16,8 @@ const safeText = (value?: string | null) => {
 
 export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
   const subject = `Bestelling bevestigd - ${data.orderId}`;
+
+  const vatPercent = Math.round((data.vatRate || 0.21) * 100);
 
   const deliveryAddress = `
     ${safeText(data.shippingAddress.name)}<br/>
@@ -94,7 +101,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
               font-size: 13px;
               line-height: 1.5;
               color: #64748b;
-            ">Prijs per stuk: ${formatCurrency(item.price)}</p>
+            ">Prijs per stuk incl. BTW: ${formatCurrency(item.price)}</p>
 
             <p style="
               margin: 6px 0 0;
@@ -102,7 +109,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
               line-height: 1.5;
               color: #1d4ed8;
               font-weight: 700;
-            ">Totaal: ${formatCurrency(item.price * item.quantity)}</p>
+            ">Totaal incl. BTW: ${formatCurrency(item.price * item.quantity)}</p>
           </td>
         </tr>
       </table>
@@ -314,30 +321,30 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
                 border: 1px solid #e2e8f0;
                 border-radius: 12px;
                 overflow: hidden;
-                margin-bottom: 30px;
+                margin-bottom: 10px;
               ">
                 <tr>
-                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Subtotaal</td>
+                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Spandoek incl. BTW</td>
                   <td align="right" style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;font-weight:700;">${formatCurrency(data.subtotal)}</td>
                 </tr>
 
                 <tr>
-                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Levering / Afhalen</td>
+                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Levering / Afhalen incl. BTW</td>
                   <td align="right" style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;font-weight:700;">${formatCurrency(data.deliveryFee)}</td>
                 </tr>
 
                 <tr>
-                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Ringen / Eyelets</td>
+                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Ringen / Eyelets incl. BTW</td>
                   <td align="right" style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;font-weight:700;">${formatCurrency(data.eyeletsFee || 0)}</td>
                 </tr>
 
                 <tr>
-                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Prijs excl. 21% BTW</td>
+                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">Totaal excl. ${vatPercent}% BTW</td>
                   <td align="right" style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;font-weight:700;">${formatCurrency(data.priceExcludingVat)}</td>
                 </tr>
 
                 <tr>
-                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">BTW ${Math.round((data.vatRate || 0.21) * 100)}%</td>
+                  <td style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#475569;">BTW ${vatPercent}% inbegrepen</td>
                   <td align="right" style="padding: 13px 18px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;font-weight:700;">${formatCurrency(data.vatAmount)}</td>
                 </tr>
 
@@ -346,6 +353,15 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
                   <td align="right" style="padding: 16px 18px;background:#1d4ed8;font-size:18px;color:#ffffff;font-weight:800;">${formatCurrency(data.total)}</td>
                 </tr>
               </table>
+
+              <p style="
+                margin: 0 0 30px;
+                font-size: 12px;
+                line-height: 1.7;
+                color: #64748b;
+              ">
+                Alle bedragen zijn inclusief ${vatPercent}% BTW. De BTW is berekend over het spandoek, levering/afhalen en ringen/eyelets.
+              </p>
 
               <!-- Address -->
               <p style="
