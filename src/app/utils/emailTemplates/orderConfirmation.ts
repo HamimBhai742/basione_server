@@ -28,9 +28,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
     }
     ${safeText(data.shippingAddress.street)} ${safeText(data.shippingAddress.houseNumber)}<br/>
     ${
-      data.shippingAddress.address
-        ? `${data.shippingAddress.address}<br/>`
-        : ""
+      data.shippingAddress.address ? `${data.shippingAddress.address}<br/>` : ""
     }
     ${safeText(data.shippingAddress.zipCode)} ${safeText(data.shippingAddress.city)}<br/>
     ${
@@ -38,11 +36,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
         ? `Tel: ${data.shippingAddress.phone}<br/>`
         : ""
     }
-    ${
-      data.shippingAddress.email
-        ? `Email: ${data.shippingAddress.email}`
-        : ""
-    }
+    ${data.shippingAddress.email ? `Email: ${data.shippingAddress.email}` : ""}
   `;
 
   const itemsHtml = data.items
@@ -510,19 +504,15 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
 </html>
 `;
 
-  await sendEmail(
-    data.email,
-    subject,
-    html,
-    undefined,
-    data.invoiceFilePath
-      ? [
-          {
-            filename: `${data.invoiceNumber || "invoice"}.pdf`,
-            path: data.invoiceFilePath,
-            contentType: "application/pdf",
-          },
-        ]
-      : [],
-  );
+  const attachments = data.invoiceUrl
+    ? [
+        {
+          filename: `${data.invoiceNumber || "invoice"}.pdf`,
+          path: data.invoiceUrl,
+          contentType: "application/pdf",
+        },
+      ]
+    : [];
+
+  await sendEmail(data.email, subject, html, undefined, attachments);
 };

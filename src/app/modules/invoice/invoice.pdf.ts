@@ -1,7 +1,4 @@
 import PDFDocument from "pdfkit";
-import fs from "fs";
-import path from "path";
-import fetch from "node-fetch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,13 +26,13 @@ type InvoicePdfPayload = {
     imageUrl?: string | null;
   };
   pricing: {
-    subtotal: number; // banner total including VAT
-    deliveryFee: number; // including VAT
-    eyeletsFee: number; // including VAT
-    priceExcludingVat: number; // full order excluding VAT
+    subtotal: number;
+    deliveryFee: number;
+    eyeletsFee: number;
+    priceExcludingVat: number;
     vatRate: number;
-    vatAmount: number; // full order VAT amount
-    total: number; // full order including VAT
+    vatAmount: number;
+    total: number;
   };
   payment: {
     method: string;
@@ -43,95 +40,41 @@ type InvoicePdfPayload = {
   };
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const LOGO_URL =
-  "https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png";
+// ─── Colors ───────────────────────────────────────────────────────────────────
 
 const COLOR = {
   brand: "#17365D",
   brandDark: "#102745",
   accent: "#2563EB",
-  accentLight: "#DBEAFE",
-  light: "#F5F7FB",
-  lightBlue: "#EFF6FF",
-  grey: "#6B7280",
+  accentSoft: "#EAF2FF",
+  light: "#F8FAFC",
+  light2: "#F1F5F9",
+  grey: "#64748B",
   muted: "#94A3B8",
-  dark: "#111827",
-  body: "#374151",
-  divider: "#D7DEE9",
+  dark: "#0F172A",
+  body: "#334155",
+  divider: "#D9E2EC",
   white: "#FFFFFF",
   green: "#16A34A",
 } as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat("nl-NL", {
+const formatCurrency = (amount: number): string =>
+  new Intl.NumberFormat("nl-NL", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(amount || 0));
-};
 
 const formatVatRate = (rate: number): string => {
   if (!rate) return "21";
   return rate <= 1 ? String(Math.round(rate * 100)) : String(rate);
 };
 
-async function fetchImageBuffer(url?: string | null): Promise<Buffer | null> {
-  if (!url) return null;
-
-  try {
-    if (url.includes("/uploads/")) {
-      const uploadsIndex = url.indexOf("/uploads/");
-      const relativePath = url.substring(uploadsIndex);
-      const cleanPath = relativePath.split("?")[0];
-      const localPath = path.join(process.cwd(), cleanPath);
-
-      if (fs.existsSync(localPath)) {
-        return fs.readFileSync(localPath);
-      }
-    }
-
-    let fetchUrl = url;
-
-    if (!fetchUrl.startsWith("http")) {
-      const baseUrl =
-        process.env.BACKEND_BASE_URL || "https://api.spandoekprint.nl";
-
-      fetchUrl = fetchUrl.startsWith("/")
-        ? `${baseUrl}${fetchUrl}`
-        : `${baseUrl}/${fetchUrl}`;
-    }
-
-    const res = await fetch(fetchUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        Accept: "image/png,image/jpeg,image/jpg,image/webp,*/*",
-      },
-    });
-
-    if (!res.ok) {
-      console.log("Image fetch failed:", res.status, fetchUrl);
-      return null;
-    }
-
-    const contentType = res.headers.get("content-type");
-
-    if (!contentType || !contentType.startsWith("image/")) {
-      console.log("Invalid image content type:", contentType, fetchUrl);
-      return null;
-    }
-
-    const arrayBuffer = await res.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-  } catch (error) {
-    console.log("Image fetch error:", error);
-    return null;
-  }
-}
+const safeText = (value?: string | null) =>
+  value && String(value).trim() ? String(value).trim() : "-";
 
 function hRule(
   doc: PDFKit.PDFDocument,
@@ -143,17 +86,20 @@ function hRule(
   doc.moveTo(x1, y).lineTo(x2, y).strokeColor(color).lineWidth(0.7).stroke();
 }
 
+// Section title with underline accent — compact version (15px underline gap)
 function sectionTitle(doc: PDFKit.PDFDocument, title: string, y: number) {
   doc
     .font("Helvetica-Bold")
-    .fontSize(11.5)
+    .fontSize(10)
     .fillColor(COLOR.brand)
-    .text(title, 40, y);
+    .text(title.toUpperCase(), 40, y);
 
-  hRule(doc, y + 16, COLOR.accent);
+  doc.roundedRect(40, y + 15, 515, 2, 1).fill(COLOR.accentSoft);
+  doc.roundedRect(40, y + 15, 82, 2, 1).fill(COLOR.accent);
 }
 
-function drawLabelValueCard(params: {
+// Card with two size modes: normal (h≥80) and compact (h<80)
+function drawCard(params: {
   doc: PDFKit.PDFDocument;
   x: number;
   y: number;
@@ -163,114 +109,105 @@ function drawLabelValueCard(params: {
   lines: string[];
 }) {
   const { doc, x, y, w, h, title, lines } = params;
+  const compact = h < 70;
 
-  doc.roundedRect(x, y, w, h, 8).fill(COLOR.light);
+  doc.roundedRect(x, y, w, h, 10).fill(COLOR.light);
+  doc.roundedRect(x, y, w, h, 10).strokeColor(COLOR.divider).lineWidth(0.7).stroke();
 
+  const titleY = compact ? y + 10 : y + 12;
   doc
     .font("Helvetica-Bold")
-    .fontSize(7.5)
+    .fontSize(7.2)
     .fillColor(COLOR.accent)
-    .text(title.toUpperCase(), x + 16, y + 14);
+    .text(title.toUpperCase(), x + 16, titleY);
 
-  let currentY = y + 34;
+  let currentY = compact ? y + 24 : y + 28;
 
-  if (lines.length > 0) {
-    lines.forEach((line, index) => {
-      doc
-        .font(index === 0 ? "Helvetica-Bold" : "Helvetica")
-        .fontSize(9.3)
-        .fillColor(index === 0 ? COLOR.dark : COLOR.body)
-        .text(line, x + 16, currentY, {
-          width: w - 32,
-          ellipsis: true,
-        });
-
-      currentY += 14;
-    });
-  } else {
+  lines.forEach((line, index) => {
     doc
-      .font("Helvetica")
-      .fontSize(9.3)
-      .fillColor(COLOR.body)
-      .text("-", x + 16, currentY);
-  }
+      .font(index === 0 ? "Helvetica-Bold" : "Helvetica")
+      .fontSize(index === 0 ? 9 : 8.2)
+      .fillColor(index === 0 ? COLOR.dark : COLOR.body)
+      .text(line, x + 16, currentY, { width: w - 32, ellipsis: true });
+
+    currentY += compact ? 12 : 13;
+  });
 }
 
-function pricingRow(
-  doc: PDFKit.PDFDocument,
-  label: string,
-  value: string,
-  y: number,
-) {
-  doc.font("Helvetica").fontSize(9.5).fillColor(COLOR.body).text(label, 48, y);
+// Pricing row
+function pricingRow(params: {
+  doc: PDFKit.PDFDocument;
+  label: string;
+  value: string;
+  y: number;
+  bold?: boolean;
+}) {
+  const { doc, label, value, y, bold = false } = params;
+
+  doc
+    .font(bold ? "Helvetica-Bold" : "Helvetica")
+    .fontSize(9)
+    .fillColor(bold ? COLOR.dark : COLOR.body)
+    .text(label, 56, y);
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(9.5)
+    .fontSize(9)
     .fillColor(COLOR.dark)
-    .text(value, 390, y, {
-      align: "right",
-      width: 155,
-    });
+    .text(value, 392, y, { align: "right", width: 145 });
 }
 
-function drawImageFallback(
-  doc: PDFKit.PDFDocument,
-  y: number,
-  url?: string | null,
-) {
-  doc
-    .roundedRect(40, y, 515, 58, 8)
-    .strokeColor(COLOR.divider)
-    .lineWidth(1)
-    .stroke();
+// Summary pill — height 34px (was 40px)
+function drawInfoPill(params: {
+  doc: PDFKit.PDFDocument;
+  x: number;
+  y: number;
+  label: string;
+  value: string;
+}) {
+  const { doc, x, y, label, value } = params;
+
+  doc.roundedRect(x, y, 160, 34, 8).fill(COLOR.white);
+  doc.roundedRect(x, y, 160, 34, 8).strokeColor("#CFE0F5").lineWidth(0.7).stroke();
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(8.5)
+    .fontSize(6.5)
     .fillColor(COLOR.grey)
-    .text("Afbeelding kon niet worden geladen", 55, y + 14);
+    .text(label.toUpperCase(), x + 12, y + 8);
 
   doc
-    .font("Helvetica")
-    .fontSize(7.5)
-    .fillColor(COLOR.accent)
-    .text(url ?? "Geen afbeelding beschikbaar", 55, y + 31, {
-      width: 480,
-      ellipsis: true,
-    });
-}
-
-function drawSafeText(
-  doc: PDFKit.PDFDocument,
-  text: string | null | undefined,
-  x: number,
-  y: number,
-  options?: PDFKit.Mixins.TextOptions,
-) {
-  doc.text(text || "-", x, y, options);
+    .font("Helvetica-Bold")
+    .fontSize(8.2)
+    .fillColor(COLOR.dark)
+    .text(value, x + 12, y + 20, { width: 136, ellipsis: true });
 }
 
 // ─── Main PDF Generator ───────────────────────────────────────────────────────
-
+//
+// One-page A4 layout — vertical budget:
+//   Header        0–100    (100 px)
+//   Pills       116–150    ( 34 px)
+//   Cards       158–244    ( 86 px)
+//   Order       256–376    ( 96 px table + 24 title)
+//   Pricing     396–576    (156 px box  + 24 title)
+//   Payment     596–672    ( 52 px cards + 24 title)
+//   Note        686–722    ( 36 px)
+//   Footer      790–842    ( 52 px)
+//
 export const generateInvoicePdf = async (
   payload: InvoicePdfPayload,
 ): Promise<Buffer> => {
-  const [logoBuffer, bannerBuffer] = await Promise.all([
-    fetchImageBuffer(LOGO_URL),
-    fetchImageBuffer(payload.banner.imageUrl),
-  ]);
-
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: "A4",
         margin: 0,
-        bufferPages: true,
+        bufferPages: false,
+        autoFirstPage: true,
       });
 
       const chunks: Buffer[] = [];
-
       doc.on("data", (chunk) => chunks.push(chunk));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
@@ -278,61 +215,48 @@ export const generateInvoicePdf = async (
       const PAGE_W = 595;
       const PAGE_H = 842;
 
-      // ── Page Background ────────────────────────────────────────────────────
-
+      // ── Background ─────────────────────────────────────────────────────────
       doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLOR.white);
 
-      // ── Header ─────────────────────────────────────────────────────────────
+      // ── Header (0–100) ─────────────────────────────────────────────────────
+      doc.rect(0, 0, PAGE_W, 100).fill(COLOR.brand);
+      doc.rect(0, 96, PAGE_W, 4).fill(COLOR.accent);
 
-      doc.rect(0, 0, PAGE_W, 104).fill(COLOR.brand);
-
-      doc.rect(0, 0, PAGE_W, 104).fillOpacity(0.12).fill(COLOR.accent);
-      doc.fillOpacity(1);
-
-      // Logo white box
-      doc.roundedRect(40, 24, 160, 50, 6).fill(COLOR.white);
-
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, 58, 34, {
-            fit: [124, 30],
-            align: "center",
-            valign: "center",
-          });
-        } catch (error) {
-          console.log("Logo render failed:", error);
-
-          doc
-            .font("Helvetica-Bold")
-            .fontSize(15)
-            .fillColor(COLOR.brand)
-            .text("Spandoek", 60, 34);
-
-          doc
-            .font("Helvetica-Bold")
-            .fontSize(10)
-            .fillColor(COLOR.accent)
-            .text("print", 142, 51);
-        }
-      } else {
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(15)
-          .fillColor(COLOR.brand)
-          .text("Spandoek", 60, 34);
-
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(10)
-          .fillColor(COLOR.accent)
-          .text("print", 142, 51);
-      }
+      // Brand box
+      doc.roundedRect(40, 22, 168, 48, 8).fill(COLOR.white);
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(29)
+        .fontSize(16)
+        .fillColor(COLOR.brand)
+        .text("Spandoek", 56, 32);
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(11)
+        .fillColor(COLOR.accent)
+        .text("Print", 142, 47);
+
+      doc
+        .font("Helvetica")
+        .fontSize(7)
+        .fillColor(COLOR.grey)
+        .text("Professionele spandoeken op maat", 56, 58, {
+          width: 134,
+          ellipsis: true,
+        });
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(26)
         .fillColor(COLOR.white)
-        .text("FACTUUR", 310, 24, {
+        .text("FACTUUR", 310, 22, { align: "right", width: 245 });
+
+      doc
+        .font("Helvetica")
+        .fontSize(8)
+        .fillColor("#DCE7F7")
+        .text(`Factuurnummer: ${payload.invoiceNumber}`, 310, 56, {
           align: "right",
           width: 245,
         });
@@ -341,7 +265,7 @@ export const generateInvoicePdf = async (
         .font("Helvetica")
         .fontSize(8)
         .fillColor("#DCE7F7")
-        .text(`Nr: ${payload.invoiceNumber}`, 310, 60, {
+        .text(`Order ID: ${payload.orderId}`, 310, 68, {
           align: "right",
           width: 245,
         });
@@ -350,27 +274,17 @@ export const generateInvoicePdf = async (
         .font("Helvetica")
         .fontSize(8)
         .fillColor("#DCE7F7")
-        .text(`Order: ${payload.orderId}`, 310, 73, {
+        .text(`Datum: ${payload.orderDate}`, 310, 80, {
           align: "right",
           width: 245,
         });
 
-      doc
-        .font("Helvetica")
-        .fontSize(8)
-        .fillColor("#DCE7F7")
-        .text(`Datum: ${payload.orderDate}`, 310, 86, {
-          align: "right",
-          width: 245,
-        });
+      // ── Summary Pills (116–150) ─────────────────────────────────────────────
+      drawInfoPill({ doc, x: 40,  y: 116, label: "Betaalmethode",   value: safeText(payload.payment.method) });
+      drawInfoPill({ doc, x: 217, y: 116, label: "Status",          value: "Betaald" });
+      drawInfoPill({ doc, x: 395, y: 116, label: "Totaal incl. BTW", value: formatCurrency(payload.pricing.total) });
 
-      doc.rect(0, 100, PAGE_W, 4).fill(COLOR.accent);
-
-      // ── Info Cards ─────────────────────────────────────────────────────────
-
-      const CARD_TOP = 124;
-      const CARD_H = 108;
-
+      // ── Customer & Address Cards (158–244) ─────────────────────────────────
       const customerLines = [
         payload.customer.name,
         payload.customer.companyName,
@@ -379,199 +293,191 @@ export const generateInvoicePdf = async (
       ].filter(Boolean) as string[];
 
       const addr = payload.shippingAddress;
-
       const addrLines = [
         `${addr.street ?? ""} ${addr.houseNumber ?? ""}`.trim(),
         addr.address,
         `${addr.zipCode ?? ""} ${addr.city ?? ""}`.trim(),
       ].filter(Boolean) as string[];
 
-      drawLabelValueCard({
-        doc,
-        x: 40,
-        y: CARD_TOP,
-        w: 245,
-        h: CARD_H,
-        title: "Klantgegevens",
-        lines: customerLines,
-      });
+      drawCard({ doc, x: 40,  y: 158, w: 245, h: 86, title: "Klantgegevens", lines: customerLines });
+      drawCard({ doc, x: 310, y: 158, w: 245, h: 86, title: "Verzendadres",  lines: addrLines });
 
-      drawLabelValueCard({
-        doc,
-        x: 310,
-        y: CARD_TOP,
-        w: 245,
-        h: CARD_H,
-        title: "Verzendadres",
-        lines: addrLines,
-      });
+      // ── Order Section (256–376) ────────────────────────────────────────────
+      let y = 256;
 
-      // ── Order Section ──────────────────────────────────────────────────────
+      sectionTitle(doc, "Bestelling", y);
+      y += 24; // y = 280
 
-      let y = CARD_TOP + CARD_H + 24;
+      // Table box (h = 96)
+      doc.roundedRect(40, y, 515, 96, 10).fill(COLOR.light);
+      doc.roundedRect(40, y, 515, 96, 10).strokeColor(COLOR.divider).lineWidth(0.7).stroke();
 
-      sectionTitle(doc, "BESTELLING", y);
-      y += 28;
+      const tableTop = y + 14; // 294
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(8)
+        .fontSize(7.5)
         .fillColor(COLOR.grey)
-        .text("PRODUCT", 40, y)
-        .text("AANTAL", 365, y)
-        .text("STUKPRIJS INCL. BTW", 405, y, {
-          align: "right",
-          width: 150,
-        });
+        .text("PRODUCT", 56, tableTop)
+        .text("AANTAL", 355, tableTop)
+        .text("STUKPRIJS INCL. BTW", 416, tableTop, { align: "right", width: 120 });
 
-      y += 14;
-      hRule(doc, y);
-      y += 13;
+      hRule(doc, tableTop + 14, COLOR.divider, 56, 539); // 308
 
       doc
         .font("Helvetica-Bold")
         .fontSize(10)
         .fillColor(COLOR.dark)
-        .text(payload.banner.name || "-", 40, y, {
-          width: 310,
+        .text(safeText(payload.banner.name), 56, tableTop + 27, {
+          width: 280,
+          ellipsis: true,
         });
-
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor(COLOR.body)
-        .text(String(payload.banner.quantity || 0), 365, y)
-        .text(formatCurrency(payload.banner.unitPrice), 405, y, {
-          align: "right",
-          width: 150,
-        });
-
-      y += 18;
-      hRule(doc, y);
-      y += 22;
-
-      // ── Banner Image Preview ───────────────────────────────────────────────
-
-      sectionTitle(doc, "ONTWERPVOORBEELD", y);
-      y += 30;
-
-      if (bannerBuffer) {
-        try {
-          doc
-            .roundedRect(40, y, 515, 142, 10)
-            .fillAndStroke(COLOR.white, COLOR.divider);
-
-          doc.roundedRect(48, y + 8, 499, 126, 8).fill("#FAFBFF");
-
-          doc.image(bannerBuffer, 48, y + 8, {
-            fit: [499, 126],
-            align: "center",
-            valign: "center",
-          });
-
-          y += 158;
-        } catch (error) {
-          console.log("Banner image render failed:", error);
-          drawImageFallback(doc, y, payload.banner.imageUrl);
-          y += 76;
-        }
-      } else if (payload.banner.imageUrl) {
-        drawImageFallback(doc, y, payload.banner.imageUrl);
-        y += 76;
-      } else {
-        doc
-          .font("Helvetica")
-          .fontSize(9)
-          .fillColor(COLOR.grey)
-          .text("Geen afbeelding beschikbaar.", 40, y);
-
-        y += 24;
-      }
-
-      // ── Pricing Section ────────────────────────────────────────────────────
-
-      y += 4;
-
-      sectionTitle(doc, "PRIJSBEREKENING", y);
-      y += 30;
-
-      const vatRate = formatVatRate(payload.pricing.vatRate);
-
-      /**
-       * Important:
-       * All prices are already including VAT.
-       * We do not add VAT again.
-       * priceExcludingVat and vatAmount should come from backend as full order breakdown:
-       * banner + delivery + eyelets.
-       */
-      const priceRows: [string, number][] = [
-        ["Spandoek incl. BTW", payload.pricing.subtotal],
-        ["Levering / Afhalen incl. BTW", payload.pricing.deliveryFee],
-        ["Ringen / Eyelets incl. BTW", payload.pricing.eyeletsFee],
-        [`Totaal excl. ${vatRate}% BTW`, payload.pricing.priceExcludingVat],
-        [`BTW ${vatRate}% inbegrepen`, payload.pricing.vatAmount],
-      ];
-
-      priceRows.forEach(([label, amount]) => {
-        pricingRow(doc, label, formatCurrency(amount), y);
-        y += 15;
-      });
-
-      y += 2;
-      hRule(doc, y);
-      y += 9;
-
-      doc.roundedRect(40, y, 515, 34, 6).fill(COLOR.brand);
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(11)
-        .fillColor(COLOR.white)
-        .text("Totaal incl. BTW", 56, y + 11);
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(11)
-        .fillColor(COLOR.white)
-        .text(formatCurrency(payload.pricing.total), 390, y + 11, {
-          align: "right",
-          width: 150,
-        });
-
-      y += 45;
 
       doc
         .font("Helvetica")
         .fontSize(7.8)
         .fillColor(COLOR.grey)
-        .text(
-          `Alle bedragen zijn inclusief ${vatRate}% BTW. De BTW is berekend over het spandoek, levering/afhalen en ringen/eyelets.`,
-          48,
-          y,
-          {
-            width: 500,
-            lineGap: 2,
-          },
-        );
+        .text("Spandoek op maat", 56, tableTop + 40, {
+          width: 280,
+          ellipsis: true,
+        });
 
-      y += 38;
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .fillColor(COLOR.body)
+        .text(String(payload.banner.quantity || 1), 365, tableTop + 30);
 
-      // ── Footer ─────────────────────────────────────────────────────────────
-
-      doc.rect(0, PAGE_H - 46, PAGE_W, 46).fill(COLOR.brand);
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .fillColor(COLOR.dark)
+        .text(formatCurrency(payload.banner.unitPrice), 416, tableTop + 30, {
+          align: "right",
+          width: 120,
+        });
 
       doc
         .font("Helvetica")
-        .fontSize(8)
+        .fontSize(6.8)
+        .fillColor(COLOR.muted)
+        .text(
+          "Ontwerpvoorbeeld is niet toegevoegd aan deze factuur zodat de factuur sneller gegenereerd en verzonden kan worden.",
+          56,
+          tableTop + 57,
+          { width: 470, lineGap: 1 },
+        );
+
+      y += 116; // 280 + 116 = 396  (96 box + 20 gap)
+
+      // ── Pricing Section (396–576) ──────────────────────────────────────────
+      sectionTitle(doc, "Prijsberekening", y); // at 396
+      y += 24; // y = 420
+
+      // Box (h = 156)
+      doc.roundedRect(40, y, 515, 156, 10).fill(COLOR.white);
+      doc.roundedRect(40, y, 515, 156, 10).strokeColor(COLOR.divider).lineWidth(0.7).stroke();
+
+      let priceY = y + 16; // 436
+      const vatRate = formatVatRate(payload.pricing.vatRate);
+
+      const priceRows: [string, number, boolean?][] = [
+        ["Spandoek incl. BTW",            payload.pricing.subtotal],
+        ["Levering / Afhalen incl. BTW",  payload.pricing.deliveryFee],
+        ["Ringen / Eyelets incl. BTW",    payload.pricing.eyeletsFee],
+        [`Totaal excl. ${vatRate}% BTW`,  payload.pricing.priceExcludingVat],
+        [`BTW ${vatRate}% inbegrepen`,    payload.pricing.vatAmount],
+      ];
+
+      priceRows.forEach(([label, amount, bold]) => {
+        pricingRow({ doc, label, value: formatCurrency(amount), y: priceY, bold });
+        priceY += 16; // rows at 16 px spacing
+      });
+      // priceY = 436 + 5×16 = 516
+
+      hRule(doc, priceY + 2, COLOR.divider, 56, 539); // 518
+
+      // Total bar
+      doc.roundedRect(56, priceY + 12, 483, 36, 8).fill(COLOR.brand); // 528–564
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(11)
+        .fillColor(COLOR.white)
+        .text("Totaal incl. BTW", 72, priceY + 24); // 540
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(11)
+        .fillColor(COLOR.white)
+        .text(formatCurrency(payload.pricing.total), 392, priceY + 24, {
+          align: "right",
+          width: 130,
+        });
+
+      y += 176; // 420 + 176 = 596  (156 box + 20 gap)
+
+      // ── Payment Section (596–672) ──────────────────────────────────────────
+      sectionTitle(doc, "Betaling", y); // at 596
+      y += 24; // y = 620
+
+      drawCard({
+        doc,
+        x: 40,
+        y,
+        w: 245,
+        h: 52,
+        title: "Betaalmethode",
+        lines: [safeText(payload.payment.method)],
+      });
+
+      drawCard({
+        doc,
+        x: 310,
+        y,
+        w: 245,
+        h: 52,
+        title: "Transactie ID",
+        lines: [safeText(payload.payment.transactionId)],
+      });
+
+      y += 66; // 620 + 66 = 686  (52 card + 14 gap)
+
+      // ── Note (686–722) ─────────────────────────────────────────────────────
+      doc.roundedRect(40, y, 515, 36, 8).fill(COLOR.accentSoft);
+
+      doc
+        .font("Helvetica")
+        .fontSize(7.5)
+        .fillColor(COLOR.body)
+        .text(
+          `Alle bedragen zijn inclusief ${vatRate}% BTW. De BTW is berekend over het spandoek, levering/afhalen en ringen/eyelets.`,
+          56,
+          y + 12,
+          { width: 480, lineGap: 1 },
+        );
+
+      // ── Footer (790–842) ───────────────────────────────────────────────────
+      doc.rect(0, PAGE_H - 52, PAGE_W, 52).fill(COLOR.brand);
+
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(8.5)
+        .fillColor(COLOR.white)
+        .text("Spandoek Print", 40, PAGE_H - 36, {
+          align: "center",
+          width: PAGE_W - 80,
+        });
+
+      doc
+        .font("Helvetica")
+        .fontSize(7.5)
         .fillColor("#DCE7F7")
         .text(
-          "Bedankt voor uw bestelling bij Spandoek Print · Vragen? Neem gerust contact met ons op.",
+          "Bedankt voor uw bestelling. Heeft u vragen? Neem gerust contact met ons op.",
           40,
-          PAGE_H - 28,
-          {
-            align: "center",
-            width: PAGE_W - 80,
-          },
+          PAGE_H - 22,
+          { align: "center", width: PAGE_W - 80 },
         );
 
       doc.end();
@@ -579,38 +485,4 @@ export const generateInvoicePdf = async (
       reject(error);
     }
   });
-};
-
-// ─── Save PDF Locally ─────────────────────────────────────────────────────────
-
-export const saveInvoicePdfLocally = async ({
-  pdfBuffer,
-  invoiceNumber,
-}: {
-  pdfBuffer: Buffer;
-  invoiceNumber: string;
-}) => {
-  const uploadDir = path.join(process.cwd(), "uploads", "invoices");
-
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, {
-      recursive: true,
-    });
-  }
-
-  const fileName = `${invoiceNumber}.pdf`;
-  const filePath = path.join(uploadDir, fileName);
-
-  await fs.promises.writeFile(filePath, pdfBuffer);
-
-  const backendBaseUrl =
-    process.env.BACKEND_BASE_URL || "https://api.spandoekprint.nl";
-
-  const fileUrl = `${backendBaseUrl}/uploads/invoices/${fileName}`;
-
-  return {
-    fileName,
-    filePath,
-    fileUrl,
-  };
 };

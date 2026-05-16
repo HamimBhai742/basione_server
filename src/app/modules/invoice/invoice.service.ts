@@ -1,8 +1,9 @@
 import httpStatus from "http-status";
 import { generateInvoiceNumber } from "../../utils/generateInvoiceNumber";
-import { generateInvoicePdf, saveInvoicePdfLocally } from "./invoice.pdf";
+import { generateInvoicePdf } from "./invoice.pdf";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../error/AppError";
+import { uploadInvoicePdfToS3 } from "../../utils/savePdfInvoice";
 
 type GenerateInvoicePayload = {
   user: any;
@@ -74,7 +75,7 @@ export const generateAndSaveInvoice = async ({
         name: `${formatLabel(order.banner?.occasion)} Banner`,
         quantity: Number(order.quantity || 1),
         unitPrice: Number(order.banner?.price || 0),
-        imageUrl: order.banner?.imageUrl || null,
+        imageUrl:  null,
       },
 
       pricing: {
@@ -97,21 +98,21 @@ export const generateAndSaveInvoice = async ({
       bufferSize: pdfBuffer?.length,
     });
 
-    const savedPdf = await saveInvoicePdfLocally({
+    const savedPdf = await uploadInvoicePdfToS3({
       pdfBuffer,
       invoiceNumber,
     });
 
     console.log("Invoice PDF saved:", {
       fileUrl: savedPdf.fileUrl,
-      filePath: savedPdf.filePath,
+      filePath: savedPdf.fileName,
     });
 
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNumber,
         invoiceUrl: savedPdf.fileUrl,
-        invoiceFilePath: savedPdf.filePath,
+        invoiceFilePath: savedPdf.fileName,
 
         orderId: order.id,
         userId: user.id,
