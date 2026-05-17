@@ -75,7 +75,7 @@ export const createPayment = async (
 
     webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
 
-    cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
+    cancelUrl: `https://spandoekprint.nl/api/v1/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
 
     metadata: {
       orderId,

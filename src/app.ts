@@ -18,6 +18,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://spandoekprint.nl",
   "https://www.spandoekprint.nl",
+  "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
 ];
 
 app.use(
@@ -28,8 +29,8 @@ app.use(
       const isAllowed =
         allowedOrigins.includes(origin) ||
         origin.endsWith(".vercel.app") ||
-        origin.includes("ngrok");
-      origin.includes(".nl");
+        origin.includes(".ngrok-free.dev") ||
+        origin.includes(".nl");
 
       if (isAllowed) {
         callback(null, true);

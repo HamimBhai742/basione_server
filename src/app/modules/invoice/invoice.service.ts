@@ -53,7 +53,22 @@ export const generateAndSaveInvoice = async ({
 
     const pdfBuffer = await generateInvoicePdf({
       invoiceNumber,
+
       orderId: order.id,
+
+      order: {
+        orderId: order.id,
+        orderNumber: order.order || null,
+        trackingNumber: order.trackingNumber || null,
+      },
+
+      company: {
+        name: "Spandoekprint",
+        street: "Neonweg 200",
+        postalCity: "1362AE Almere",
+        country: "Nederland",
+      },
+
       orderDate: order.createdAt.toLocaleString(),
 
       customer: {
@@ -75,7 +90,12 @@ export const generateAndSaveInvoice = async ({
         name: `${formatLabel(order.banner?.occasion)} Banner`,
         quantity: Number(order.quantity || 1),
         unitPrice: Number(order.banner?.price || 0),
-        imageUrl:  null,
+        imageUrl: null,
+
+        designType: "Uploaded / Generated design",
+        designFileName: order.banner?.fileName || null,
+        designReference: order.bannerId || order.banner?.id || order.id,
+        size: order.banner?.size || null,
       },
 
       pricing: {
@@ -118,7 +138,7 @@ export const generateAndSaveInvoice = async ({
         userId: user.id,
 
         // Uncomment only if your Invoice model has paymentId field
-        paymentId: payment?.id||"",
+        paymentId: payment?.id || "",
 
         amount: Number(order.total || 0),
         vatAmount: Number(order.vatAmount || 0),
