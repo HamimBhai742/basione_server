@@ -6,6 +6,7 @@ import { orderRoutes } from "../modules/order/order.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
 import { adminRoutes } from "../modules/admin/admin.route";
 import { decorationRoutes } from "../modules/decorations/decorations.routes";
+import { blogRoutes } from "../modules/blog/blog.routes";
 
 export const router = Router();
 
@@ -38,8 +39,13 @@ const routes = [
     path: "/decorations",
     route: decorationRoutes,
   },
+  {
+    path: "/blog",
+    route: blogRoutes,
+  },
 ];
 
 routes.forEach((route) => {
   router.use(route.path, route.route);
 });
+

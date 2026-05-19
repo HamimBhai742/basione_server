@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { adminController } from "./admin.controller";
 import { upload } from "../../middleware/upload";
+import { checkAuth } from "../../middleware/checkAuth";
 
 const router = Router();
 
@@ -49,5 +50,32 @@ router.get("/faqs", adminController.getFaqs);
 router.post("/create-faq", adminController.createFaq);
 router.patch("/update-faq/:id", adminController.updateFaq);
 router.delete("/delete-faq/:id", adminController.deleteFaq);
+
+// --- Admin Template Management Endpoints ---
+router.post(
+  "/create-template",
+  checkAuth("admin"),
+  upload.single("image"),
+  adminController.createTemplate,
+);
+
+router.patch(
+  "/update-template/:id",
+  checkAuth("admin"),
+  upload.single("image"),
+  adminController.updateTemplate,
+);
+
+router.delete(
+  "/delete-template/:id",
+  checkAuth("admin"),
+  adminController.deleteTemplate,
+);
+
+router.get(
+  "/templates",
+  checkAuth("admin"),
+  adminController.getAllTemplates,
+);
 
 export const adminRoutes = router;

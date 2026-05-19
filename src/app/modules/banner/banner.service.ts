@@ -596,6 +596,110 @@ const getSelectedBanner = async (id: string) => {
   return banner;
 };
 
+const getTemplates = async (
+  page: number,
+  limit: number,
+  skip: number,
+  occasion?: string,
+) => {
+  const where: any = {
+    isTemplate: true,
+  };
+
+  if (occasion) {
+    where.occasion = occasion;
+  }
+
+  const templates = await prisma.banner.findMany({
+    skip,
+    take: limit,
+    where,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const total = await prisma.banner.count({ where });
+
+  return {
+    templates,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const createBannerFromTemplate = async (req: AuthRequest) => {
+  let parsedData = req.body;
+  if (typeof req.body === "string" || (req.body.data && typeof req.body.data === "string")) {
+    parsedData = JSON.parse(req.body.data || req.body);
+  }
+
+  const { templateId } = parsedData;
+  if (!templateId) {
+    throw new AppError("templateId is required", 400);
+  }
+
+  const template = await prisma.banner.findUnique({
+    where: { id: templateId, isTemplate: true },
+  });
+
+  if (!template) {
+    throw new AppError("Template not found", 404);
+  }
+
+  const width = Number(parsedData.width);
+  const height = Number(parsedData.height);
+
+  if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+    throw new AppError("Invalid banner size.", 400);
+  }
+
+  if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
+    throw new AppError(
+      `Maximum banner size is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
+      400,
+    );
+  }
+
+  const price = calculateBannerPriceInclVat(width, height);
+
+  let imageUrl = template.imageUrl;
+  if (req.file) {
+    imageUrl = await uploadImageToS3(req.file);
+  }
+
+  const sizeType = parsedData.sizeType || template.sizeType;
+  const sizeLabel = formatLabel(sizeType);
+
+  const banner = await prisma.banner.create({
+    data: {
+      userId: req.user?.id || null,
+      occasion: template.occasion,
+      style: template.style,
+      headline: parsedData.headline || template.headline,
+      name: parsedData.name || template.name,
+      description: parsedData.description || template.description,
+      hobbies: parsedData.hobbies || template.hobbies || [],
+      sizeType,
+      sizeLabel,
+      width,
+      height,
+      imageUrl,
+      price,
+      variant: 0,
+      isTemplate: false,
+      isSelected: true,
+      status: "SELECTED",
+    },
+  });
+
+  return banner;
+};
+
 export const bannerService = {
   mybanner,
   createBanner,
@@ -603,4 +707,6 @@ export const bannerService = {
   getSelectedBanner,
   createBannerByTemplate,
   updateBanner,
+  getTemplates,
+  createBannerFromTemplate,
 };

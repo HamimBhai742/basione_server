@@ -88,6 +88,33 @@ const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getTemplates = catchAsync(async (req: Request, res: Response) => {
+  const { page, limit, skip } = calculatePagination(req.query);
+  const occasion = req.query.occasion as string;
+  const result = await bannerService.getTemplates(page, limit, skip, occasion);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templates fetched successfully",
+    data: result.templates,
+    metaData: result.metaData,
+  });
+});
+
+const createBannerFromTemplate = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const banner = await bannerService.createBannerFromTemplate(req);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Banner created from template successfully",
+      data: banner,
+    });
+  },
+);
+
 export const bannerController = {
   mybanner,
   createBanner,
@@ -95,4 +122,6 @@ export const bannerController = {
   getSelectedBanner,
   createBannerByTemplate,
   updateBanner,
+  getTemplates,
+  createBannerFromTemplate,
 };

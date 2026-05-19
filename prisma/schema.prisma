@@ -30,6 +30,7 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   invoices  Invoice[]
+  blogs     Blog[]
 }
 
 enum Status {
@@ -58,7 +59,7 @@ model Banner {
   description String?
 
   sizeType  String
-  sizeLabel String
+  sizeLabel String?
   width     Int
   height    Int
 
@@ -68,6 +69,7 @@ model Banner {
   revisedPrompt String?
 
   isSelected Boolean      @default(false)
+  isTemplate Boolean      @default(false)
   status     BannerStatus @default(GENERATED)
 
   generationId String? // group 4 variants
@@ -265,3 +267,33 @@ model Faq {
   updatedAt DateTime @updatedAt
 }
 
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Blog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  slug       String   @unique
+  content    String
+  coverImage String?
+  images     String[]
+  category   String
+  tags       String[]
+  isFeatured Boolean  @default(false)
+
+  metaTitle       String?
+  metaDescription String?
+
+  status BlogStatus @default(DRAFT)
+
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id])
+
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

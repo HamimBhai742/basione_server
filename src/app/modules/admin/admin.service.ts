@@ -8,6 +8,10 @@ import { orderRefundedTemplate } from "../../utils/emailTemplates/orderRefunded"
 import { orderReadyTemplate } from "../../utils/emailTemplates/orderReadyTemplate";
 import { orderShippedTemplate } from "../../utils/emailTemplates/orderShipped";
 import { stat } from "fs";
+import { uploadImageToS3 } from "../../utils/uploadAws";
+import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
+import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+
 
 type IOrderStatus =
   | "pending"
@@ -764,6 +768,182 @@ const getFaqs = async () => {
   return faqs;
 };
 
+const createTemplate = async (payload: any, file?: Express.Multer.File) => {
+  let parsedData = payload;
+  if (typeof payload === "string" || (payload.data && typeof payload.data === "string")) {
+    parsedData = JSON.parse(payload.data || payload);
+  }
+
+  const width = Number(parsedData?.width || 0);
+  const height = Number(parsedData?.height || 0);
+
+  if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+    throw new AppError("Invalid template dimensions. Width and height must be positive numbers.", 400);
+  }
+
+  let imageUrl = "";
+  if (file) {
+    imageUrl = await uploadImageToS3(file);
+  } else if (parsedData.imageUrl) {
+    imageUrl = parsedData.imageUrl;
+  } else {
+    throw new AppError("Template image is required.", 400);
+  }
+
+  const areaM2 = (width / 100) * (height / 100);
+  const pricePerM2 = areaM2 < 1 ? 25 : 20;
+  const calculatedPrice = areaM2 * pricePerM2;
+  const finalPrice = Math.max(calculatedPrice, 12);
+
+  const template = await prisma.banner.create({
+    data: {
+      occasion: parsedData.occasion || "custom",
+      style: parsedData.style || "Template",
+      headline: parsedData.headline || "Template Headline",
+      name: parsedData.name || null,
+      description: parsedData.description || null,
+      sizeType: parsedData.sizeType || "custom",
+      sizeLabel: parsedData.sizeLabel || "Custom Size",
+      width,
+      height,
+      imageUrl,
+      price: Number(finalPrice.toFixed(2)),
+      isTemplate: true,
+      variant: 0,
+      status: "GENERATED",
+    },
+  });
+
+  return template;
+};
+
+const updateTemplate = async (templateId: string, payload: any, file?: Express.Multer.File) => {
+  const isExist = await prisma.banner.findUnique({
+    where: { id: templateId, isTemplate: true },
+  });
+
+  if (!isExist) {
+    throw new AppError("Template not found", httpStatus.NOT_FOUND);
+  }
+
+  let parsedData = payload;
+  if (typeof payload === "string" || (payload.data && typeof payload.data === "string")) {
+    parsedData = JSON.parse(payload.data || payload);
+  }
+
+  const updateData: any = {};
+
+  if (parsedData.occasion !== undefined) updateData.occasion = parsedData.occasion;
+  if (parsedData.style !== undefined) updateData.style = parsedData.style;
+  if (parsedData.headline !== undefined) updateData.headline = parsedData.headline;
+  if (parsedData.name !== undefined) updateData.name = parsedData.name;
+  if (parsedData.description !== undefined) updateData.description = parsedData.description;
+  if (parsedData.sizeType !== undefined) updateData.sizeType = parsedData.sizeType;
+  if (parsedData.sizeLabel !== undefined) updateData.sizeLabel = parsedData.sizeLabel;
+
+  let width = isExist.width;
+  let height = isExist.height;
+
+  if (parsedData.width !== undefined) {
+    width = Number(parsedData.width);
+    updateData.width = width;
+  }
+  if (parsedData.height !== undefined) {
+    height = Number(parsedData.height);
+    updateData.height = height;
+  }
+
+  if (parsedData.width !== undefined || parsedData.height !== undefined) {
+    if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+      throw new AppError("Invalid template dimensions.", 400);
+    }
+    const areaM2 = (width / 100) * (height / 100);
+    const pricePerM2 = areaM2 < 1 ? 25 : 20;
+    const calculatedPrice = areaM2 * pricePerM2;
+    const finalPrice = Math.max(calculatedPrice, 12);
+    updateData.price = Number(finalPrice.toFixed(2));
+  }
+
+  if (file) {
+    const fileUrl = await uploadImageToS3(file);
+    updateData.imageUrl = fileUrl;
+
+    if (isExist.imageUrl) {
+      const oldKey = getS3KeyFromUrl(isExist.imageUrl);
+      if (oldKey) {
+        await deleteImageFromS3(oldKey);
+      }
+    }
+  }
+
+  const updatedTemplate = await prisma.banner.update({
+    where: { id: templateId },
+    data: updateData,
+  });
+
+  return updatedTemplate;
+};
+
+const deleteTemplate = async (templateId: string) => {
+  const isExist = await prisma.banner.findUnique({
+    where: { id: templateId, isTemplate: true },
+  });
+
+  if (!isExist) {
+    throw new AppError("Template not found", httpStatus.NOT_FOUND);
+  }
+
+  if (isExist.imageUrl) {
+    const key = getS3KeyFromUrl(isExist.imageUrl);
+    if (key) {
+      await deleteImageFromS3(key);
+    }
+  }
+
+  await prisma.banner.delete({
+    where: { id: templateId },
+  });
+
+  return true;
+};
+
+const getAllTemplates = async (
+  page: number,
+  limit: number,
+  skip: number,
+  occasion?: string,
+) => {
+  const where: any = {
+    isTemplate: true,
+  };
+
+  if (occasion) {
+    where.occasion = occasion;
+  }
+
+  const [templates, total] = await prisma.$transaction([
+    prisma.banner.findMany({
+      where,
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      skip,
+    }),
+    prisma.banner.count({ where }),
+  ]);
+
+  return {
+    templates,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 export const adminService = {
   totalOrder,
   manageOrder,
@@ -783,4 +963,8 @@ export const adminService = {
   updateFaq,
   deleteFaq,
   getFaqs,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  getAllTemplates,
 };

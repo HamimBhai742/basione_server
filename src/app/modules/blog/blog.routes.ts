@@ -1,0 +1,78 @@
+import { Router } from "express";
+import { checkAuth } from "../../middleware/checkAuth";
+import { validateRequest } from "../../middleware/validateRequest";
+import { upload } from "../../middleware/upload";
+import { blogValidation } from "./blog.zod.schema";
+import { blogController } from "./blog.controller";
+
+const router = Router();
+
+// --- Administrative Endpoints (Admin role only) ---
+
+// Create a new blog post (handles coverImage direct upload or JSON data body)
+router.post(
+  "/create",
+  checkAuth("admin"),
+  upload.single("coverImage"),
+  validateRequest(blogValidation.createBlogZodSchema),
+  blogController.createBlog,
+);
+
+// Upload a cover or content image independently (returns image URL)
+router.post(
+  "/upload-image",
+  checkAuth("admin"),
+  upload.single("image"),
+  blogController.uploadImage,
+);
+
+// Edit an existing blog post (handles coverImage update or JSON data body)
+router.patch(
+  "/:id",
+  checkAuth("admin"),
+  upload.single("coverImage"),
+  validateRequest(blogValidation.updateBlogZodSchema),
+  blogController.updateBlog,
+);
+
+// Delete a blog post
+router.delete(
+  "/:id",
+  checkAuth("admin"),
+  blogController.deleteBlog,
+);
+
+// Admin-specific paginated list of all blog posts (supports search/filter drafts/archives/published)
+router.get(
+  "/admin",
+  checkAuth("admin"),
+  blogController.getAdminBlogs,
+);
+
+// --- Public Endpoints (No authentication required) ---
+
+// Fetch unique categories and tags used across all blog posts
+router.get(
+  "/categories-tags",
+  blogController.getCategoriesAndTags,
+);
+
+// Fetch a single blog post by ID
+router.get(
+  "/id/:id",
+  blogController.getBlogById,
+);
+
+// Public-facing list of published blog posts (supports pagination, search, category filtering)
+router.get(
+  "/",
+  blogController.getPublicBlogs,
+);
+
+// Fetch a single blog post by SEO Slug
+router.get(
+  "/:slug",
+  blogController.getBlogBySlug,
+);
+
+export const blogRoutes = router;

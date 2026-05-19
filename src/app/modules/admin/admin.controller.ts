@@ -292,6 +292,59 @@ const getFaqs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createTemplate = catchAsync(async (req: Request, res: Response) => {
+  const file = req.file;
+  const result = await adminService.createTemplate(req.body, file);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Template created successfully",
+    data: result,
+  });
+});
+
+const updateTemplate = catchAsync(async (req: Request, res: Response) => {
+  const file = req.file;
+  const result = await adminService.updateTemplate(
+    req.params.id as string,
+    req.body,
+    file,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Template updated successfully",
+    data: result,
+  });
+});
+
+const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteTemplate(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Template deleted successfully",
+    data: null,
+  });
+});
+
+const getAllTemplates = catchAsync(async (req: Request, res: Response) => {
+  const { page, limit, skip } = calculatePagination(req.query);
+  const occasion = req.query.occasion as string;
+  const result = await adminService.getAllTemplates(page, limit, skip, occasion);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templates fetched successfully",
+    data: result.templates,
+    metaData: result.metaData,
+  });
+});
+
 export const adminController = {
   totalOrder,
   manageOrder,
@@ -311,4 +364,8 @@ export const adminController = {
   updateFaq,
   deleteFaq,
   getFaqs,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+  getAllTemplates,
 };

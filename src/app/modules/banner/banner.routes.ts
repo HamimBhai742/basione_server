@@ -19,6 +19,8 @@ router.get("/my-banner", checkAuth("user"), bannerController.mybanner);
 
 router.get("/all-banners", bannerController.getAllbanners);
 
+router.get("/templates", bannerController.getTemplates);
+
 router.get("/:id", bannerController.getSelectedBanner);
 
 router.post(
@@ -26,6 +28,13 @@ router.post(
   // checkAuth("user"),
   upload.single("image"),
   bannerController.createBannerByTemplate,
+);
+
+router.post(
+  "/create-banner-from-template",
+  checkAuth("user"),
+  upload.single("image"),
+  bannerController.createBannerFromTemplate,
 );
 
 router.patch(
