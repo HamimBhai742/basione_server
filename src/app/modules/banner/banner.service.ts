@@ -482,13 +482,41 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     const img = await uploadImageToS3(req.file);
     imageUrl = img;
 
-    if (oldImg) {
+    // Only delete original image from S3 if we are updating a user banner draft, NOT a template!
+    if (oldImg && !banner.isTemplate) {
       const oldKey = getS3KeyFromUrl(oldImg);
 
       if (oldKey) {
         await deleteImageFromS3(oldKey);
       }
     }
+  }
+
+  // If this is a template banner, create a new customized user banner copy instead of modifying the template!
+  if (banner.isTemplate) {
+    const newBanner = await prisma.banner.create({
+      data: {
+        userId: req.user?.id || null,
+        occasion: occasion,
+        style: banner.style,
+        headline: parsedData?.headline || banner.headline,
+        name: parsedData?.name || banner.name,
+        description: parsedData?.description || banner.description,
+        hobbies: parsedData?.hobbies || banner.hobbies || [],
+        sizeType: parsedData?.size || banner.sizeType,
+        sizeLabel: parsedData?.size ? formatLabel(parsedData.size) : banner.sizeLabel,
+        width,
+        height,
+        imageUrl,
+        price,
+        variant: 0,
+        isTemplate: false,
+        isSelected: true,
+        status: "SELECTED",
+      },
+    });
+
+    return newBanner;
   }
 
   const updateData: any = {};
@@ -550,21 +578,27 @@ const getAllbanners = async (
   category?: string,
   fetchFrom?: "home" | "gallery",
 ) => {
+  const where: any = {};
+
+  if (category && category !== "all" && category !== "undefined") {
+    where.occasion = category;
+  }
+
+  if (fetchFrom === "home" || fetchFrom === "gallery") {
+    where.isTemplate = true;
+  }
+
   const banners = await prisma.banner.findMany({
     skip,
     take: fetchFrom === "home" ? 6 : limit,
-    where: {
-      occasion: category ? category : undefined,
-    },
+    where,
     orderBy: {
       createdAt: "desc",
     },
   });
 
   const total = await prisma.banner.count({
-    where: {
-      occasion: category ? category : undefined,
-    },
+    where,
   });
 
   return {
