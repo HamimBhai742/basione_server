@@ -12,6 +12,30 @@ import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 
+const bannerListSelect = {
+  id: true,
+  userId: true,
+  occasion: true,
+  style: true,
+  headline: true,
+  name: true,
+  price: true,
+  hobbies: true,
+  description: true,
+  sizeType: true,
+  sizeLabel: true,
+  width: true,
+  height: true,
+  imageUrl: true,
+  variant: true,
+  revisedPrompt: true,
+  isSelected: true,
+  isTemplate: true,
+  status: true,
+  generationId: true,
+  createdAt: true,
+  updatedAt: true,
+};
 
 type IOrderStatus =
   | "pending"
@@ -811,6 +835,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       isTemplate: true,
       variant: 0,
       status: "GENERATED",
+      canvasJSON: parsedData.canvasJSON || null,
     },
   });
 
@@ -840,6 +865,7 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   if (parsedData.description !== undefined) updateData.description = parsedData.description;
   if (parsedData.sizeType !== undefined) updateData.sizeType = parsedData.sizeType;
   if (parsedData.sizeLabel !== undefined) updateData.sizeLabel = parsedData.sizeLabel;
+  if (parsedData.canvasJSON !== undefined) updateData.canvasJSON = parsedData.canvasJSON;
 
   let width = isExist.width;
   let height = isExist.height;
@@ -929,6 +955,7 @@ const getAllTemplates = async (
       },
       take: limit,
       skip,
+      select: bannerListSelect,
     }),
     prisma.banner.count({ where }),
   ]);

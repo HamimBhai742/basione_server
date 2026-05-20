@@ -68,6 +68,8 @@ model Banner {
 
   revisedPrompt String?
 
+  canvasJSON String?
+
   isSelected Boolean      @default(false)
   isTemplate Boolean      @default(false)
   status     BannerStatus @default(GENERATED)

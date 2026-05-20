@@ -6,6 +6,32 @@ import { AppError } from "../../error/AppError";
 import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+
+const bannerListSelect = {
+  id: true,
+  userId: true,
+  occasion: true,
+  style: true,
+  headline: true,
+  name: true,
+  price: true,
+  hobbies: true,
+  description: true,
+  sizeType: true,
+  sizeLabel: true,
+  width: true,
+  height: true,
+  imageUrl: true,
+  variant: true,
+  revisedPrompt: true,
+  isSelected: true,
+  isTemplate: true,
+  status: true,
+  generationId: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
 export enum ICategory {
   wedding = "wedding",
   birthday = "birthday",
@@ -567,6 +593,7 @@ const mybanner = async (id: string) => {
     where: {
       userId: id,
     },
+    select: bannerListSelect,
   });
   return banner;
 };
@@ -595,6 +622,7 @@ const getAllbanners = async (
     orderBy: {
       createdAt: "desc",
     },
+    select: bannerListSelect,
   });
 
   const total = await prisma.banner.count({
@@ -651,6 +679,7 @@ const getTemplates = async (
     orderBy: {
       createdAt: "desc",
     },
+    select: bannerListSelect,
   });
 
   const total = await prisma.banner.count({ where });
