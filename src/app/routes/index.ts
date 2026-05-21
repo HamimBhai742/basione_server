@@ -7,6 +7,7 @@ import { paymentRoutes } from "../modules/payment/payment.routes";
 import { adminRoutes } from "../modules/admin/admin.route";
 import { decorationRoutes } from "../modules/decorations/decorations.routes";
 import { blogRoutes } from "../modules/blog/blog.routes";
+import { aggregateRoutes } from "../modules/aggregate/aggregate.routes";
 
 export const router = Router();
 
@@ -42,6 +43,10 @@ const routes = [
   {
     path: "/blog",
     route: blogRoutes,
+  },
+  {
+    path: "/aggregate",
+    route: aggregateRoutes,
   },
 ];
 
