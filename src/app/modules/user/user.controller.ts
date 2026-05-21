@@ -35,7 +35,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "User registered successfully. Please check your email",
+    message: "Gebruiker succesvol geregistreerd. Controleer je e-mail",
     data: user,
   });
 });
@@ -46,7 +46,7 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User verified successfully",
+    message: "Gebruiker succesvol geverifieerd",
     data: null,
   });
 });
@@ -57,7 +57,7 @@ const resendOtp = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "OTP sent successfully",
+    message: "OTP succesvol verzonden",
     data: user,
   });
 });
@@ -68,7 +68,7 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "OTP sent successfully",
+    message: "OTP succesvol verzonden",
     data: user,
   });
 });
@@ -79,7 +79,7 @@ const resendForgotPassOtp = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "OTP sent successfully",
+    message: "OTP succesvol verzonden",
     data: user,
   });
 });
@@ -94,7 +94,7 @@ const verifyForgotOtp = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User verified successfully",
+    message: "Gebruiker succesvol geverifieerd",
     data: user,
   });
 });
@@ -106,7 +106,7 @@ const getMyProfile = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "User profile fetched successfully",
+      message: "Gebruikersprofiel succesvol opgehaald",
       data: user,
     });
   },
@@ -124,7 +124,7 @@ const updateUser = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "User profile updated successfully",
+      message: "Gebruikersprofiel succesvol bijgewerkt",
       data: user,
     });
   },
@@ -136,7 +136,7 @@ const getTotalActiveUsers = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Total active users fetched successfully",
+    message: "Totaal aantal actieve gebruikers succesvol opgehaald",
     data: totalActiveUsers,
   });
 });

@@ -73,7 +73,7 @@ const registerUser = async (payload: IUserPayload) => {
   }
 
   if (isExistingUser) {
-    throw new AppError("User already exists", httpStatus.CONFLICT);
+    throw new AppError("Gebruiker bestaat al", httpStatus.CONFLICT);
   }
 
   const hashedPassword = await bcrypt.hash(
@@ -131,15 +131,15 @@ const verifyOtp = async (otp: string, email: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (user.otp !== otp) {
-    throw new AppError("Invalid OTP", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldige OTP", httpStatus.BAD_REQUEST);
   }
 
   if (user?.otpExpiry && user.otpExpiry < new Date()) {
-    throw new AppError("OTP has expired", httpStatus.BAD_REQUEST);
+    throw new AppError("OTP is verlopen", httpStatus.BAD_REQUEST);
   }
 
   await prisma.user.update({
@@ -178,11 +178,11 @@ const resendOtp = async (email: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (user.isVerified) {
-    throw new AppError("User is already verified", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is al geverifieerd", httpStatus.BAD_REQUEST);
   }
 
   const otp = generateOtp(6);
@@ -231,15 +231,15 @@ const forgotPassword = async (email: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (!user.isVerified) {
-    throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet geverifieerd", httpStatus.BAD_REQUEST);
   }
 
   if (user.status !== "active") {
-    throw new AppError("User is not active", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet actief", httpStatus.BAD_REQUEST);
   }
 
   const otp = generateOtp(6);
@@ -294,15 +294,15 @@ const resendForgotPassOtp = async (email: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (!user.isVerified) {
-    throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet geverifieerd", httpStatus.BAD_REQUEST);
   }
 
   if (user.status !== "active") {
-    throw new AppError("User is not active", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet actief", httpStatus.BAD_REQUEST);
   }
 
   const otp = generateOtp(6);
@@ -359,15 +359,15 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (user.forgetPasswordToken !== token) {
-    throw new AppError("Invalid token", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldig token", httpStatus.BAD_REQUEST);
   }
 
   if (user.otp !== otp) {
-    throw new AppError("Invalid OTP", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldige OTP", httpStatus.BAD_REQUEST);
   }
 
   if (
@@ -375,7 +375,7 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
     (user.forgetPasswordTokenExpires &&
       user.forgetPasswordTokenExpires < new Date())
   ) {
-    throw new AppError("OTP has expired", httpStatus.BAD_REQUEST);
+    throw new AppError("OTP is verlopen", httpStatus.BAD_REQUEST);
   }
 
   const tempToken = await generateToken(user, config.jwt.secret, "5m");
@@ -437,7 +437,7 @@ const updateUser = async (data: {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const oldImg = user.image;

@@ -188,22 +188,22 @@ const createOrder = async (
   const { deliveryType, quantity, hasEyelets = true } = payload;
 
   if (!userId) {
-    throw new AppError("User id is required.", httpStatus.UNAUTHORIZED);
+    throw new AppError("Gebruikers-id is verplicht.", httpStatus.UNAUTHORIZED);
   }
 
   if (!bannerId) {
-    throw new AppError("Banner id is required.", httpStatus.BAD_REQUEST);
+    throw new AppError("Banner-id is verplicht.", httpStatus.BAD_REQUEST);
   }
 
   if (!quantity || !Number.isInteger(quantity) || quantity < 1) {
-    throw new AppError("Quantity must be at least 1.", httpStatus.BAD_REQUEST);
+    throw new AppError("Aantal moet minstens 1 zijn.", httpStatus.BAD_REQUEST);
   }
 
   const selectedDeliveryOption = DELIVERY_OPTIONS[deliveryType];
 
   if (!selectedDeliveryOption) {
     throw new AppError(
-      "Invalid delivery or pickup option.",
+      "Ongeldige bezorg- of afhaaloptie.",
       httpStatus.BAD_REQUEST,
     );
   }
@@ -215,14 +215,14 @@ const createOrder = async (
   });
 
   if (!banner) {
-    throw new AppError("Banner not found.", httpStatus.NOT_FOUND);
+    throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
   }
 
   // banner.price is already INCLUDING VAT
   const bannerPrice = Number(banner.price);
 
   if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
-    throw new AppError("Invalid banner price.", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
   }
 
   // Eyelets fee is already INCLUDING VAT
@@ -319,39 +319,39 @@ const validateCheckoutPayload = (payload: CheckOutPayload) => {
   const city = sanitizeString(payload.city);
 
   if (!name) {
-    throw new AppError("Name is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Naam is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!phone) {
-    throw new AppError("Phone number is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Telefoonnummer is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!/^\+?[0-9\s-]{7,20}$/.test(phone)) {
-    throw new AppError("Invalid phone number", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldig telefoonnummer", httpStatus.BAD_REQUEST);
   }
 
   if (!email) {
-    throw new AppError("Email is required", httpStatus.BAD_REQUEST);
+    throw new AppError("E-mailadres is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!/^\S+@\S+\.\S+$/.test(email)) {
-    throw new AppError("Invalid email address", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldig e-mailadres", httpStatus.BAD_REQUEST);
   }
 
   if (!street) {
-    throw new AppError("Street is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Straat is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!houseNumber) {
-    throw new AppError("House number is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Huisnummer is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!zipCode) {
-    throw new AppError("Zip code is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Postcode is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!city) {
-    throw new AppError("City is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Stad is verplicht", httpStatus.BAD_REQUEST);
   }
 
   return {
@@ -373,11 +373,11 @@ const checkOut = async (
   payload: CheckOutPayload,
 ) => {
   if (!orderId) {
-    throw new AppError("Order id is required", httpStatus.BAD_REQUEST);
+    throw new AppError("Bestel-id is verplicht", httpStatus.BAD_REQUEST);
   }
 
   if (!userId) {
-    throw new AppError("User id is required", httpStatus.UNAUTHORIZED);
+    throw new AppError("Gebruikers-id is verplicht", httpStatus.UNAUTHORIZED);
   }
 
   const validatedAddress = validateCheckoutPayload(payload);
@@ -394,23 +394,23 @@ const checkOut = async (
   });
 
   if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (order.userId !== userId) {
-    throw new AppError("You are not authorized", httpStatus.UNAUTHORIZED);
+    throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
   }
 
   if (order.status === "cancelled") {
-    throw new AppError("Order is cancelled", httpStatus.BAD_REQUEST);
+    throw new AppError("Bestelling is geannuleerd", httpStatus.BAD_REQUEST);
   }
 
   if (order.payment?.status === "paid") {
-    throw new AppError("Order already paid", httpStatus.BAD_REQUEST);
+    throw new AppError("Bestelling is al betaald", httpStatus.BAD_REQUEST);
   }
 
   if (order.total <= 0) {
-    throw new AppError("Invalid order amount", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldig bestelbedrag", httpStatus.BAD_REQUEST);
   }
 
   const banner = await prisma.banner.findUnique({
@@ -420,7 +420,7 @@ const checkOut = async (
   });
 
   if (!banner) {
-    throw new AppError("Banner not found", httpStatus.NOT_FOUND);
+    throw new AppError("Banner niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const result = await prisma.$transaction(async (tx) => {
@@ -578,7 +578,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
 
   if (order?.status !== "pending" && order?.status !== "processing") {
     throw new AppError(
-      "Only pending orders can be canceled",
+      "Alleen bestellingen met status 'pending' kunnen worden geannuleerd",
       httpStatus.BAD_REQUEST,
     );
   }
@@ -605,7 +605,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
       },
     ],
     subtotal: order.total,
-    cancelReason: reason || "User requested cancellation",
+    cancelReason: reason || "Gebruiker heeft om annulering gevraagd",
     cancelledBy: "user",
   };
   await orderCancelledTemplate(data as OrderCancelledData);

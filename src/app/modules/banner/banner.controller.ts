@@ -12,7 +12,7 @@ const createBanner = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Banner created successfully",
+      message: "Banner succesvol aangemaakt",
       data: banner,
     });
   },
@@ -25,7 +25,7 @@ const createBannerByTemplate = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Banner created successfully",
+      message: "Banner succesvol aangemaakt",
       data: banner,
     });
   },
@@ -38,7 +38,7 @@ const updateBanner = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Banner updated successfully",
+      message: "Banner succesvol bijgewerkt",
       data: banner,
     });
   },
@@ -51,7 +51,7 @@ const mybanner = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "banner fetched successfully",
+      message: "Banner succesvol opgehaald",
       data: banner,
     });
   },
@@ -71,7 +71,7 @@ const getAllbanners = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "banners fetched successfully",
+    message: "Banners succesvol opgehaald",
     data: banners.banners,
     metaData: banners.metaData,
   });
@@ -83,7 +83,7 @@ const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "banner fetched successfully",
+    message: "Banner succesvol opgehaald",
     data: banner,
   });
 });
@@ -96,7 +96,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Templates fetched successfully",
+    message: "Templates succesvol opgehaald",
     data: result.templates,
     metaData: result.metaData,
   });
@@ -109,7 +109,7 @@ const createBannerFromTemplate = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Banner created from template successfully",
+      message: "Banner succesvol aangemaakt op basis van template",
       data: banner,
     });
   },

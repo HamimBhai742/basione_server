@@ -15,7 +15,7 @@ export const bannerGenerateSchema = z.object({
     .nullable()
     .optional()
     .transform((val) => val ?? undefined), // ✅ NEW
-  occasion: z.string().min(1, "Please select occasion"), // ✅ NEW
+  occasion: z.string().min(1, "Selecteer een gelegenheid"), // ✅ NEW
 
   headline: z.string().optional(), // ✅ NEW
   subheadline: z.string().optional(), // ✅ NEW

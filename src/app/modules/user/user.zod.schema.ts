@@ -1,22 +1,22 @@
 import z from "zod";
 
 export const userZodSchema = z.object({
-  name: z.string({ message: "Name is required" }),
-  email: z.email({ message: "Email is required" }),
+  name: z.string({ message: "Naam is verplicht" }),
+  email: z.email({ message: "E-mailadres is verplicht" }),
   password: z
-    .string({ message: "Password is required" })
-    .min(6, { message: "Password must be at least 6 characters" }),
+    .string({ message: "Wachtwoord is verplicht" })
+    .min(6, { message: "Wachtwoord moet minstens 6 tekens bevatten" }),
 });
 
 export const otpVerifyZodSchema = z.object({
   otp: z
-    .string({ message: "OTP is required" })
-    .length(6, { message: "OTP must be 6 digits" }),
-  email: z.email({ message: "Email is required" }),
+    .string({ message: "OTP is verplicht" })
+    .length(6, { message: "OTP moet 6 cijfers zijn" }),
+  email: z.email({ message: "E-mailadres is verplicht" }),
 });
 
 export const otpResendZodSchema = z.object({
-  email: z.email({ message: "Email is required" }),
+  email: z.email({ message: "E-mailadres is verplicht" }),
 });
 
 export const userUpdateZodSchema = z.object({
@@ -26,12 +26,12 @@ export const userUpdateZodSchema = z.object({
 });
 
 export const forgotPasswordZodSchema = z.object({
-  email: z.email({ message: "Email is required" }),
+  email: z.email({ message: "E-mailadres is verplicht" }),
 });
 
 export const resetPasswordZodSchema = z.object({
-  token: z.string({ message: "Token is required" }),
+  token: z.string({ message: "Token is verplicht" }),
   password: z
-    .string({ message: "Password is required" })
-    .min(6, { message: "Password must be at least 6 characters" })
+    .string({ message: "Wachtwoord is verplicht" })
+    .min(6, { message: "Wachtwoord moet minstens 6 tekens bevatten" })
 });

@@ -112,12 +112,12 @@ const createBanner = async (req: AuthRequest) => {
     width <= 0 ||
     height <= 0
   ) {
-    throw new AppError("Invalid banner size.", 400);
+    throw new AppError("Ongeldige bannerafmeting.", 400);
   }
 
   if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
     throw new AppError(
-      `Maximum banner size is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
+      `Maximale bannerafmeting is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
       400,
     );
   }
@@ -196,7 +196,7 @@ const createBanner = async (req: AuthRequest) => {
 
     console.error("AI server error:", rawError);
 
-    throw new AppError("AI server is shutting down", 400);
+    throw new AppError("AI-server wordt afgesloten", 400);
   }
 
   return new Promise((resolve, reject) => {
@@ -314,7 +314,7 @@ const createBanner = async (req: AuthRequest) => {
             isFinished = true;
 
             reject(
-              new AppError(data?.message || "AI server returned an error", 400),
+              new AppError(data?.message || "AI-server gaf een fout terug", 400),
             );
           }
 
@@ -381,7 +381,7 @@ const createBannerByTemplate = async (req: AuthRequest) => {
     width <= 0 ||
     height <= 0
   ) {
-    throw new Error("Invalid banner width or height");
+    throw new Error("Ongeldige bannerbreedte of -hoogte");
   }
 
   const areaM2 = calculateAreaM2(width, height);
@@ -439,7 +439,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   });
 
   if (!banner) {
-    throw new Error("Banner not found");
+    throw new Error("Banner niet gevonden");
   }
 
   let parsedData: any = null;
@@ -487,7 +487,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
       width <= 0 ||
       height <= 0
     ) {
-      throw new Error("Invalid banner width or height");
+      throw new Error("Ongeldige bannerbreedte of -hoogte");
     }
 
     areaM2 = calculateAreaM2(width, height);
@@ -703,7 +703,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
 
   const { templateId } = parsedData;
   if (!templateId) {
-    throw new AppError("templateId is required", 400);
+    throw new AppError("templateId is verplicht", 400);
   }
 
   const template = await prisma.banner.findUnique({
@@ -711,19 +711,19 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   });
 
   if (!template) {
-    throw new AppError("Template not found", 404);
+    throw new AppError("Template niet gevonden", 404);
   }
 
   const width = Number(parsedData.width);
   const height = Number(parsedData.height);
 
   if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
-    throw new AppError("Invalid banner size.", 400);
+    throw new AppError("Ongeldige bannerafmeting.", 400);
   }
 
   if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
     throw new AppError(
-      `Maximum banner size is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
+      `Maximale bannerafmeting is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
       400,
     );
   }

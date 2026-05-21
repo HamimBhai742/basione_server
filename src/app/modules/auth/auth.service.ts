@@ -20,21 +20,21 @@ const loginUser = async (payload: IUserPayload) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (!user.isVerified) {
-    throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet geverifieerd", httpStatus.BAD_REQUEST);
   }
 
   if (user.status !== "active") {
-    throw new AppError("User is not active", httpStatus.BAD_REQUEST);
+    throw new AppError("Gebruiker is niet actief", httpStatus.BAD_REQUEST);
   }
 
   const isPasswordMatch = await bcrypt.compare(payload.password, user.password);
 
   if (!isPasswordMatch) {
-    throw new AppError("Incorrect password", httpStatus.UNAUTHORIZED);
+    throw new AppError("Onjuist wachtwoord", httpStatus.UNAUTHORIZED);
   }
 
   const token = await generateToken(
@@ -57,7 +57,7 @@ const loginUser = async (payload: IUserPayload) => {
 //reset password after verify
 const resetPassword = async (userId: string, password: string) => {
   if (!userId) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const user = await prisma.user.findUnique({
@@ -67,14 +67,14 @@ const resetPassword = async (userId: string, password: string) => {
   });
 
   if (!user) {
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (
     user.forgetPasswordTokenExpires &&
     user.forgetPasswordTokenExpires < new Date()
   ) {
-    throw new AppError("Token has expired", httpStatus.BAD_REQUEST);
+    throw new AppError("Token is verlopen", httpStatus.BAD_REQUEST);
   }
 
   const hashedPassword = await bcrypt.hash(password, config.password_salt);

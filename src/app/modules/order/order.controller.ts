@@ -14,7 +14,7 @@ const createOrder = async (req: Request & { user?: any }, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order created successfully",
+    message: "Bestelling succesvol aangemaakt",
     data: order,
   });
 };
@@ -29,7 +29,7 @@ const checkOut = async (req: Request & { user?: any }, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order checked out successfully",
+    message: "Bestelling succesvol afgerekend",
     data: order,
   });
 };
@@ -41,7 +41,7 @@ const getMyOrders = async (req: Request & { user?: any }, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Orders fetched successfully",
+    message: "Bestellingen succesvol opgehaald",
     data: orders.orders,
     metaData: orders.metaData,
   });
@@ -59,7 +59,7 @@ const getMyDesigns = async (req: Request & { user?: any }, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Designs fetched successfully",
+    message: "Ontwerpen succesvol opgehaald",
     data: designs.orders,
     metaData: designs.metaData,
   });
@@ -74,7 +74,7 @@ const getSingleOrder = async (req: Request & { user?: any }, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order fetched successfully",
+    message: "Bestelling succesvol opgehaald",
     data: order,
   });
 };
@@ -85,7 +85,7 @@ const cancledOrder = async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order canceled successfully",
+    message: "Bestelling succesvol geannuleerd",
     data: null,
   });
 };

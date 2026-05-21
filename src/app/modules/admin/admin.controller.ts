@@ -29,7 +29,7 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Orders fetched successfully",
+    message: "Bestellingen succesvol opgehaald",
     data: orders.orders,
     metaData: orders.metaData,
   });
@@ -44,7 +44,7 @@ const manageOrder = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order updated successfully",
+    message: "Bestelling succesvol bijgewerkt",
     data: order,
   });
 });
@@ -71,7 +71,7 @@ const manageUsers = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Users fetched successfully",
+    message: "Gebruikers succesvol opgehaald",
     data: users.users,
     metaData: users.metaData,
   });
@@ -86,7 +86,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User status updated successfully",
+    message: "Gebruikersstatus succesvol bijgewerkt",
     data: user,
   });
 });
@@ -97,7 +97,7 @@ const dashboardStats = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Dashboard stats fetched successfully",
+    message: "Dashboard-statistieken succesvol opgehaald",
     data: stats,
   });
 });
@@ -124,7 +124,7 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Transactions fetched successfully",
+    message: "Transacties succesvol opgehaald",
     data: payments.payments,
     metaData: payments.metaData,
   });
@@ -142,7 +142,7 @@ const createDecoration = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Decoration created successfully",
+    message: "Decoratie succesvol aangemaakt",
     data: decoration,
   });
 });
@@ -154,7 +154,7 @@ const deleteDecoration = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     data: null,
-    message: "Decoration deleted successfully",
+    message: "Decoratie succesvol verwijderd",
   });
 });
 
@@ -178,7 +178,7 @@ const getAllDecoration = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Decorations fetched successfully",
+    message: "Decoraties succesvol opgehaald",
     data: decorations.decorations,
     metaData: decorations.metaData,
   });
@@ -191,7 +191,7 @@ const createDecorationCategory = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
-      message: "Decoration category created successfully",
+      message: "Decoratiecategorie succesvol aangemaakt",
       data: category,
     });
   },
@@ -203,7 +203,7 @@ const getAllDecorationCategory = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Decoration categories fetched successfully",
+      message: "Decoratiecategorieën succesvol opgehaald",
       data: categories,
     });
   },
@@ -219,7 +219,7 @@ const updateDecorationCategory = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Decoration category updated successfully",
+      message: "Decoratiecategorie succesvol bijgewerkt",
       data: category,
     });
   },
@@ -232,7 +232,7 @@ const deleteDecorationCategory = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Decoration category deleted successfully",
+      message: "Decoratiecategorie succesvol verwijderd",
       data: null,
     });
   },
@@ -243,7 +243,7 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Order response sent successfully",
+    message: "Bestelling succesvol opgehaald",
     data: order,
   });
 });
@@ -254,7 +254,7 @@ const createFaq = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "FAQ created successfully",
+    message: "FAQ succesvol aangemaakt",
     data: faq,
   });
 });
@@ -265,7 +265,7 @@ const updateFaq = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "FAQ updated successfully",
+    message: "FAQ succesvol bijgewerkt",
     data: faq,
   });
 });
@@ -276,7 +276,7 @@ const deleteFaq = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "FAQ deleted successfully",
+    message: "FAQ succesvol verwijderd",
     data: null,
   });
 });
@@ -287,7 +287,7 @@ const getFaqs = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "FAQs fetched successfully",
+    message: "FAQ's succesvol opgehaald",
     data: faqs,
   });
 });
@@ -299,7 +299,7 @@ const createTemplate = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Template created successfully",
+    message: "Template succesvol aangemaakt",
     data: result,
   });
 });
@@ -315,7 +315,7 @@ const updateTemplate = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Template updated successfully",
+    message: "Template succesvol bijgewerkt",
     data: result,
   });
 });
@@ -326,7 +326,7 @@ const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Template deleted successfully",
+    message: "Template succesvol verwijderd",
     data: null,
   });
 });
@@ -339,7 +339,7 @@ const getAllTemplates = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Templates fetched successfully",
+    message: "Templates succesvol opgehaald",
     data: result.templates,
     metaData: result.metaData,
   });

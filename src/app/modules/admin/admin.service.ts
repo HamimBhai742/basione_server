@@ -196,7 +196,7 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
   });
 
   if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const data = {
@@ -278,14 +278,14 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
   if (status === "ready") {
     if (payemt?.status !== "paid") {
       throw new AppError(
-        "Only orders with paid status can be updated",
+        "Alleen betaalde bestellingen kunnen worden bijgewerkt",
         httpStatus.BAD_REQUEST,
       );
     }
 
     if (order.status !== "processing") {
       throw new AppError(
-        "Only orders with processing status can be ready for delivery",
+        "Alleen bestellingen met status 'processing' kunnen klaar worden gezet voor levering",
         httpStatus.BAD_REQUEST,
       );
     }
@@ -301,19 +301,19 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
     await orderReadyTemplate(
       order.user.name,
       order.user.email,
-      "Order Ready for Delivery",
+      "Bestelling klaar voor levering",
       orderReadyData,
     );
   } else if (status === "delivered") {
     if (payemt?.status !== "paid") {
       throw new AppError(
-        "Only orders with paid status can be updated",
+        "Alleen betaalde bestellingen kunnen worden bijgewerkt",
         httpStatus.BAD_REQUEST,
       );
     }
     if (order.status !== "shipped") {
       throw new AppError(
-        "Only orders with ready status can be updated to delivered",
+        "Alleen bestellingen met status 'shipped' kunnen als geleverd worden gemarkeerd",
         httpStatus.BAD_REQUEST,
       );
     }
@@ -329,15 +329,15 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
     await orderDeliveryCompleteTemplate(
       order.user.name,
       order.user.email,
-      "Order Delivered",
+      "Bestelling geleverd",
       data,
     );
   } else if (status === "cancelled") {
-    await cancledOrder(orderId, "Order canclled by admin");
+    await cancledOrder(orderId, "Bestelling geannuleerd door beheerder");
   } else if (status === "refunded") {
     if (payemt?.status !== "paid") {
       throw new AppError(
-        "Only orders with paid status can be updated",
+        "Alleen betaalde bestellingen kunnen worden bijgewerkt",
         httpStatus.BAD_REQUEST,
       );
     }
@@ -353,13 +353,13 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
     await orderRefundedTemplate(
       order.user.name,
       order.user.email,
-      "Order Refunded",
+      "Bestelling terugbetaald",
       refundedData,
     );
   } else if (status === "shipped") {
     if (order.status !== "ready") {
       throw new AppError(
-        "Only orders with ready status can be updated to shipped",
+        "Alleen bestellingen met status 'ready' kunnen op 'shipped' worden gezet",
       );
     }
 
@@ -397,7 +397,7 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
     await orderShippedTemplate(
       order.user.name,
       order.user.email,
-      "Order Shipped",
+      "Bestelling verzonden",
       shippedData,
     );
   }
@@ -669,7 +669,7 @@ const createDecorationCategory = async (name: string) => {
   });
 
   if (isExist) {
-    throw new AppError("Decoration category already exists");
+    throw new AppError("Decoratiecategorie bestaat al");
   }
   const category = await prisma.decorationCategory.create({
     data: {
@@ -692,7 +692,7 @@ const updateDecorationCategory = async (id: string, name: string) => {
   });
 
   if (!isExist) {
-    throw new AppError("Decoration category not found");
+    throw new AppError("Decoratiecategorie niet gevonden");
   }
   const category = await prisma.decorationCategory.update({
     where: {
@@ -711,7 +711,7 @@ const deleteDecorationCategory = async (id: string) => {
   });
 
   if (!isExist) {
-    throw new AppError("Decoration category not found");
+    throw new AppError("Decoratiecategorie niet gevonden");
   }
 
   await prisma.$transaction(async (tx) => {
@@ -758,7 +758,7 @@ const updateFaq = async (id: string, data: Partial<{ category: string; question:
   });
 
   if (!isExist) {
-    throw new AppError("Faq not found", httpStatus.NOT_FOUND);
+    throw new AppError("FAQ niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const faq = await prisma.faq.update({
@@ -774,7 +774,7 @@ const deleteFaq = async (id: string) => {
   });
 
   if (!isExist) {
-    throw new AppError("Faq not found", httpStatus.NOT_FOUND);
+    throw new AppError("FAQ niet gevonden", httpStatus.NOT_FOUND);
   }
 
   await prisma.faq.delete({
@@ -802,7 +802,10 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const height = Number(parsedData?.height || 0);
 
   if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
-    throw new AppError("Invalid template dimensions. Width and height must be positive numbers.", 400);
+    throw new AppError(
+      "Ongeldige template-afmetingen. Breedte en hoogte moeten positieve getallen zijn.",
+      400,
+    );
   }
 
   let imageUrl = "";
@@ -811,7 +814,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   } else if (parsedData.imageUrl) {
     imageUrl = parsedData.imageUrl;
   } else {
-    throw new AppError("Template image is required.", 400);
+    throw new AppError("Template-afbeelding is verplicht.", 400);
   }
 
   const areaM2 = (width / 100) * (height / 100);
@@ -848,7 +851,7 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   });
 
   if (!isExist) {
-    throw new AppError("Template not found", httpStatus.NOT_FOUND);
+    throw new AppError("Template niet gevonden", httpStatus.NOT_FOUND);
   }
 
   let parsedData = payload;
@@ -881,7 +884,7 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
   if (parsedData.width !== undefined || parsedData.height !== undefined) {
     if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
-      throw new AppError("Invalid template dimensions.", 400);
+      throw new AppError("Ongeldige template-afmetingen.", 400);
     }
     const areaM2 = (width / 100) * (height / 100);
     const pricePerM2 = areaM2 < 1 ? 25 : 20;
@@ -916,7 +919,7 @@ const deleteTemplate = async (templateId: string) => {
   });
 
   if (!isExist) {
-    throw new AppError("Template not found", httpStatus.NOT_FOUND);
+    throw new AppError("Template niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (isExist.imageUrl) {

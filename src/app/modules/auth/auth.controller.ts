@@ -12,7 +12,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User logged in successfully",
+    message: "Gebruiker succesvol ingelogd",
     data: user.user,
   });
 });
@@ -27,7 +27,7 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User logged out successfully",
+    message: "Gebruiker succesvol uitgelogd",
     data: null,
   });
 });
@@ -42,7 +42,7 @@ const resetPassword = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Password reset successfully",
+      message: "Wachtwoord succesvol opnieuw ingesteld",
       data: user,
     });
   },
