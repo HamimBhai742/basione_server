@@ -299,3 +299,37 @@ model Blog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+enum ChatbotRole {
+  user
+  assistant
+  developer
+}
+
+model ChatbotConversation {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String          @unique
+  userId         String?         @db.ObjectId
+  title          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user     User?            @relation(fields: [userId], references: [id])
+  messages ChatbotMessage[]
+
+  @@index([userId])
+}
+
+model ChatbotMessage {
+  id                   String             @id @default(auto()) @map("_id") @db.ObjectId
+  conversationObjectId String             @db.ObjectId
+  role                 ChatbotRole
+  content              String
+  model                String?
+  isPartial            Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+
+  conversation ChatbotConversation @relation(fields: [conversationObjectId], references: [id])
+
+  @@index([conversationObjectId])
+}

@@ -254,3 +254,75 @@ Deploy as serverless functions utilizing `vercel.json` edge configurations:
 npm install -g vercel
 vercel --prod
 ```
+
+---
+
+## Chatbot (Frontend Integration)
+
+**Base path (versioned):** `/api/v1/chatbot`  
+**Legacy path (also supported):** `/api/chatbot`
+
+### Non-stream (JSON)
+`POST /api/v1/chatbot/ask`
+```json
+{ "question": "Hi" }
+```
+Response shape:
+```json
+{
+  "answer": "Hello! How can I assist you today with the Spandoek platform?",
+  "sources": ["General Documentation"],
+  "confidence": 0.95,
+  "is_streaming": false
+}
+```
+
+### Stream (real-time, NDJSON)
+`POST /api/v1/chatbot/stream` returns `application/x-ndjson` (one JSON object per line):
+- Alias: `POST /api/v1/chatbot/ask/stream` (and same under `/api/chatbot/*`)
+- `{"type":"meta", ...}`
+- `{"type":"delta","delta":"..."}`
+- `{"type":"done","answer":"...", ...}`
+
+Browser example:
+```js
+const res = await fetch("http://localhost:5000/api/v1/chatbot/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ question: "Hi" }),
+});
+
+const reader = res.body.getReader();
+const decoder = new TextDecoder();
+let buffer = "";
+let answer = "";
+
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  buffer += decoder.decode(value, { stream: true });
+
+  let idx;
+  while ((idx = buffer.indexOf("\n")) >= 0) {
+    const line = buffer.slice(0, idx).trim();
+    buffer = buffer.slice(idx + 1);
+    if (!line) continue;
+    const evt = JSON.parse(line);
+    if (evt.type === "delta") {
+      answer += evt.delta;
+      // update UI with `answer`
+    }
+  }
+}
+```
+
+### Fetch saved conversation
+`GET /api/v1/chatbot/conversation/:conversation_id`
+
+### Backend config (no OpenAI here)
+Set the upstream AI-service base URL (the AI developer's service):
+```env
+CHATBOT_UPSTREAM_BASE_URL="http://<ai-service-host>:<port>"
+CHATBOT_UPSTREAM_ASK_PATH="/api/chatbot/ask"
+CHATBOT_UPSTREAM_STREAM_PATH="/api/chatbot/ask/stream"
+```

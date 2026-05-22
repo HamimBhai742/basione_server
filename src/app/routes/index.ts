@@ -8,6 +8,7 @@ import { adminRoutes } from "../modules/admin/admin.route";
 import { decorationRoutes } from "../modules/decorations/decorations.routes";
 import { blogRoutes } from "../modules/blog/blog.routes";
 import { aggregateRoutes } from "../modules/aggregate/aggregate.routes";
+import { chatbotRoutes } from "../modules/chatbot/chatbot.routes";
 
 export const router = Router();
 
@@ -47,6 +48,10 @@ const routes = [
   {
     path: "/aggregate",
     route: aggregateRoutes,
+  },
+  {
+    path: "/chatbot",
+    route: chatbotRoutes,
   },
 ];
 
