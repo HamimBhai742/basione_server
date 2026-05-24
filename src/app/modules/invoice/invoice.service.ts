@@ -79,6 +79,7 @@ export const generateAndSaveInvoice = async ({
       },
 
       shippingAddress: {
+        companyName: order.addresses?.companyName || null,
         street: order.addresses?.street || "",
         houseNumber: order.addresses?.houseNumber || "",
         address: order.addresses?.address || "",

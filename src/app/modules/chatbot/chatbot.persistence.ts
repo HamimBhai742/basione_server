@@ -18,6 +18,7 @@ type ConversationRecord = {
 
 const conversationDelegate = () => (prisma as any).chatbotConversation;
 const messageDelegate = () => (prisma as any).chatbotMessage;
+const settingDelegate = () => (prisma as any).chatbotSetting;
 
 export const chatbotPersistence = {
   getOrCreateConversation: async (opts: { conversationId?: string; userId?: string | null }) => {
@@ -111,5 +112,154 @@ export const chatbotPersistence = {
       return { conversationObjectId: null as string | null, messages: [] as StoredChatMessage[] };
     }
   },
-};
 
+  getSetting: async <T>(key: string, fallback: T): Promise<T> => {
+    try {
+      const setting = await settingDelegate().findUnique({
+        where: { key },
+        select: { value: true },
+      });
+
+      return setting?.value ? (setting.value as T) : fallback;
+    } catch {
+      return fallback;
+    }
+  },
+
+  upsertSetting: async <T>(opts: { key: string; value: T; updatedBy?: string | null }) => {
+    const setting = await settingDelegate().upsert({
+      where: { key: opts.key },
+      update: {
+        value: opts.value,
+        updatedBy: opts.updatedBy || null,
+      },
+      create: {
+        key: opts.key,
+        value: opts.value,
+        updatedBy: opts.updatedBy || null,
+      },
+    });
+
+    return setting;
+  },
+
+  listConversations: async (opts: {
+    page: number;
+    limit: number;
+    skip: number;
+    searchTerm?: string;
+  }) => {
+    try {
+      const where = opts.searchTerm
+        ? {
+            OR: [
+              { conversationId: { contains: opts.searchTerm, mode: "insensitive" } },
+              { title: { contains: opts.searchTerm, mode: "insensitive" } },
+            ],
+          }
+        : {};
+
+      const [conversations, total] = await Promise.all([
+        conversationDelegate().findMany({
+          where,
+          orderBy: { updatedAt: "desc" },
+          take: opts.limit,
+          skip: opts.skip,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              },
+            },
+            messages: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: {
+                id: true,
+                role: true,
+                content: true,
+                createdAt: true,
+                isPartial: true,
+              },
+            },
+          },
+        }),
+        conversationDelegate().count({ where }),
+      ]);
+
+      return {
+        conversations,
+        metaData: {
+          total,
+          page: opts.page,
+          limit: opts.limit,
+          totalPages: Math.ceil(total / opts.limit),
+        },
+      };
+    } catch {
+      return {
+        conversations: [],
+        metaData: {
+          total: 0,
+          page: opts.page,
+          limit: opts.limit,
+          totalPages: 0,
+        },
+      };
+    }
+  },
+
+  getConversation: async (conversationId: string) => {
+    try {
+      return await conversationDelegate().findUnique({
+        where: { conversationId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+          messages: {
+            orderBy: { createdAt: "asc" },
+            select: {
+              id: true,
+              role: true,
+              content: true,
+              model: true,
+              isPartial: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+    } catch {
+      return null;
+    }
+  },
+
+  deleteConversation: async (conversationId: string) => {
+    const convo = await conversationDelegate().findUnique({
+      where: { conversationId },
+      select: { id: true },
+    });
+
+    if (!convo) return false;
+
+    await prisma.$transaction([
+      messageDelegate().deleteMany({
+        where: { conversationObjectId: convo.id },
+      }),
+      conversationDelegate().delete({
+        where: { conversationId },
+      }),
+    ]);
+
+    return true;
+  },
+};

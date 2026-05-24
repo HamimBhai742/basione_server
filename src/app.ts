@@ -21,7 +21,7 @@ const allowedOrigins = [
   "https://spandoekprint.nl",
   "https://www.spandoekprint.nl",
   "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
-  ...(config.client_url ? [config.client_url] : []),
+  // ...(config.client_url ? [config.client_url] : []),
 ];
 
 app.use(
@@ -46,9 +46,7 @@ app.use(
 );
 
 app.use("/api/v1", router);
-// Legacy/unversioned chatbot endpoints (keeps frontend integration simple):
-// - /api/chatbot/ask
-// - /api/chatbot/stream
+
 app.use("/api/chatbot", chatbotRoutes);
 
 app.get("/", (req, res) => {

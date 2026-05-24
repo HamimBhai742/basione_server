@@ -17,3 +17,13 @@ export const chatbotAskSchema = z.object({
   conversation_id: z.string().max(200).optional(),
 });
 
+export const chatbotSettingsSchema = z.object({
+  isEnabled: z.boolean().optional(),
+  websiteKnowledgeEnabled: z.boolean().optional(),
+  systemPrompt: z.string().min(1).max(5000).optional(),
+  fallbackMessage: z.string().min(1).max(1000).optional(),
+  sources: z.array(z.string().min(1).max(200)).max(20).optional(),
+  allowedDomains: z.array(z.string().min(1).max(200)).max(20).optional(),
+  maxHistoryMessages: z.number().int().min(1).max(100).optional(),
+  confidenceThreshold: z.number().min(0).max(1).optional(),
+});

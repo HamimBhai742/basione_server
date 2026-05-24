@@ -2,6 +2,9 @@ import { Router } from "express";
 import { adminController } from "./admin.controller";
 import { upload } from "../../middleware/upload";
 import { checkAuth } from "../../middleware/checkAuth";
+import { chatbotController } from "../chatbot/chatbot.controller";
+import { validateRequest } from "../../middleware/validateRequest";
+import { chatbotSettingsSchema } from "../chatbot/chatbot.zod.schema";
 
 const router = Router();
 
@@ -76,6 +79,50 @@ router.get(
   "/templates",
   checkAuth("admin"),
   adminController.getAllTemplates,
+);
+
+// --- Admin Chatbot Management Endpoints ---
+router.get(
+  "/chatbot/settings",
+  checkAuth("admin"),
+  chatbotController.getSettings,
+);
+
+router.patch(
+  "/chatbot/settings",
+  checkAuth("admin"),
+  validateRequest(chatbotSettingsSchema),
+  chatbotController.updateSettings,
+);
+
+router.get(
+  "/chatbot/conversations",
+  checkAuth("admin"),
+  chatbotController.listConversations,
+);
+
+router.get(
+  "/chatbot/conversations/:conversationId",
+  checkAuth("admin"),
+  chatbotController.getConversation,
+);
+
+router.delete(
+  "/chatbot/conversations/:conversationId",
+  checkAuth("admin"),
+  chatbotController.deleteConversation,
+);
+
+router.get(
+  "/chatbot/documentation/summary",
+  checkAuth("admin"),
+  chatbotController.getDocumentationSummary,
+);
+
+router.get(
+  "/chatbot/documentation/search",
+  checkAuth("admin"),
+  chatbotController.searchDocumentation,
 );
 
 export const adminRoutes = router;

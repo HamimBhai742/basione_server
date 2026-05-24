@@ -5,12 +5,21 @@ import { chatbotController } from "./chatbot.controller";
 import { randomUUID } from "crypto";
 import { chatbotPersistence } from "./chatbot.persistence";
 import { chatbotUpstream } from "./chatbot.upstream";
+import { chatbotService } from "./chatbot.service";
 
 const router = Router();
 
 router.post("/ask", validateRequest(chatbotAskSchema), chatbotController.ask);
 
 const streamHandler = async (req: any, res: any) => {
+  const settings = await chatbotService.getSettings();
+  if (!settings.isEnabled) {
+    return res.status(503).json({
+      success: false,
+      message: "AI chat is currently disabled",
+    });
+  }
+
   const convo = await chatbotPersistence.getOrCreateConversation({
     conversationId:
       typeof req.body.conversation_id === "string" && req.body.conversation_id
@@ -47,16 +56,13 @@ const streamHandler = async (req: any, res: any) => {
 
   const previous = await chatbotPersistence.listMessages({
     conversationId: convo.conversationId,
-    limit: 30,
+    limit: settings.maxHistoryMessages,
   });
 
   const messages = [
     {
       role: "developer" as const,
-      content:
-        "You are a helpful support chatbot for the Spandoek / SpandoekPrint platform. " +
-        "Answer in the same language as the user (Dutch/English). " +
-        "Be concise and practical. If you are unsure, say so and ask a short follow-up question.",
+      content: settings.systemPrompt,
     },
     ...(previous.messages.length > 0
       ? previous.messages.map((m) => ({ role: m.role, content: m.content }))
@@ -76,7 +82,7 @@ const streamHandler = async (req: any, res: any) => {
     writeLine({
       type: "done",
       answer: "",
-      sources: ["General Documentation"],
+      sources: settings.sources,
       confidence: 0.95,
       conversation_id: convo.conversationId,
       message_id,
@@ -97,6 +103,11 @@ const streamHandler = async (req: any, res: any) => {
       question: userQuestion,
       conversation_id: convo.conversationId,
       messages: messages.filter((m: any) => m.role !== "developer"),
+      settings: {
+        websiteKnowledgeEnabled: settings.websiteKnowledgeEnabled,
+        allowedDomains: settings.allowedDomains,
+        fallbackMessage: settings.fallbackMessage,
+      },
     });
 
     const upstreamStream = upstream.stream;
@@ -175,7 +186,7 @@ const streamHandler = async (req: any, res: any) => {
     writeLine({
       type: "done",
       answer: answer.trim(),
-      sources: ["General Documentation"],
+      sources: settings.sources,
       confidence: 0.95,
       conversation_id: convo.conversationId,
       message_id,
@@ -201,7 +212,7 @@ const streamHandler = async (req: any, res: any) => {
     writeLine({
       type: "done",
       answer: answer.trim(),
-      sources: ["General Documentation"],
+      sources: settings.sources,
       confidence: 0.95,
       conversation_id: convo.conversationId,
       message_id,

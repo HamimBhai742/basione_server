@@ -28,6 +28,7 @@ type InvoicePdfPayload = {
   };
 
   shippingAddress: {
+    companyName?: string | null;
     street?: string | null;
     houseNumber?: string | null;
     address?: string | null;
@@ -379,6 +380,7 @@ export const generateInvoicePdf = async (
       const addr = payload.shippingAddress;
 
       const addrLines = [
+        addr.companyName,
         `${addr.street ?? ""} ${addr.houseNumber ?? ""}`.trim(),
         addr.address,
         `${addr.zipCode ?? ""} ${addr.city ?? ""}`.trim(),

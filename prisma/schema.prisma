@@ -334,3 +334,12 @@ model ChatbotMessage {
 
   @@index([conversationObjectId])
 }
+
+model ChatbotSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     Json
+  updatedBy String?  @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
