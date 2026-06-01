@@ -237,8 +237,8 @@ const createOrder = async (
     throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
   }
 
-  // Eyelets fee is already INCLUDING VAT
-  const eyeletsFee = hasEyelets ? EYELETS_FEE : 0;
+  // Eyelets fee is per banner (€3.50 incl. VAT each), so multiply by quantity
+  const eyeletsFee = hasEyelets ? EYELETS_FEE * quantity : 0;
 
   const priceCalculation = calculateOrderPrice({
     bannerPrice,
