@@ -6,6 +6,7 @@ interface PaymentSuccessData {
  amount: number;
  transactionId: string;
  orderId: string;
+ profileOrderId?: string;
  date: string;
  invoiceUrl?: string | null;
  invoiceNumber?: string | null;
@@ -19,6 +20,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  amount,
  transactionId,
  orderId,
+ profileOrderId,
  date,
  invoiceUrl,
  invoiceNumber,
@@ -400,7 +402,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  <tr>
  <td align="center">
  <a
- href="https://spandoekprint.nl/profile/${data.orderId}"
+ href="https://spandoekprint.nl/profile/${profileOrderId || orderId}"
  class="dashboard-button"
  style="
  display: inline-block;

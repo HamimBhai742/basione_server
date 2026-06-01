@@ -67,6 +67,8 @@ model Banner {
   imageUrl String
   variant  Int
 
+  designNumber String?
+
   revisedPrompt String?
 
   canvasJSON String?
@@ -84,6 +86,7 @@ model Banner {
 
   @@index([userId])
   @@index([generationId])
+  @@index([designNumber])
 }
 
 enum BannerStatus {

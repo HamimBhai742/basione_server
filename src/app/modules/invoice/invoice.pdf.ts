@@ -44,6 +44,7 @@ type InvoicePdfPayload = {
 
     designType?: string | null;
     designFileName?: string | null;
+    designNumber?: string | null;
     designReference?: string | null;
     size?: string | null;
   };
@@ -96,6 +97,19 @@ const formatVatRate = (rate: number): string => {
 
 const safeText = (value?: string | null) =>
   value && String(value).trim() ? String(value).trim() : "-";
+
+const getDesignNumberFromReference = (value?: string | null) => {
+  if (!value) return null;
+
+  const sequence = value.split("-").pop();
+  const numericSequence = Number(sequence);
+
+  if (Number.isNaN(numericSequence) || numericSequence < 1) {
+    return sequence || value;
+  }
+
+  return String(numericSequence);
+};
 
 function hRule(
   doc: PDFKit.PDFDocument,
@@ -253,11 +267,13 @@ export const generateInvoicePdf = async (
         payload.order?.orderId ||
         payload.orderId;
 
-      const designReference =
-        payload.banner.designReference ||
-        payload.order?.trackingNumber ||
-        payload.order?.orderNumber ||
-        payload.orderId;
+      const designNumber =
+        payload.banner.designNumber ||
+        getDesignNumberFromReference(
+          payload.order?.trackingNumber ||
+            payload.order?.orderNumber ||
+            payload.orderId,
+        );
 
       const designFileName = payload.banner.designFileName || "Niet toegevoegd";
       const designType = payload.banner.designType || "Ontwerp referentie";
@@ -481,7 +497,7 @@ export const generateInvoicePdf = async (
         .font("Helvetica")
         .fontSize(7.1)
         .fillColor(COLOR.grey)
-        .text(`Order referentie: ${safeText(displayOrderNumber)}`, 56, tableTop + 72, {
+        .text(`Design nummer: ${safeText(designNumber)}`, 56, tableTop + 72, {
           width: 230,
           ellipsis: true,
         });
@@ -490,7 +506,7 @@ export const generateInvoicePdf = async (
         .font("Helvetica")
         .fontSize(7.1)
         .fillColor(COLOR.grey)
-        .text(`Design referentie: ${safeText(designReference)}`, 56, tableTop + 84, {
+        .text(`Order referentie: ${safeText(displayOrderNumber)}`, 56, tableTop + 84, {
           width: 230,
           ellipsis: true,
         });

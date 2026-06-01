@@ -20,6 +20,19 @@ const formatLabel = (value?: string | null) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const getDesignNumberFromTrackingNumber = (trackingNumber?: string | null) => {
+  if (!trackingNumber) return null;
+
+  const sequence = trackingNumber.split("-").pop();
+  const numericSequence = Number(sequence);
+
+  if (Number.isNaN(numericSequence) || numericSequence < 1) {
+    return sequence || trackingNumber;
+  }
+
+  return String(numericSequence);
+};
+
 export const generateAndSaveInvoice = async ({
   user,
   order,
@@ -50,6 +63,10 @@ export const generateAndSaveInvoice = async ({
     const invoiceNumber = await generateInvoiceNumber();
 
     console.log("Invoice number generated:", invoiceNumber);
+
+    const designNumber =
+      order.banner?.designNumber ||
+      getDesignNumberFromTrackingNumber(order.trackingNumber);
 
     const pdfBuffer = await generateInvoicePdf({
       invoiceNumber,
@@ -95,7 +112,13 @@ export const generateAndSaveInvoice = async ({
 
         designType: "Uploaded / Generated design",
         designFileName: order.banner?.fileName || null,
-        designReference: order.bannerId || order.banner?.id || order.id,
+        designNumber,
+        designReference:
+          designNumber ||
+          order.trackingNumber ||
+          order.bannerId ||
+          order.banner?.id ||
+          order.id,
         size: order.banner?.size || null,
       },
 

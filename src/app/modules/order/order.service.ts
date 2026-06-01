@@ -10,6 +10,7 @@ import { createPayment } from "../payment/payment.service";
 import { getNextOrderNumber } from "../../utils/trackingNumber";
 import { formatLabel } from "../../utils/formatLable";
 import { DeliveryMethod, DeliveryType } from "@prisma/client";
+import { applyDesignNumberToBanner } from "../../utils/applyDesignNumberToBanner";
 
 type FrontendDeliveryType =
   | "standard-delivery"
@@ -77,6 +78,17 @@ const DELIVERY_OPTIONS: Record<
 
 const roundToTwo = (value: number): number => {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+};
+
+const getDesignNumberFromTrackingNumber = (trackingNumber: string) => {
+  const sequence = trackingNumber.split("-").pop();
+  const numericSequence = Number(sequence);
+
+  if (Number.isNaN(numericSequence) || numericSequence < 1) {
+    return sequence || trackingNumber;
+  }
+
+  return String(numericSequence);
 };
 
 // Price is already INCLUDING VAT.
@@ -236,6 +248,11 @@ const createOrder = async (
   });
 
   const trackingNumber = await getNextOrderNumber();
+  const designNumber = getDesignNumberFromTrackingNumber(trackingNumber);
+  const finalBannerImageUrl = await applyDesignNumberToBanner({
+    imageUrl: banner.imageUrl,
+    designNumber,
+  });
 
   const order = await prisma.$transaction(async (tx) => {
     await tx.banner.update({
@@ -244,6 +261,8 @@ const createOrder = async (
       },
       data: {
         userId,
+        designNumber,
+        imageUrl: finalBannerImageUrl,
       },
     });
 
@@ -594,7 +613,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
   const data = {
     userName: order?.user.name as string,
     email: order?.user.email as string,
-    orderId: order?.id as string,
+    orderId: (order?.trackingNumber || order?.id) as string,
     orderDate: order?.createdAt.toLocaleString() as string,
     cancelledDate: new Date().toLocaleString(),
     items: [

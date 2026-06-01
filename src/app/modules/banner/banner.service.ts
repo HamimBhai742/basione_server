@@ -23,6 +23,7 @@ const bannerListSelect = {
   height: true,
   imageUrl: true,
   variant: true,
+  designNumber: true,
   revisedPrompt: true,
   isSelected: true,
   isTemplate: true,
