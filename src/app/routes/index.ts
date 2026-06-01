@@ -9,6 +9,7 @@ import { decorationRoutes } from "../modules/decorations/decorations.routes";
 import { blogRoutes } from "../modules/blog/blog.routes";
 import { aggregateRoutes } from "../modules/aggregate/aggregate.routes";
 import { chatbotRoutes } from "../modules/chatbot/chatbot.routes";
+import { fontRoutes } from "../modules/font/font.routes";
 
 export const router = Router();
 
@@ -52,6 +53,10 @@ const routes = [
   {
     path: "/chatbot",
     route: chatbotRoutes,
+  },
+  {
+    path: "/fonts",
+    route: fontRoutes,
   },
 ];
 

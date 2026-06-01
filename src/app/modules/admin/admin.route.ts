@@ -5,6 +5,7 @@ import { checkAuth } from "../../middleware/checkAuth";
 import { chatbotController } from "../chatbot/chatbot.controller";
 import { validateRequest } from "../../middleware/validateRequest";
 import { chatbotSettingsSchema } from "../chatbot/chatbot.zod.schema";
+import { fontController } from "../font/font.controller";
 
 const router = Router();
 
@@ -79,6 +80,33 @@ router.get(
   "/templates",
   checkAuth("admin"),
   adminController.getAllTemplates,
+);
+
+// --- Admin Font Management Endpoints ---
+router.get(
+  "/fonts",
+  checkAuth("admin"),
+  fontController.getAdminFonts,
+);
+
+router.post(
+  "/fonts",
+  checkAuth("admin"),
+  upload.single("file"),
+  fontController.createFont,
+);
+
+router.patch(
+  "/fonts/:id",
+  checkAuth("admin"),
+  upload.single("file"),
+  fontController.updateFont,
+);
+
+router.delete(
+  "/fonts/:id",
+  checkAuth("admin"),
+  fontController.deleteFont,
 );
 
 // --- Admin Chatbot Management Endpoints ---

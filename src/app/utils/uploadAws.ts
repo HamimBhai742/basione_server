@@ -3,7 +3,10 @@ import { s3 } from "../lib/s3client";
 import config from "../../config";
 import { AppError } from "../error/AppError";
 
-export const uploadImageToS3 = async (file: Express.Multer.File) => {
+export const uploadFileToS3 = async (
+  file: Express.Multer.File,
+  folder = "images",
+) => {
   const bucketName = config.s3.name;
   const region = config.s3.region;
 
@@ -12,7 +15,7 @@ export const uploadImageToS3 = async (file: Express.Multer.File) => {
   }
 
   const safeFileName = file.originalname.replace(/\s+/g, "-");
-  const fileName = `images/${Date.now()}-${safeFileName}`;
+  const fileName = `${folder}/${Date.now()}-${safeFileName}`;
 
   const command = new PutObjectCommand({
     Bucket: bucketName,
@@ -26,4 +29,8 @@ export const uploadImageToS3 = async (file: Express.Multer.File) => {
   const fileUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
 
   return fileUrl;
+};
+
+export const uploadImageToS3 = async (file: Express.Multer.File) => {
+  return uploadFileToS3(file, "images");
 };
