@@ -7,7 +7,6 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import { AppError } from "./app/error/AppError";
 import { chatbotRoutes } from "./app/modules/chatbot/chatbot.routes";
-import config from "./config";
 
 const app: Application = express();
 

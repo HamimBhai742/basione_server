@@ -146,6 +146,86 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   invoice   Invoice?
+  shipments QlsShipment[]
+}
+
+enum QlsShipmentStatus {
+  draft
+  created
+  printed
+  pre_transit
+  in_transit
+  delivered
+  returned
+  returned_to_sender
+  failed
+}
+
+enum QlsShipmentEventType {
+  created
+  status
+  label
+  refresh
+  webhook
+  failed
+}
+
+model QlsShipment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  orderId String @db.ObjectId
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  qlsShipmentId        String? @unique
+  companyId            String
+  brandId              String
+  productId            Int?
+  productCombinationId Int
+  reference            String
+  status               QlsShipmentStatus @default(draft)
+  weight               Int?
+  barcode              String?
+  trackingId           String?
+  trackingUrl          String?
+  labelPdfUrl          String?
+  labelZplUrl          String?
+  servicepointCode     String?
+  lastError            String?
+  rawRequest           Json?
+  rawResponse          Json?
+  lastSyncedAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    QlsShipmentEvent[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([barcode])
+  @@index([trackingId])
+  @@index([reference])
+}
+
+model QlsShipmentEvent {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  shipmentId String?      @db.ObjectId
+  shipment   QlsShipment? @relation(fields: [shipmentId], references: [id])
+
+  orderId       String?              @db.ObjectId
+  eventType     QlsShipmentEventType
+  qlsStatus     String?
+  qlsShipmentId String?
+  barcode       String?
+  trackingId    String?
+  payload       Json
+  receivedAt    DateTime             @default(now())
+
+  @@index([shipmentId])
+  @@index([orderId])
+  @@index([qlsShipmentId])
+  @@index([barcode])
+  @@index([trackingId])
 }
 
 model Invoice {

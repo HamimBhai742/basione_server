@@ -10,6 +10,7 @@ import { blogRoutes } from "../modules/blog/blog.routes";
 import { aggregateRoutes } from "../modules/aggregate/aggregate.routes";
 import { chatbotRoutes } from "../modules/chatbot/chatbot.routes";
 import { fontRoutes } from "../modules/font/font.routes";
+import { shippingRoutes } from "../modules/shipping/shipping.routes";
 
 export const router = Router();
 
@@ -57,6 +58,10 @@ const routes = [
   {
     path: "/fonts",
     route: fontRoutes,
+  },
+  {
+    path: "/shipping",
+    route: shippingRoutes,
   },
 ];
 

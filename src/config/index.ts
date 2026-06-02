@@ -36,4 +36,17 @@ export default {
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
     },
   },
+  qls: {
+    baseUrl: process.env.QLS_BASE_URL || "https://api.pakketdienstqls.nl",
+    username: process.env.QLS_USERNAME as string,
+    password: process.env.QLS_PASSWORD as string,
+    companyId: process.env.QLS_COMPANY_ID as string,
+    brandId: process.env.QLS_BRAND_ID as string,
+    defaultProductCombinationId: Number(
+      process.env.QLS_DEFAULT_PRODUCT_COMBINATION_ID || 0,
+    ),
+    defaultWeightGram: Number(process.env.QLS_DEFAULT_WEIGHT_GRAM || 1000),
+    defaultCountry: process.env.QLS_DEFAULT_COUNTRY || "NL",
+    webhookSecret: process.env.QLS_WEBHOOK_SECRET as string,
+  },
 };
