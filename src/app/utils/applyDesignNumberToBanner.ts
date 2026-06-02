@@ -1,7 +1,10 @@
+import path from "path";
 import axios from "axios";
 import sharp from "sharp";
 import { AppError } from "../error/AppError";
 import { uploadBufferToS3 } from "./uploadAws";
+
+const fontPath = path.join(process.cwd(), "src", "app", "assets", "fonts", "Roboto-Bold.ttf").replace(/\\/g, "/");
 
 const escapeSvgText = (value: string) => {
   return value
@@ -30,9 +33,23 @@ const getWatermarkSvg = ({
 
   return Buffer.from(`
     <svg width="${boxWidth}" height="${boxHeight}" viewBox="0 0 ${boxWidth} ${boxHeight}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          @font-face {
+            font-family: 'Roboto-Bold';
+            src: url('${fontPath}');
+          }
+          .watermark-text {
+            font-family: 'Roboto-Bold', Arial, Helvetica, sans-serif;
+            font-size: ${fontSize}px;
+            font-weight: 700;
+            fill: #0F172A;
+          }
+        </style>
+      </defs>
       <rect x="0" y="0" width="${boxWidth}" height="${boxHeight}" rx="${radius}" fill="rgba(255,255,255,0.86)"/>
       <rect x="1" y="1" width="${boxWidth - 2}" height="${boxHeight - 2}" rx="${radius}" fill="none" stroke="rgba(15,23,42,0.35)" stroke-width="2"/>
-      <text x="${boxWidth / 2}" y="${Math.round(boxHeight / 2 + fontSize * 0.35)}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700" fill="#0F172A">${escapeSvgText(text)}</text>
+      <text x="${boxWidth / 2}" y="${Math.round(boxHeight / 2 + fontSize * 0.35)}" text-anchor="middle" class="watermark-text">${escapeSvgText(text)}</text>
     </svg>
   `);
 };
