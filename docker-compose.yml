@@ -1,11 +1,13 @@
 services:
-  api:
-    build: .
-    container_name: basione-api
-    restart: unless-stopped
+  basione-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATABASE_URL: ${DATABASE_URL}
+    container_name: basione-server
+    restart: always
     ports:
-      - "${PORT:-3000}:3000"
+      - "5000:5000"
     env_file:
       - .env
-    environment:
-      PORT: 3000
