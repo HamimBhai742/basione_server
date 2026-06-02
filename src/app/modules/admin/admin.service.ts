@@ -11,6 +11,7 @@ import { stat } from "fs";
 import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+import { generateUniqueBannerSlug } from "../banner/banner.service";
 
 const bannerListSelect = {
   id: true,
@@ -18,6 +19,7 @@ const bannerListSelect = {
   occasion: true,
   style: true,
   headline: true,
+  slug: true,
   name: true,
   price: true,
   hobbies: true,
@@ -823,11 +825,15 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const calculatedPrice = areaM2 * pricePerM2;
   const finalPrice = Math.max(calculatedPrice, 12);
 
+  const headline = parsedData.headline || "Template Headline";
+  const slug = parsedData.slug || await generateUniqueBannerSlug(headline);
+
   const template = await prisma.banner.create({
     data: {
       occasion: parsedData.occasion || "custom",
       style: parsedData.style || "Template",
-      headline: parsedData.headline || "Template Headline",
+      headline,
+      slug,
       name: parsedData.name || null,
       description: parsedData.description || null,
       sizeType: parsedData.sizeType || "custom",
@@ -840,6 +846,11 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       variant: 0,
       status: "GENERATED",
       canvasJSON: parsedData.canvasJSON || null,
+      metaTitle: parsedData.metaTitle || null,
+      metaDescription: parsedData.metaDescription || null,
+      h1Title: parsedData.h1Title || null,
+      introText: parsedData.introText || null,
+      seoDescription: parsedData.seoDescription || null,
     },
   });
 
@@ -864,12 +875,26 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
   if (parsedData.occasion !== undefined) updateData.occasion = parsedData.occasion;
   if (parsedData.style !== undefined) updateData.style = parsedData.style;
-  if (parsedData.headline !== undefined) updateData.headline = parsedData.headline;
+  if (parsedData.headline !== undefined) {
+    updateData.headline = parsedData.headline;
+    if (parsedData.slug) {
+      updateData.slug = parsedData.slug;
+    } else if (parsedData.headline !== isExist.headline) {
+      updateData.slug = await generateUniqueBannerSlug(parsedData.headline, templateId);
+    }
+  } else if (parsedData.slug !== undefined) {
+    updateData.slug = parsedData.slug;
+  }
   if (parsedData.name !== undefined) updateData.name = parsedData.name;
   if (parsedData.description !== undefined) updateData.description = parsedData.description;
   if (parsedData.sizeType !== undefined) updateData.sizeType = parsedData.sizeType;
   if (parsedData.sizeLabel !== undefined) updateData.sizeLabel = parsedData.sizeLabel;
   if (parsedData.canvasJSON !== undefined) updateData.canvasJSON = parsedData.canvasJSON;
+  if (parsedData.metaTitle !== undefined) updateData.metaTitle = parsedData.metaTitle;
+  if (parsedData.metaDescription !== undefined) updateData.metaDescription = parsedData.metaDescription;
+  if (parsedData.h1Title !== undefined) updateData.h1Title = parsedData.h1Title;
+  if (parsedData.introText !== undefined) updateData.introText = parsedData.introText;
+  if (parsedData.seoDescription !== undefined) updateData.seoDescription = parsedData.seoDescription;
 
   let width = isExist.width;
   let height = isExist.height;

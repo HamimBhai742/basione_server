@@ -115,6 +115,17 @@ const createBannerFromTemplate = catchAsync(
   },
 );
 
+const getTemplateBySlug = catchAsync(async (req: Request, res: Response) => {
+  const template = await bannerService.getTemplateBySlug(req.params.slug as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Template succesvol opgehaald",
+    data: template,
+  });
+});
+
 export const bannerController = {
   mybanner,
   createBanner,
@@ -123,5 +134,6 @@ export const bannerController = {
   createBannerByTemplate,
   updateBanner,
   getTemplates,
+  getTemplateBySlug,
   createBannerFromTemplate,
 };

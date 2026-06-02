@@ -6,6 +6,32 @@ import { AppError } from "../../error/AppError";
 import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+import slugify from "slugify";
+
+export const generateUniqueBannerSlug = async (headline: string, currentId?: string): Promise<string> => {
+  const baseSlug = slugify(headline || "banner", { lower: true, strict: true });
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const isExist = await prisma.banner.findFirst({
+      where: {
+        slug,
+        ...(currentId ? { id: { not: currentId } } : {}),
+      },
+    });
+    
+    if (!isExist) {
+      break;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+  
+  return slug;
+};
 
 const bannerListSelect = {
   id: true,
@@ -13,6 +39,7 @@ const bannerListSelect = {
   occasion: true,
   style: true,
   headline: true,
+  slug: true,
   name: true,
   price: true,
   hobbies: true,
@@ -220,35 +247,37 @@ const createBanner = async (req: AuthRequest) => {
         (a, b) => a.variant - b.variant,
       );
 
-      const savedBanners = await Promise.all(
-        sortedVariants.map((item) =>
-          prisma.banner.create({
-            data: {
-              userId: req.user?.id || null,
+      const savedBanners: any[] = [];
+      for (const item of sortedVariants) {
+        const slug = await generateUniqueBannerSlug(`${parsedData.headline || "banner"}-v${item.variant}`);
+        const banner = await prisma.banner.create({
+          data: {
+            userId: req.user?.id || null,
 
-              occasion: parsedData.occasion,
-              style: parsedData.style,
-              headline: parsedData.headline,
-              name: parsedData.name,
+            occasion: parsedData.occasion,
+            style: parsedData.style,
+            headline: parsedData.headline,
+            slug,
+            name: parsedData.name,
 
-              hobbies: parsedData.hobbies || [],
-              description: parsedData.description,
+            hobbies: parsedData.hobbies || [],
+            description: parsedData.description,
 
-              sizeType: parsedData.size.type,
-              sizeLabel: parsedData.size.label,
-              width: parsedData.size.width,
-              height: parsedData.size.height,
+            sizeType: parsedData.size.type,
+            sizeLabel: parsedData.size.label,
+            width: parsedData.size.width,
+            height: parsedData.size.height,
 
-              imageUrl: item.url ?? "",
-              variant: item.variant,
+            imageUrl: item.url ?? "",
+            variant: item.variant,
 
-              price,
+            price,
 
-              revisedPrompt: item.revised_prompt || null,
-            },
-          }),
-        ),
-      );
+            revisedPrompt: item.revised_prompt || null,
+          },
+        });
+        savedBanners.push(banner);
+      }
 
       resolve({
         variants: savedBanners,
@@ -402,9 +431,12 @@ const createBannerByTemplate = async (req: AuthRequest) => {
 
   const sizeLabel = formatLabel(parsedData.size);
 
+  const slug = await generateUniqueBannerSlug(headline);
+
   const banner = await prisma.banner.create({
     data: {
       headline,
+      slug,
       occasion: occ,
       imageUrl: imgUrl,
 
@@ -521,12 +553,15 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
 
   // If this is a template banner, create a new customized user banner copy instead of modifying the template!
   if (banner.isTemplate) {
+    const bannerHeadline = parsedData?.headline || banner.headline;
+    const slug = await generateUniqueBannerSlug(bannerHeadline);
     const newBanner = await prisma.banner.create({
       data: {
         userId: req.user?.id || null,
         occasion: occasion,
         style: banner.style,
-        headline: parsedData?.headline || banner.headline,
+        headline: bannerHeadline,
+        slug,
         name: parsedData?.name || banner.name,
         description: parsedData?.description || banner.description,
         hobbies: parsedData?.hobbies || banner.hobbies || [],
@@ -552,12 +587,24 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     updateData.imageUrl = imageUrl;
   }
 
+  let finalHeadline = banner.headline;
+
   if (parsedData?.size) {
+    finalHeadline = headline;
     updateData.headline = headline;
     updateData.occasion = occasion;
     updateData.price = price;
     updateData.sizeType = parsedData.size;
     updateData.sizeLabel = formatLabel(parsedData.size);
+  }
+
+  if (parsedData?.headline && parsedData.headline !== banner.headline) {
+    finalHeadline = parsedData.headline;
+    updateData.headline = parsedData.headline;
+  }
+
+  if (finalHeadline !== banner.headline) {
+    updateData.slug = await generateUniqueBannerSlug(finalHeadline, bannerId);
   }
 
   if (parsedData?.width) {
@@ -696,6 +743,21 @@ const getTemplates = async (
   };
 };
 
+const getTemplateBySlug = async (slug: string) => {
+  const template = await prisma.banner.findFirst({
+    where: {
+      slug,
+      isTemplate: true,
+    },
+  });
+
+  if (!template) {
+    throw new AppError("Template niet gevonden", 404);
+  }
+
+  return template;
+};
+
 const createBannerFromTemplate = async (req: AuthRequest) => {
   let parsedData = req.body;
   if (typeof req.body === "string" || (req.body.data && typeof req.body.data === "string")) {
@@ -739,12 +801,16 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   const sizeType = parsedData.sizeType || template.sizeType;
   const sizeLabel = formatLabel(sizeType);
 
+  const bannerHeadline = parsedData.headline || template.headline;
+  const slug = await generateUniqueBannerSlug(bannerHeadline);
+
   const banner = await prisma.banner.create({
     data: {
       userId: req.user?.id || null,
       occasion: template.occasion,
       style: template.style,
-      headline: parsedData.headline || template.headline,
+      headline: bannerHeadline,
+      slug,
       name: parsedData.name || template.name,
       description: parsedData.description || template.description,
       hobbies: parsedData.hobbies || template.hobbies || [],
@@ -772,5 +838,6 @@ export const bannerService = {
   createBannerByTemplate,
   updateBanner,
   getTemplates,
+  getTemplateBySlug,
   createBannerFromTemplate,
 };

@@ -52,6 +52,7 @@ model Banner {
   occasion String
   style    String
   headline String
+  slug     String?
   name     String?
   price    Float
 
@@ -72,6 +73,12 @@ model Banner {
   revisedPrompt String?
 
   canvasJSON String?
+
+  metaTitle       String?
+  metaDescription String?
+  h1Title         String?
+  introText       String?
+  seoDescription  String?
 
   isSelected Boolean      @default(false)
   isTemplate Boolean      @default(false)

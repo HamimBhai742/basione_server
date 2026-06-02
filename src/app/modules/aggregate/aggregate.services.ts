@@ -6,6 +6,7 @@ const bannerListSelect = {
   occasion: true,
   style: true,
   headline: true,
+  slug: true,
   name: true,
   price: true,
   hobbies: true,
