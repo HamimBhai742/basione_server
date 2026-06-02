@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Install fontconfig and standard fonts for SVG text rendering with sharp/librsvg
+RUN apk add --no-cache fontconfig ttf-dejavu
+
 WORKDIR /app
 
 ARG DATABASE_URL

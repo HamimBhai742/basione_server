@@ -1,10 +1,47 @@
+import fs from "fs";
 import path from "path";
 import axios from "axios";
 import sharp from "sharp";
 import { AppError } from "../error/AppError";
 import { uploadBufferToS3 } from "./uploadAws";
 
-const fontPath = path.join(process.cwd(), "src", "app", "assets", "fonts", "Roboto-Bold.ttf").replace(/\\/g, "/");
+const getFontPath = (): string => {
+  const pathsToTry = [
+    // 1. Relative to __dirname in development (src/app/utils/ -> src/app/assets/fonts/)
+    path.join(__dirname, "..", "assets", "fonts", "Roboto-Bold.ttf"),
+    
+    // 2. Relative to __dirname in production compiled (dist/app/utils/ -> src/app/assets/fonts/)
+    path.join(__dirname, "..", "..", "..", "src", "app", "assets", "fonts", "Roboto-Bold.ttf"),
+    
+    // 3. Relative to process.cwd() in src
+    path.join(process.cwd(), "src", "app", "assets", "fonts", "Roboto-Bold.ttf"),
+    
+    // 4. Relative to process.cwd() in dist
+    path.join(process.cwd(), "dist", "app", "assets", "fonts", "Roboto-Bold.ttf"),
+
+    // 5. In case they copied assets directly to root app/assets/fonts
+    path.join(process.cwd(), "app", "assets", "fonts", "Roboto-Bold.ttf"),
+  ];
+
+  console.log(`[Font Discovery] process.cwd(): ${process.cwd()}`);
+  console.log(`[Font Discovery] __dirname: ${__dirname}`);
+
+  for (const p of pathsToTry) {
+    const exists = fs.existsSync(p);
+    console.log(`[Font Discovery] Checking path: ${p} - Exists: ${exists}`);
+    if (exists) {
+      console.log(`[Font Discovery] Successfully selected font path: ${p}`);
+      return p.replace(/\\/g, "/");
+    }
+  }
+
+  // Fallback to the default path if none exists
+  const fallback = path.join(process.cwd(), "src", "app", "assets", "fonts", "Roboto-Bold.ttf").replace(/\\/g, "/");
+  console.warn(`[Font Discovery] WARNING: Font not found in any standard location. Falling back to: ${fallback}`);
+  return fallback;
+};
+
+const fontPath = getFontPath();
 
 const escapeSvgText = (value: string) => {
   return value
