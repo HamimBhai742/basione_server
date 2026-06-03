@@ -252,6 +252,8 @@ const createOrder = async (
   const finalBannerImageUrl = await applyDesignNumberToBanner({
     imageUrl: banner.imageUrl,
     designNumber,
+    widthCm: banner.width,
+    heightCm: banner.height,
   });
 
   const order = await prisma.$transaction(async (tx) => {

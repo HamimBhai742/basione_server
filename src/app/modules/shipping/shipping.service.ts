@@ -273,8 +273,10 @@ const createShipment = async (payload: CreateShipmentPayload) => {
     receiver_contact: buildReceiverContact(order),
     shipment_products: payload.shipmentProducts || buildShipmentProducts(order),
   };
+  console.log(requestPayload);
 
   const response = await qlsClient.createShipment(requestPayload);
+  console.log("QlS create Shipment", response);
 
   const shipment = await persistShipmentResponse({
     orderId: order.id,
@@ -368,7 +370,7 @@ const refreshShipment = async (orderId: string, user?: any) => {
   const response = await qlsClient.getShipment(shipment.qlsShipmentId, true);
 
   return persistShipmentResponse({
-    orderId: order.id,
+    orderId: order.id, 
     response,
     existingShipmentId: shipment.id,
   });

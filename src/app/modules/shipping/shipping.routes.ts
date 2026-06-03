@@ -11,7 +11,7 @@ const router = Router();
 
 router.get(
   "/methods",
-  checkAuth("user", "admin"),
+ // checkAuth("user", "admin"),
   shippingController.getShippingMethods,
 );
 

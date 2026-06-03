@@ -46,6 +46,19 @@ type QlsWebhookPayload = {
   type_id: number;
 };
 
+const extractLeafMessages = (val: any): string[] => {
+  if (typeof val === "string") {
+    return [val];
+  }
+  if (Array.isArray(val)) {
+    return val.flatMap(extractLeafMessages);
+  }
+  if (val && typeof val === "object") {
+    return Object.values(val).flatMap(extractLeafMessages);
+  }
+  return [String(val)];
+};
+
 const getAxiosErrorMessage = (error: unknown) => {
   if (!axios.isAxiosError(error)) {
     return error instanceof Error ? error.message : "Unknown QLS error";
@@ -58,13 +71,33 @@ const getAxiosErrorMessage = (error: unknown) => {
     return responseData;
   }
 
-  if (responseData?.errors?.length) {
-    return Array.isArray(responseData.errors)
-      ? responseData.errors.join(", ")
-      : String(responseData.errors);
+  if (responseData?.errors) {
+    if (Array.isArray(responseData.errors)) {
+      return responseData.errors
+        .map((err: any) => {
+          if (typeof err === "string") return err;
+          if (err && typeof err === "object") {
+            // QLS or standard error formats might have a message, detail, or error key
+            return err.message || err.detail || err.error || extractLeafMessages(err).join(", ");
+          }
+          return String(err);
+        })
+        .join(", ");
+    }
+    if (typeof responseData.errors === "object") {
+      const errorParts = Object.entries(responseData.errors).map(([field, fieldErrors]) => {
+        const messages = extractLeafMessages(fieldErrors).join(", ");
+        return `${field}: ${messages}`;
+      });
+      return errorParts.join("; ");
+    }
+    return String(responseData.errors);
   }
 
   if (responseData?.message) {
+    if (typeof responseData.message === "object") {
+      return extractLeafMessages(responseData.message).join(", ");
+    }
     return responseData.message;
   }
 

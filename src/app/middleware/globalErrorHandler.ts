@@ -9,6 +9,7 @@ export const globalErrorHandler = (
   let message = err.message || "Something went wrong";
   let statusCode = err.statusCode || 500;
   const errorDetails: any = [];
+  console.log(err.message,err);
 
   if (err.name === "ZodError") {
     message = "Validation error";

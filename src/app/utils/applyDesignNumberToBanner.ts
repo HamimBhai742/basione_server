@@ -56,12 +56,21 @@ const getWatermarkSvg = ({
   text,
   width,
   height,
+  widthCm,
+  heightCm,
 }: {
   text: string;
   width: number;
   height: number;
+  widthCm?: number;
+  heightCm?: number;
 }) => {
-  const fontSize = Math.max(18, Math.round(Math.min(width, height) * 0.035));
+  const physicalHeightCm = heightCm || 100;
+  // 5mm = 0.5cm. Calculate corresponding pixel size.
+  // fontSize = (0.5 / physicalHeightCm) * height
+  const calculatedFontSize = Math.round((0.5 / physicalHeightCm) * height);
+  const fontSize = Math.max(12, calculatedFontSize);
+
   const paddingX = Math.round(fontSize * 0.55);
   const paddingY = Math.round(fontSize * 0.35);
   const boxWidth = Math.round(text.length * fontSize * 0.64 + paddingX * 2);
@@ -94,9 +103,13 @@ const getWatermarkSvg = ({
 export const applyDesignNumberToBanner = async ({
   imageUrl,
   designNumber,
+  widthCm,
+  heightCm,
 }: {
   imageUrl: string;
   designNumber: string;
+  widthCm?: number;
+  heightCm?: number;
 }) => {
   if (!imageUrl) {
     throw new AppError("Banner image URL is missing", 400);
@@ -122,12 +135,16 @@ export const applyDesignNumberToBanner = async ({
     text: designNumber,
     width: metadata.width,
     height: metadata.height,
+    widthCm,
+    heightCm,
   });
 
   const watermarkMetadata = await sharp(watermark).metadata();
+  const physicalHeightCm = heightCm || 100;
+  // Approximately 8mm margin
   const margin = Math.max(
-    16,
-    Math.round(Math.min(metadata.width, metadata.height) * 0.018),
+    10,
+    Math.round((0.8 / physicalHeightCm) * metadata.height),
   );
 
   const finalImageBuffer = await image
