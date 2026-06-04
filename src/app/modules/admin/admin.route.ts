@@ -55,6 +55,31 @@ router.post("/create-faq", adminController.createFaq);
 router.patch("/update-faq/:id", adminController.updateFaq);
 router.delete("/delete-faq/:id", adminController.deleteFaq);
 
+// --- Admin Template Category Management Endpoints ---
+router.post(
+  "/template-categories",
+  checkAuth("admin"),
+  adminController.createTemplateCategory,
+);
+
+router.get(
+  "/template-categories",
+  checkAuth("admin"),
+  adminController.getAllTemplateCategories,
+);
+
+router.patch(
+  "/template-categories/:id",
+  checkAuth("admin"),
+  adminController.updateTemplateCategory,
+);
+
+router.delete(
+  "/template-categories/:id",
+  checkAuth("admin"),
+  adminController.deleteTemplateCategory,
+);
+
 // --- Admin Template Management Endpoints ---
 router.post(
   "/create-template",

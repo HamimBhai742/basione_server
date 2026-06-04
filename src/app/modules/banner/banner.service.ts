@@ -36,6 +36,8 @@ export const generateUniqueBannerSlug = async (headline: string, currentId?: str
 const bannerListSelect = {
   id: true,
   userId: true,
+  templateCategoryId: true,
+  templateCategory: true,
   occasion: true,
   style: true,
   headline: true,
@@ -558,6 +560,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     const newBanner = await prisma.banner.create({
       data: {
         userId: req.user?.id || null,
+        templateCategoryId: banner.templateCategoryId || null,
         occasion: occasion,
         style: banner.style,
         headline: bannerHeadline,
@@ -652,11 +655,25 @@ const getAllbanners = async (
   skip: number,
   category?: string,
   fetchFrom?: "home" | "gallery",
+  categoryId?: string,
 ) => {
   const where: any = {};
 
-  if (category && category !== "all" && category !== "undefined") {
-    where.occasion = category;
+  if (categoryId && categoryId !== "all" && categoryId !== "undefined") {
+    where.templateCategoryId = categoryId;
+  } else if (category && category !== "all" && category !== "undefined") {
+    const templateCategory = await prisma.templateCategory.findFirst({
+      where: {
+        slug: category,
+        isActive: true,
+      },
+    });
+
+    if (templateCategory) {
+      where.templateCategoryId = templateCategory.id;
+    } else {
+      where.occasion = category;
+    }
   }
 
   if (fetchFrom === "home" || fetchFrom === "gallery") {
@@ -711,10 +728,29 @@ const getTemplates = async (
   limit: number,
   skip: number,
   occasion?: string,
+  categoryId?: string,
+  category?: string,
 ) => {
   const where: any = {
     isTemplate: true,
   };
+
+  if (categoryId) {
+    where.templateCategoryId = categoryId;
+  } else if (category) {
+    const templateCategory = await prisma.templateCategory.findFirst({
+      where: {
+        slug: category,
+        isActive: true,
+      },
+    });
+
+    if (templateCategory) {
+      where.templateCategoryId = templateCategory.id;
+    } else {
+      where.occasion = category;
+    }
+  }
 
   if (occasion) {
     where.occasion = occasion;
@@ -741,6 +777,19 @@ const getTemplates = async (
       totalPages: Math.ceil(total / limit),
     },
   };
+};
+
+const getTemplateCategories = async () => {
+  const categories = await prisma.templateCategory.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return categories;
 };
 
 const getTemplateBySlug = async (slug: string) => {
@@ -807,6 +856,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   const banner = await prisma.banner.create({
     data: {
       userId: req.user?.id || null,
+      templateCategoryId: template.templateCategoryId || null,
       occasion: template.occasion,
       style: template.style,
       headline: bannerHeadline,
@@ -838,6 +888,7 @@ export const bannerService = {
   createBannerByTemplate,
   updateBanner,
   getTemplates,
+  getTemplateCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
 };

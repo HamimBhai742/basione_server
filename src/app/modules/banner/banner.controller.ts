@@ -60,12 +60,14 @@ const mybanner = catchAsync(
 const getAllbanners = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip } = calculatePagination(req.query);
   const category = req.query.category as string;
+  const categoryId = req.query.categoryId as string;
   const banners = await bannerService.getAllbanners(
     page,
     limit,
     skip,
     category,
     req.query.fetchFrom as "home" | "gallery",
+    categoryId,
   );
 
   sendResponse(res, {
@@ -91,7 +93,16 @@ const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
 const getTemplates = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip } = calculatePagination(req.query);
   const occasion = req.query.occasion as string;
-  const result = await bannerService.getTemplates(page, limit, skip, occasion);
+  const categoryId = req.query.categoryId as string;
+  const category = req.query.category as string;
+  const result = await bannerService.getTemplates(
+    page,
+    limit,
+    skip,
+    occasion,
+    categoryId,
+    category,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -99,6 +110,17 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
     message: "Templates succesvol opgehaald",
     data: result.templates,
     metaData: result.metaData,
+  });
+});
+
+const getTemplateCategories = catchAsync(async (req: Request, res: Response) => {
+  const categories = await bannerService.getTemplateCategories();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatecategorieen succesvol opgehaald",
+    data: categories,
   });
 });
 
@@ -134,6 +156,7 @@ export const bannerController = {
   createBannerByTemplate,
   updateBanner,
   getTemplates,
+  getTemplateCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
 };

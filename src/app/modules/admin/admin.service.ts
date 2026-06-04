@@ -16,6 +16,8 @@ import { generateUniqueBannerSlug } from "../banner/banner.service";
 const bannerListSelect = {
   id: true,
   userId: true,
+  templateCategoryId: true,
+  templateCategory: true,
   occasion: true,
   style: true,
   headline: true,
@@ -38,6 +40,39 @@ const bannerListSelect = {
   generationId: true,
   createdAt: true,
   updatedAt: true,
+};
+
+const generateUniqueTemplateCategorySlug = async (
+  name: string,
+  currentId?: string,
+): Promise<string> => {
+  const baseSlug = generateSlug(name || "category");
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const isExist = await prisma.templateCategory.findFirst({
+      where: {
+        slug,
+        ...(currentId ? { id: { not: currentId } } : {}),
+      },
+    });
+
+    if (!isExist) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+};
+
+const generateSlug = (value: string) => {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 };
 
 type IOrderStatus =
@@ -795,6 +830,136 @@ const getFaqs = async () => {
   return faqs;
 };
 
+const createTemplateCategory = async (data: {
+  name: string;
+  slug?: string;
+  isActive?: boolean;
+}) => {
+  const name = data.name?.trim();
+
+  if (!name) {
+    throw new AppError("Categorienaam is verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  const slug = data.slug?.trim()
+    ? generateSlug(data.slug)
+    : await generateUniqueTemplateCategorySlug(name);
+
+  const category = await prisma.templateCategory.create({
+    data: {
+      name,
+      slug,
+      isActive: data.isActive ?? true,
+    },
+  });
+
+  return category;
+};
+
+const getAllTemplateCategories = async () => {
+  const categories = await prisma.templateCategory.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return categories;
+};
+
+const updateTemplateCategory = async (
+  id: string,
+  data: Partial<{
+    name: string;
+    slug: string;
+    isActive: boolean;
+  }>,
+) => {
+  const isExist = await prisma.templateCategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Templatecategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const updateData: any = {};
+
+  if (data.name !== undefined) {
+    const name = data.name.trim();
+    if (!name) {
+      throw new AppError("Categorienaam is verplicht", httpStatus.BAD_REQUEST);
+    }
+    updateData.name = name;
+  }
+
+  if (data.slug !== undefined) {
+    updateData.slug = await generateUniqueTemplateCategorySlug(data.slug, id);
+  } else if (data.name !== undefined && data.name !== isExist.name) {
+    updateData.slug = await generateUniqueTemplateCategorySlug(data.name, id);
+  }
+
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  const category = await prisma.templateCategory.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return category;
+};
+
+const deleteTemplateCategory = async (id: string) => {
+  const isExist = await prisma.templateCategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Templatecategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.banner.updateMany({
+      where: {
+        templateCategoryId: id,
+      },
+      data: {
+        templateCategoryId: null,
+      },
+    });
+
+    await tx.templateCategory.delete({
+      where: { id },
+    });
+  });
+
+  return true;
+};
+
+const resolveTemplateCategory = async (parsedData: any) => {
+  if (parsedData.templateCategoryId || parsedData.categoryId) {
+    const category = await prisma.templateCategory.findUnique({
+      where: { id: parsedData.templateCategoryId || parsedData.categoryId },
+    });
+
+    if (!category) {
+      throw new AppError("Templatecategorie niet gevonden", httpStatus.NOT_FOUND);
+    }
+
+    return category;
+  }
+
+  const categorySlug = parsedData.templateCategorySlug || parsedData.category;
+  if (categorySlug) {
+    return prisma.templateCategory.findFirst({
+      where: {
+        slug: categorySlug,
+      },
+    });
+  }
+
+  return null;
+};
+
 const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   let parsedData = payload;
   if (typeof payload === "string" || (payload.data && typeof payload.data === "string")) {
@@ -827,10 +992,12 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
 
   const headline = parsedData.headline || "Template Headline";
   const slug = parsedData.slug || await generateUniqueBannerSlug(headline);
+  const templateCategory = await resolveTemplateCategory(parsedData);
 
   const template = await prisma.banner.create({
     data: {
-      occasion: parsedData.occasion || "custom",
+      templateCategoryId: templateCategory?.id || null,
+      occasion: parsedData.occasion || templateCategory?.slug || "custom",
       style: parsedData.style || "Template",
       headline,
       slug,
@@ -874,6 +1041,18 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   const updateData: any = {};
 
   if (parsedData.occasion !== undefined) updateData.occasion = parsedData.occasion;
+  if (
+    parsedData.templateCategoryId !== undefined ||
+    parsedData.categoryId !== undefined ||
+    parsedData.templateCategorySlug !== undefined ||
+    parsedData.category !== undefined
+  ) {
+    const templateCategory = await resolveTemplateCategory(parsedData);
+    updateData.templateCategoryId = templateCategory?.id || null;
+    if (parsedData.occasion === undefined && templateCategory) {
+      updateData.occasion = templateCategory.slug;
+    }
+  }
   if (parsedData.style !== undefined) updateData.style = parsedData.style;
   if (parsedData.headline !== undefined) {
     updateData.headline = parsedData.headline;
@@ -967,10 +1146,28 @@ const getAllTemplates = async (
   limit: number,
   skip: number,
   occasion?: string,
+  categoryId?: string,
+  category?: string,
 ) => {
   const where: any = {
     isTemplate: true,
   };
+
+  if (categoryId) {
+    where.templateCategoryId = categoryId;
+  } else if (category) {
+    const templateCategory = await prisma.templateCategory.findFirst({
+      where: {
+        slug: category,
+      },
+    });
+
+    if (templateCategory) {
+      where.templateCategoryId = templateCategory.id;
+    } else {
+      where.occasion = category;
+    }
+  }
 
   if (occasion) {
     where.occasion = occasion;
@@ -1019,6 +1216,10 @@ export const adminService = {
   updateFaq,
   deleteFaq,
   getFaqs,
+  createTemplateCategory,
+  getAllTemplateCategories,
+  updateTemplateCategory,
+  deleteTemplateCategory,
   createTemplate,
   updateTemplate,
   deleteTemplate,

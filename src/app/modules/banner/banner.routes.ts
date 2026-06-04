@@ -21,6 +21,8 @@ router.get("/all-banners", bannerController.getAllbanners);
 
 router.get("/templates", bannerController.getTemplates);
 
+router.get("/template-categories", bannerController.getTemplateCategories);
+
 router.get("/templates/:slug", bannerController.getTemplateBySlug);
 
 router.get("/:id", bannerController.getSelectedBanner);

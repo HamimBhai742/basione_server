@@ -292,6 +292,53 @@ const getFaqs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createTemplateCategory = catchAsync(async (req: Request, res: Response) => {
+  const category = await adminService.createTemplateCategory(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Templatecategorie succesvol aangemaakt",
+    data: category,
+  });
+});
+
+const getAllTemplateCategories = catchAsync(async (req: Request, res: Response) => {
+  const categories = await adminService.getAllTemplateCategories();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatecategorieen succesvol opgehaald",
+    data: categories,
+  });
+});
+
+const updateTemplateCategory = catchAsync(async (req: Request, res: Response) => {
+  const category = await adminService.updateTemplateCategory(
+    req.params.id as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatecategorie succesvol bijgewerkt",
+    data: category,
+  });
+});
+
+const deleteTemplateCategory = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteTemplateCategory(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatecategorie succesvol verwijderd",
+    data: null,
+  });
+});
+
 const createTemplate = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   const result = await adminService.createTemplate(req.body, file);
@@ -334,7 +381,16 @@ const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
 const getAllTemplates = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip } = calculatePagination(req.query);
   const occasion = req.query.occasion as string;
-  const result = await adminService.getAllTemplates(page, limit, skip, occasion);
+  const categoryId = req.query.categoryId as string;
+  const category = req.query.category as string;
+  const result = await adminService.getAllTemplates(
+    page,
+    limit,
+    skip,
+    occasion,
+    categoryId,
+    category,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -364,6 +420,10 @@ export const adminController = {
   updateFaq,
   deleteFaq,
   getFaqs,
+  createTemplateCategory,
+  getAllTemplateCategories,
+  updateTemplateCategory,
+  deleteTemplateCategory,
   createTemplate,
   updateTemplate,
   deleteTemplate,
