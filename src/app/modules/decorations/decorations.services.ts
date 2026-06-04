@@ -15,10 +15,9 @@ const getAllDecoration = async (
     },
     include: {
       category: true,
-    },
-    take: limit,
-    skip,
+    }
   });
+  
   return {
     decorations,
     metaData: {
