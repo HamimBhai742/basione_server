@@ -20,6 +20,7 @@ const allowedOrigins = [
   "https://spandoekprint.nl",
   "https://www.spandoekprint.nl",
   "https://fortifiable-unpopulous-sonia.ngrok-free.dev",
+  "http://10.0.70.135:3000"
   // ...(config.client_url ? [config.client_url] : []),
 ];
 
