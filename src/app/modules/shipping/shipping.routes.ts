@@ -41,7 +41,7 @@ router.get(
 
 router.post(
   "/shipments",
-  checkAuth("admin"),
+  checkAuth("admin","user"),
   validateRequest(createShipmentSchema),
   shippingController.createShipment,
 );
