@@ -444,52 +444,47 @@ const checkOut = async (
     throw new AppError("Banner niet gevonden", httpStatus.NOT_FOUND);
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    await tx.address.upsert({
-      where: {
-        orderId,
-      },
-      update: {
-        name: validatedAddress.name,
-        companyName: validatedAddress.companyName,
-        phone: validatedAddress.phone,
-        email: validatedAddress.email,
-        street: validatedAddress.street,
-        houseNumber: validatedAddress.houseNumber,
-        address: validatedAddress.address,
-        zipCode: validatedAddress.zipCode,
-        city: validatedAddress.city,
-        userId,
-      },
-      create: {
-        name: validatedAddress.name,
-        companyName: validatedAddress.companyName,
-        phone: validatedAddress.phone,
-        email: validatedAddress.email,
-        street: validatedAddress.street,
-        houseNumber: validatedAddress.houseNumber,
-        address: validatedAddress.address,
-        zipCode: validatedAddress.zipCode,
-        city: validatedAddress.city,
-        userId,
-        orderId,
-      },
-    });
-
-    const paymentSession = await createPayment(
-      {
-        orderId,
-        amount: order.total,
-        customerName: validatedAddress.name,
-        companyName: validatedAddress.companyName,
-        customerEmail: validatedAddress.email,
-      },
+  await prisma.address.upsert({
+    where: {
+      orderId,
+    },
+    update: {
+      name: validatedAddress.name,
+      companyName: validatedAddress.companyName,
+      phone: validatedAddress.phone,
+      email: validatedAddress.email,
+      street: validatedAddress.street,
+      houseNumber: validatedAddress.houseNumber,
+      address: validatedAddress.address,
+      zipCode: validatedAddress.zipCode,
+      city: validatedAddress.city,
       userId,
-      tx,
-    );
-
-    return paymentSession;
+    },
+    create: {
+      name: validatedAddress.name,
+      companyName: validatedAddress.companyName,
+      phone: validatedAddress.phone,
+      email: validatedAddress.email,
+      street: validatedAddress.street,
+      houseNumber: validatedAddress.houseNumber,
+      address: validatedAddress.address,
+      zipCode: validatedAddress.zipCode,
+      city: validatedAddress.city,
+      userId,
+      orderId,
+    },
   });
+
+  const result = await createPayment(
+    {
+      orderId,
+      amount: order.total,
+      customerName: validatedAddress.name,
+      companyName: validatedAddress.companyName,
+      customerEmail: validatedAddress.email,
+    },
+    userId,
+  );
 
   return result.checkoutUrl;
 };

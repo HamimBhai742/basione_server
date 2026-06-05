@@ -41,26 +41,26 @@ router.get(
 
 router.post(
   "/shipments",
-  checkAuth("admin","user"),
+  // checkAuth("admin","user"),
   validateRequest(createShipmentSchema),
   shippingController.createShipment,
 );
 
 router.get(
   "/orders/:orderId/shipments",
-  checkAuth("user", "admin"),
+  // checkAuth("user", "admin"),
   shippingController.getOrderShipment,
 );
 
 router.post(
   "/orders/:orderId/shipments/refresh",
-  checkAuth("user", "admin"),
+  // checkAuth("user", "admin"),
   shippingController.refreshShipment,
 );
 
 router.get(
   "/shipments/:shipmentId/label",
-  checkAuth("user", "admin"),
+  // checkAuth("user", "admin"),
   shippingController.downloadLabel,
 );
 

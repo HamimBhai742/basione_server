@@ -67,7 +67,7 @@ const buildReceiverContact = (order: any) => {
 
   return {
     name: sanitize(address.name),
-    companyname: sanitize(address.companyName) || sanitize(address.name),
+    companyname: sanitize(address.companyName) || undefined,
     street: sanitize(address.street),
     housenumber: sanitize(address.houseNumber),
     address2: sanitize(address.address) || undefined,

@@ -76,7 +76,7 @@ export const createPayment = async (
 
     webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
 
-    cancelUrl: `https://spandoekprint.nl/api/v1/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
+    cancelUrl: `https://spandoekprint.nl/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
 
     metadata: {
       orderId,
@@ -190,9 +190,10 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   let shipmentCreated = false;
 
   try {
+    console.log(updatedOrder)
     if (updatedOrder.deliveryMethod === "delivery") {
       shipment = await shippingService.createShipment({
-        orderId: updatedOrder.id,
+        orderId: updatedOrder?.id,
       });
       shipmentCreated = true;
 
