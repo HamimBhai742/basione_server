@@ -8,12 +8,15 @@ import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import slugify from "slugify";
 
-export const generateUniqueBannerSlug = async (headline: string, currentId?: string): Promise<string> => {
+export const generateUniqueBannerSlug = async (
+  headline: string,
+  currentId?: string,
+): Promise<string> => {
   const baseSlug = slugify(headline || "banner", { lower: true, strict: true });
-  
+
   let slug = baseSlug;
   let counter = 1;
-  
+
   while (true) {
     const isExist = await prisma.banner.findFirst({
       where: {
@@ -21,15 +24,15 @@ export const generateUniqueBannerSlug = async (headline: string, currentId?: str
         ...(currentId ? { id: { not: currentId } } : {}),
       },
     });
-    
+
     if (!isExist) {
       break;
     }
-    
+
     slug = `${baseSlug}-${counter}`;
     counter++;
   }
-  
+
   return slug;
 };
 
@@ -188,7 +191,17 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_2", "");
   formData.append("ref_image_3", "");
   formData.append("ref_image_4", "");
+  console.log({
+    occasion: parsedData?.occasion,
+    style: parsedData?.style,
+    headline: parsedData?.headline || "",
+    subtext: parsedData?.subheadline || "",
+    name: parsedData?.name || "",
+    age: parsedData?.age || "",
+    description: parsedData.description || "A banner for a wedding invitation",
+  });
 
+  
   // const banners = await prisma.banner.findMany({
   //   take: 4,
   //   orderBy: { createdAt: "desc" },
@@ -251,7 +264,9 @@ const createBanner = async (req: AuthRequest) => {
 
       const savedBanners: any[] = [];
       for (const item of sortedVariants) {
-        const slug = await generateUniqueBannerSlug(`${parsedData.headline || "banner"}-v${item.variant}`);
+        const slug = await generateUniqueBannerSlug(
+          `${parsedData.headline || "banner"}-v${item.variant}`,
+        );
         const banner = await prisma.banner.create({
           data: {
             userId: req.user?.id || null,
@@ -346,7 +361,10 @@ const createBanner = async (req: AuthRequest) => {
             isFinished = true;
 
             reject(
-              new AppError(data?.message || "AI-server gaf een fout terug", 400),
+              new AppError(
+                data?.message || "AI-server gaf een fout terug",
+                400,
+              ),
             );
           }
 
@@ -569,7 +587,9 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         description: parsedData?.description || banner.description,
         hobbies: parsedData?.hobbies || banner.hobbies || [],
         sizeType: parsedData?.size || banner.sizeType,
-        sizeLabel: parsedData?.size ? formatLabel(parsedData.size) : banner.sizeLabel,
+        sizeLabel: parsedData?.size
+          ? formatLabel(parsedData.size)
+          : banner.sizeLabel,
         width,
         height,
         imageUrl,
@@ -809,7 +829,10 @@ const getTemplateBySlug = async (slug: string) => {
 
 const createBannerFromTemplate = async (req: AuthRequest) => {
   let parsedData = req.body;
-  if (typeof req.body === "string" || (req.body.data && typeof req.body.data === "string")) {
+  if (
+    typeof req.body === "string" ||
+    (req.body.data && typeof req.body.data === "string")
+  ) {
     parsedData = JSON.parse(req.body.data || req.body);
   }
 
@@ -829,7 +852,12 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   const width = Number(parsedData.width);
   const height = Number(parsedData.height);
 
-  if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+  if (
+    Number.isNaN(width) ||
+    Number.isNaN(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
     throw new AppError("Ongeldige bannerafmeting.", 400);
   }
 
