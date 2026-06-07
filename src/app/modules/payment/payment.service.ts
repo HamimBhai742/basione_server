@@ -14,7 +14,6 @@ import {
   markInvoiceAsSent,
 } from "../invoice/invoice.service";
 import { OrderConfirmedEmailData } from "../../../type/interface";
-import { shippingService } from "../shipping/shipping.service";
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -184,44 +183,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   });
 
   /**
-   * 3. Create QLS shipment for paid delivery orders
-   */
-  let shipment = null;
-  let shipmentCreated = false;
-
-  try {
-    console.log(updatedOrder)
-    if (updatedOrder.deliveryMethod === "delivery") {
-      shipment = await shippingService.createShipment({
-        orderId: updatedOrder?.id,
-      });
-      shipmentCreated = true;
-
-      console.log("QLS shipment created successfully after payment:", {
-        orderId: updatedOrder.id,
-        shipmentId: shipment.id,
-        qlsShipmentId: shipment.qlsShipmentId,
-      });
-    } else {
-      console.log("QLS shipment skipped for pickup order:", {
-        orderId: updatedOrder.id,
-        deliveryMethod: updatedOrder.deliveryMethod,
-      });
-    }
-  } catch (error: any) {
-    shipmentCreated = false;
-
-    console.error("QLS shipment creation failed after payment:", {
-      orderId: updatedOrder.id,
-      name: error.name,
-      message: error.message,
-      statusCode: error.statusCode,
-      stack: error.stack,
-    });
-  }
-
-  /**
-   * 4. Get user
+   * 3. Get user
    */
   const user = await prisma.user.findUnique({
     where: {
@@ -249,7 +211,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   });
 
   /**
-   * 5. Generate invoice
+   * 4. Generate invoice
    */
   const invoice = await generateAndSaveInvoice({
     user,
@@ -274,7 +236,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   });
 
   /**
-   * 6. Safe invoice file path
+   * 5. Safe invoice file path
    */
   const safeInvoiceFilePath =
     invoice.invoiceFilePath && fs.existsSync(invoice.invoiceFilePath)
@@ -290,7 +252,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   });
 
   /**
-   * 7. Send payment success email
+   * 6. Send payment success email
    */
   try {
     console.log("Calling paymentSuccessTemplate:", {
@@ -327,7 +289,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   }
 
   /**
-   * 8. Prepare order confirmation email data
+   * 7. Prepare order confirmation email data
    */
   const emailData: OrderConfirmedEmailData = {
     userName: updatedOrder.user?.name || user.name || "Customer",
@@ -388,7 +350,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   });
 
   /**
-   * 9. Send order confirmation email
+   * 8. Send order confirmation email
    */
   let orderEmailSent = false;
 
@@ -419,7 +381,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   }
 
   /**
-   * 10. Mark invoice as sent only if order confirmation email sent
+   * 9. Mark invoice as sent only if order confirmation email sent
    */
   if (orderEmailSent) {
     try {
@@ -445,8 +407,8 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
     order: updatedOrder,
     payment: updatedPayment,
     invoice,
-    shipment,
-    shipmentCreated,
+    shipment: null,
+    shipmentCreated: false,
     orderEmailSent,
   };
 };

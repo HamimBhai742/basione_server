@@ -249,6 +249,13 @@ const createShipment = async (payload: CreateShipmentPayload) => {
     throw new AppError("Only paid orders can be shipped", httpStatus.BAD_REQUEST);
   }
 
+  if (order.status !== "ready") {
+    throw new AppError(
+      "Only ready orders can have QLS shipment labels created",
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
   const existingShipment = order.shipments.find(
     (shipment) => shipment.status !== "failed",
   );

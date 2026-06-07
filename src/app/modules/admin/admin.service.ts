@@ -12,6 +12,7 @@ import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
+import { shippingService } from "../shipping/shipping.service";
 
 const bannerListSelect = {
   id: true,
@@ -401,6 +402,11 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
       );
     }
 
+    const shipment =
+      order.deliveryMethod === "delivery"
+        ? await shippingService.createShipment({ orderId })
+        : null;
+
     await prisma.order.update({
       where: {
         id: orderId,
@@ -414,8 +420,12 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
       shippedDate: new Date().toLocaleString(),
       estimatedDelivery: order?.deliveryTime as string,
       courierName: "DHL",
-      trackingNumber: order?.trackingNumber as string,
-      trackingLink: `http://localhost:3000/profile/${orderId}`,
+      trackingNumber:
+        shipment?.trackingId ||
+        shipment?.barcode ||
+        (order?.trackingNumber as string),
+      trackingLink:
+        shipment?.trackingUrl || `http://localhost:3000/profile/${orderId}`,
 
       items: [
         {
