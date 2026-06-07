@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createShipmentSchema = z.object({
   orderId: z.string().min(1),
+  carrier: z.enum(["dhl", "dragonfly", "dpd", "postnl"]).optional(),
   productCombinationId: z.number().int().positive().optional(),
   brandId: z.string().min(1).optional(),
   weight: z.number().int().positive().optional(),

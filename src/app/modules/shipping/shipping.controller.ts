@@ -68,6 +68,15 @@ const getSetupProductCombinations = catchAsync(
   },
 );
 
+const getSupportedCarriers = catchAsync(async (_req: Request, res: Response) => {
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "QLS carriers fetched successfully",
+    data: shippingService.getSupportedCarriers(),
+  });
+});
+
 const createShipment = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const shipment = await shippingService.createShipment(req.body);
@@ -173,6 +182,7 @@ export const shippingController = {
   getSetupBrands,
   getSetupProducts,
   getSetupProductCombinations,
+  getSupportedCarriers,
   createShipment,
   getOrderShipment,
   refreshShipment,

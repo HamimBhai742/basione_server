@@ -12,7 +12,7 @@ import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
-import { shippingService } from "../shipping/shipping.service";
+import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
 
 const bannerListSelect = {
   id: true,
@@ -84,6 +84,11 @@ type IOrderStatus =
   | "refunded"
   | "delivered"
   | "cancelled";
+
+type ManageOrderOptions = {
+  carrier?: QlsCarrierCode;
+  productCombinationId?: number;
+};
 
 const totalOrder = async (
   page: number,
@@ -216,7 +221,11 @@ const totalOrder = async (
   };
 };
 
-const manageOrder = async (orderId: string, status: IOrderStatus) => {
+const manageOrder = async (
+  orderId: string,
+  status: IOrderStatus,
+  options: ManageOrderOptions = {},
+) => {
   const payemt = await prisma.payment.findUnique({
     where: {
       orderId,
@@ -402,9 +411,20 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
       );
     }
 
+    if (order.deliveryMethod === "delivery" && !options.carrier) {
+      throw new AppError(
+        "Selecteer een vervoerder voordat u de bestelling verzendt",
+        httpStatus.BAD_REQUEST,
+      );
+    }
+
     const shipment =
       order.deliveryMethod === "delivery"
-        ? await shippingService.createShipment({ orderId })
+        ? await shippingService.createShipment({
+            orderId,
+            carrier: options.carrier,
+            productCombinationId: options.productCombinationId,
+          })
         : null;
 
     await prisma.order.update({
@@ -419,7 +439,9 @@ const manageOrder = async (orderId: string, status: IOrderStatus) => {
       orderNumber: orderId as string,
       shippedDate: new Date().toLocaleString(),
       estimatedDelivery: order?.deliveryTime as string,
-      courierName: "DHL",
+      courierName: shipment
+        ? shippingService.getCarrierLabel(options.carrier)
+        : "Afhalen",
       trackingNumber:
         shipment?.trackingId ||
         shipment?.barcode ||

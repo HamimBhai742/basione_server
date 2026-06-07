@@ -39,6 +39,10 @@ const manageOrder = catchAsync(async (req: Request, res: Response) => {
   const order = await adminService.manageOrder(
     req.params.id as string,
     req.body.status,
+    {
+      carrier: req.body.carrier,
+      productCombinationId: req.body.productCombinationId,
+    },
   );
 
   sendResponse(res, {

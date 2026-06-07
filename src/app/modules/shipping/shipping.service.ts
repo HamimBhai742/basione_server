@@ -11,6 +11,7 @@ import {
 
 type CreateShipmentPayload = {
   orderId: string;
+  carrier?: QlsCarrierCode;
   productCombinationId?: number;
   brandId?: string;
   weight?: number;
@@ -18,6 +19,65 @@ type CreateShipmentPayload = {
   customsInvoiceNumber?: string;
   customsShipmentType?: "commercial" | "documents" | "return" | "sample";
   shipmentProducts?: QlsShipmentProduct[];
+};
+
+export type QlsCarrierCode = "dhl" | "dragonfly" | "dpd" | "postnl";
+
+const supportedCarriers: Record<QlsCarrierCode, { code: QlsCarrierCode; label: string }> = {
+  dhl: {
+    code: "dhl",
+    label: "DHL",
+  },
+  dragonfly: {
+    code: "dragonfly",
+    label: "Dragonfly",
+  },
+  dpd: {
+    code: "dpd",
+    label: "DPD",
+  },
+  postnl: {
+    code: "postnl",
+    label: "PostNL",
+  },
+};
+
+const getSupportedCarriers = () => Object.values(supportedCarriers);
+
+const isQlsCarrierCode = (carrier?: string): carrier is QlsCarrierCode => {
+  return Boolean(carrier && carrier in supportedCarriers);
+};
+
+const getCarrierLabel = (carrier?: string) => {
+  return isQlsCarrierCode(carrier) ? supportedCarriers[carrier].label : "QLS";
+};
+
+const resolveProductCombinationId = (
+  carrier?: string,
+  productCombinationId?: number,
+) => {
+  if (productCombinationId) {
+    return productCombinationId;
+  }
+
+  if (!carrier) {
+    return config.qls.defaultProductCombinationId;
+  }
+
+  if (!isQlsCarrierCode(carrier)) {
+    throw new AppError("Unsupported QLS carrier selected", httpStatus.BAD_REQUEST);
+  }
+
+  const carrierProductCombinationId = config.qls.carriers[carrier];
+
+  if (!carrierProductCombinationId) {
+    throw new AppError(
+      `QLS product combination ID is not configured for ${supportedCarriers[carrier].label}`,
+      httpStatus.BAD_REQUEST,
+    );
+  }
+
+  return carrierProductCombinationId;
 };
 
 const normalizeQlsStatus = (status?: string): QlsShipmentStatus => {
@@ -79,17 +139,24 @@ const buildReceiverContact = (order: any) => {
   };
 };
 
-const buildShipmentProducts = (order: any): QlsShipmentProduct[] => [
-  {
+const removeUndefinedFields = <T>(value: T): T => {
+  return JSON.parse(JSON.stringify(value));
+};
+
+const buildShipmentProducts = (order: any): QlsShipmentProduct[] => {
+  const quantity = Number(order.quantity || 1);
+  const weightPerUnit = order.weight
+    ? Math.max(1, Math.round(Number(order.weight) / quantity))
+    : undefined;
+
+  return [{
     amount: Number(order.quantity || 1),
     name: `${order.banner?.name || order.banner?.occasion || "Custom"} Banner`,
     price_per_unit: Number(order.banner?.price || order.total || 0),
-    weight_per_unit: Number(
-      Math.max(1, Math.round((order.weight || config.qls.defaultWeightGram) / Number(order.quantity || 1))),
-    ),
+    weight_per_unit: weightPerUnit,
     currency: "EUR",
-  },
-];
+  }];
+};
 
 const persistShipmentResponse = async ({
   orderId,
@@ -216,8 +283,14 @@ const getSetupProductCombinations = async (companyId: string) => {
 };
 
 const createShipment = async (payload: CreateShipmentPayload) => {
-  const productCombinationId =
-    payload.productCombinationId || config.qls.defaultProductCombinationId;
+  if (payload.carrier && !isQlsCarrierCode(payload.carrier)) {
+    throw new AppError("Unsupported QLS carrier selected", httpStatus.BAD_REQUEST);
+  }
+
+  const productCombinationId = resolveProductCombinationId(
+    payload.carrier,
+    payload.productCombinationId,
+  );
 
   if (!productCombinationId) {
     throw new AppError(
@@ -267,19 +340,26 @@ const createShipment = async (payload: CreateShipmentPayload) => {
     );
   }
 
-  const weight = payload.weight || config.qls.defaultWeightGram;
-
-  const requestPayload: QlsCreateShipmentPayload = {
+  const requestPayload: QlsCreateShipmentPayload = removeUndefinedFields({
     product_combination_id: productCombinationId,
     brand_id: payload.brandId || config.qls.brandId,
     servicepoint_code: payload.servicepointCode,
     reference: buildReference(order),
-    weight,
+    weight: payload.weight || undefined,
     customs_invoice_number: payload.customsInvoiceNumber,
     customs_shipment_type: payload.customsShipmentType,
     receiver_contact: buildReceiverContact(order),
     shipment_products: payload.shipmentProducts || buildShipmentProducts(order),
-  };
+  });
+  const selectedCarrier = payload.carrier
+    ? supportedCarriers[payload.carrier]
+    : undefined;
+  const requestPayloadForLog = selectedCarrier
+    ? {
+        ...requestPayload,
+        carrier: selectedCarrier,
+      }
+    : requestPayload;
   console.log(requestPayload);
 
   const response = await qlsClient.createShipment(requestPayload);
@@ -287,7 +367,7 @@ const createShipment = async (payload: CreateShipmentPayload) => {
 
   const shipment = await persistShipmentResponse({
     orderId: order.id,
-    requestPayload,
+    requestPayload: requestPayloadForLog,
     response,
     existingShipmentId: existingShipment?.id,
   });
@@ -301,7 +381,12 @@ const createShipment = async (payload: CreateShipmentPayload) => {
       qlsShipmentId: response?.id || null,
       barcode: response?.barcode || null,
       trackingId: response?.tracking_id || null,
-      payload: JSON.parse(JSON.stringify(response || {})),
+      payload: JSON.parse(
+        JSON.stringify({
+          carrier: selectedCarrier,
+          response: response || {},
+        }),
+      ),
     },
   });
 
@@ -527,6 +612,8 @@ export const shippingService = {
   getSetupBrands,
   getSetupProducts,
   getSetupProductCombinations,
+  getSupportedCarriers,
+  getCarrierLabel,
   createShipment,
   getOrderShipment,
   refreshShipment,

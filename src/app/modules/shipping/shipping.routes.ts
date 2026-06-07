@@ -16,6 +16,12 @@ router.get(
 );
 
 router.get(
+  "/carriers",
+  // checkAuth("admin"),
+  shippingController.getSupportedCarriers,
+);
+
+router.get(
   "/setup/companies",
   // checkAuth("admin"),
   shippingController.getSetupCompanies,
