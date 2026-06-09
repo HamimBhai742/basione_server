@@ -12,6 +12,10 @@ import { formatLabel } from "../../utils/formatLable";
 import { DeliveryMethod, DeliveryType } from "@prisma/client";
 import { applyDesignNumberToBanner } from "../../utils/applyDesignNumberToBanner";
 import { buildOrderReviewLink } from "../../utils/orderReview";
+import {
+  generateGuestOrderToken,
+  getGuestOrderTokenExpiry,
+} from "../../utils/guestOrderToken";
 
 type FrontendDeliveryType =
   | "standard-delivery"
@@ -29,7 +33,21 @@ interface CreateOrderPayload {
   // Client requested default should be Yes.
   // Frontend should send true by default, but backend also defaults true for safety.
   hasEyelets?: boolean;
+  isGuest?: boolean;
+  guest?: boolean;
 }
+
+const isTruthyFlag = (value: unknown) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return ["1", "true", "yes", "guest"].includes(value.toLowerCase());
+  }
+
+  return value === 1;
+};
 
 const VAT_RATE = 0.21;
 const EYELETS_FEE = 3.5; // already INCLUDING VAT
@@ -193,14 +211,16 @@ const calculateOrderPrice = ({
 };
 
 const createOrder = async (
-  userId: string,
+  userId: string | undefined,
   bannerId: string,
   payload: CreateOrderPayload,
 ) => {
   // Backend default true, because client requested rings option should be Yes by default.
   const { deliveryType, quantity, hasEyelets = true } = payload;
+  const isGuestOrder =
+    !userId || isTruthyFlag(payload.isGuest) || isTruthyFlag(payload.guest);
 
-  if (!userId) {
+  if (!userId && !isGuestOrder) {
     throw new AppError("Gebruikers-id is verplicht.", httpStatus.UNAUTHORIZED);
   }
 
@@ -263,7 +283,7 @@ const createOrder = async (
         id: bannerId,
       },
       data: {
-        userId,
+        ...(userId ? { userId } : {}),
         designNumber,
         imageUrl: finalBannerImageUrl,
       },
@@ -302,7 +322,10 @@ const createOrder = async (
         // Final total stays same because all prices are already incl. VAT
         total: priceCalculation.total,
 
-        userId,
+        userId: userId || null,
+        isGuest: isGuestOrder,
+        guestOrderToken: isGuestOrder ? generateGuestOrderToken() : null,
+        guestTokenExpiresAt: isGuestOrder ? getGuestOrderTokenExpiry() : null,
         bannerId,
         trackingNumber,
       },
@@ -391,15 +414,11 @@ const validateCheckoutPayload = (payload: CheckOutPayload) => {
 
 const checkOut = async (
   orderId: string,
-  userId: string,
+  userId: string | undefined,
   payload: CheckOutPayload,
 ) => {
   if (!orderId) {
     throw new AppError("Bestel-id is verplicht", httpStatus.BAD_REQUEST);
-  }
-
-  if (!userId) {
-    throw new AppError("Gebruikers-id is verplicht", httpStatus.UNAUTHORIZED);
   }
 
   const validatedAddress = validateCheckoutPayload(payload);
@@ -419,7 +438,11 @@ const checkOut = async (
     throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
-  if (order.userId !== userId) {
+  if (order.userId) {
+    if (!userId || order.userId !== userId) {
+      throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
+    }
+  } else if (!order.isGuest) {
     throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
   }
 
@@ -459,7 +482,7 @@ const checkOut = async (
       address: validatedAddress.address,
       zipCode: validatedAddress.zipCode,
       city: validatedAddress.city,
-      userId,
+      userId: order.userId || userId || null,
     },
     create: {
       name: validatedAddress.name,
@@ -471,10 +494,23 @@ const checkOut = async (
       address: validatedAddress.address,
       zipCode: validatedAddress.zipCode,
       city: validatedAddress.city,
-      userId,
+      userId: order.userId || userId || null,
       orderId,
     },
   });
+
+  if (order.isGuest) {
+    await prisma.order.update({
+      where: {
+        id: orderId,
+      },
+      data: {
+        guestEmail: validatedAddress.email,
+        guestName: validatedAddress.name,
+        guestPhone: validatedAddress.phone,
+      },
+    });
+  }
 
   const result = await createPayment(
     {
@@ -484,7 +520,7 @@ const checkOut = async (
       companyName: validatedAddress.companyName,
       customerEmail: validatedAddress.email,
     },
-    userId,
+    order.userId || userId,
   );
 
   return result.checkoutUrl;
@@ -507,6 +543,8 @@ const attachReviewInfo = (order: any) => {
   const hasExistingReview = Boolean(order?.templateReview);
   const canReview = Boolean(
     templateId &&
+      order?.userId &&
+      !order?.isGuest &&
       order?.status === "delivered" &&
       order?.paymentStatus === "paid" &&
       !hasExistingReview,
@@ -618,6 +656,37 @@ const getSingleOrder = async (orderId: string, userId: string) => {
   return order ? attachReviewInfo(order) : order;
 };
 
+const getGuestOrder = async (orderId: string, token?: string) => {
+  if (!token) {
+    throw new AppError("Guest token is verplicht", httpStatus.UNAUTHORIZED);
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      banner: true,
+      addresses: true,
+      payment: true,
+      templateReview: true,
+    },
+  });
+
+  if (!order || !order.isGuest) {
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  if (
+    order.guestOrderToken !== token ||
+    (order.guestTokenExpiresAt && order.guestTokenExpiresAt < new Date())
+  ) {
+    throw new AppError("Ongeldige guest token", httpStatus.UNAUTHORIZED);
+  }
+
+  return attachReviewInfo(order);
+};
+
 export const cancledOrder = async (orderId: string, reason?: string) => {
   const order = await prisma.order.findUnique({
     where: {
@@ -626,6 +695,7 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     include: {
       user: true,
       banner: true,
+      addresses: true,
     },
   });
 
@@ -644,9 +714,18 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     },
   });
 
+  const customerName =
+    order?.user?.name || order?.guestName || order?.addresses?.name || "Customer";
+  const customerEmail =
+    order?.user?.email || order?.guestEmail || order?.addresses?.email;
+
+  if (!customerEmail) {
+    throw new AppError("E-mailadres niet gevonden", httpStatus.BAD_REQUEST);
+  }
+
   const data = {
-    userName: order?.user.name as string,
-    email: order?.user.email as string,
+    userName: customerName,
+    email: customerEmail,
     orderId: (order?.trackingNumber || order?.id) as string,
     orderDate: order?.createdAt.toLocaleString() as string,
     cancelledDate: new Date().toLocaleString(),
@@ -669,6 +748,7 @@ export const orderService = {
   checkOut,
   getMyOrders,
   getSingleOrder,
+  getGuestOrder,
   cancledOrder,
   getMyDesigns,
 };

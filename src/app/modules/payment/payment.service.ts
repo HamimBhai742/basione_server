@@ -25,9 +25,56 @@ interface CreatePaymentPayload {
   customerEmail?: string;
 }
 
+const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
+  if (
+    paymentJSON &&
+    typeof paymentJSON === "object" &&
+    !Array.isArray(paymentJSON) &&
+    "molliePaymentId" in paymentJSON
+  ) {
+    const molliePaymentId = paymentJSON.molliePaymentId;
+
+    return typeof molliePaymentId === "string" ? molliePaymentId : null;
+  }
+
+  return null;
+};
+
+const ensurePaymentAccess = (
+  payment: any,
+  userId?: string,
+  guestToken?: string,
+) => {
+  const order = payment?.order;
+
+  if (!order) {
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  if (order.userId) {
+    if (!userId || order.userId !== userId) {
+      throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
+    }
+
+    return;
+  }
+
+  if (!order.isGuest) {
+    throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
+  }
+
+  if (
+    !guestToken ||
+    order.guestOrderToken !== guestToken ||
+    (order.guestTokenExpiresAt && order.guestTokenExpiresAt < new Date())
+  ) {
+    throw new AppError("Ongeldige guest token", httpStatus.UNAUTHORIZED);
+  }
+};
+
 export const createPayment = async (
   payload: CreatePaymentPayload,
-  userId: string,
+  userId?: string,
   tx?: TransactionClient,
 ) => {
   const db = tx || prisma;
@@ -35,6 +82,19 @@ export const createPayment = async (
   const { amount, orderId, customerName, companyName, customerEmail } = payload;
 
   const transactionId = generateTransactionId();
+  const order = await db.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      isGuest: true,
+      guestOrderToken: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
+  }
 
   const existingPendingPayment = await db.payment.findFirst({
     where: {
@@ -57,11 +117,15 @@ export const createPayment = async (
       amount,
       transactionId,
       status: "pending",
-      userId,
+      userId: userId || null,
     },
   });
 
   const displayName = companyName || customerName;
+  const guestTokenQuery =
+    order.isGuest && order.guestOrderToken
+      ? `&token=${order.guestOrderToken}`
+      : "";
 
   const checkout = await mollieClient.payments.create({
     amount: {
@@ -71,24 +135,37 @@ export const createPayment = async (
 
     description: `Order #${orderId} - ${displayName}`,
 
-    redirectUrl: `https://spandoekprint.nl/payment/success?paymentId=${payment.id}&orderId=${orderId}`,
+    redirectUrl: `https://spandoekprint.nl/payment/success?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 
     webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
 
-    cancelUrl: `https://spandoekprint.nl/payment/canceled?paymentId=${payment.id}&orderId=${orderId}`,
+    cancelUrl: `https://spandoekprint.nl/payment/canceled?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 
     metadata: {
       orderId,
       paymentId: payment.id,
-      userId,
+      userId: userId || "",
       customerName,
       companyName: companyName || "",
       customerEmail: customerEmail || "",
     },
   });
 
+  await db.payment.update({
+    where: {
+      id: payment.id,
+    },
+    data: {
+      paymentJSON: {
+        molliePaymentId: checkout.id,
+        mollieStatus: checkout.status,
+      },
+    },
+  });
+
   return {
     paymentId: payment.id,
+    molliePaymentId: checkout.id,
     checkoutUrl: checkout.getCheckoutUrl(),
   };
 };
@@ -99,14 +176,38 @@ const mollieWebhook = async (payId: string) => {
   }
 
   const payment = await mollieClient.payments.get(payId);
-  const { orderId, paymentId, userId } = payment.metadata as any;
+  await handleMolliePaymentUpdate(payment);
+
+  return {
+    message: "Payment processed",
+  };
+};
+
+const handleMolliePaymentUpdate = async (payment: any) => {
+  const { orderId, paymentId, userId } = (payment.metadata || {}) as any;
+
+  if (!orderId || !paymentId) {
+    throw new AppError("Payment metadata missing", httpStatus.BAD_REQUEST);
+  }
 
   const localPayment = await prisma.payment.findUnique({
     where: { id: paymentId },
+    include: {
+      order: true,
+    },
   });
 
-  if (localPayment && localPayment.status === payment.status) {
-    console.log(`Payment ${paymentId} already processed with status ${payment.status}, ignoring webhook duplicate.`);
+  if (!localPayment) {
+    throw new AppError("Payment not found", httpStatus.NOT_FOUND);
+  }
+
+  if (
+    localPayment.status === payment.status &&
+    localPayment.order.paymentStatus === payment.status
+  ) {
+    console.log(
+      `Payment ${paymentId} already processed with status ${payment.status}, ignoring webhook duplicate.`,
+    );
     return { message: "Already processed" };
   }
 
@@ -124,14 +225,70 @@ const mollieWebhook = async (payId: string) => {
   }
 
   return {
-    message: "Payment pending",
+    message: `Payment ${payment.status}`,
+  };
+};
+
+const syncPaymentStatus = async (
+  paymentId: string | undefined,
+  userId?: string,
+  guestToken?: string,
+) => {
+  if (!paymentId) {
+    throw new AppError("Payment ID not found", httpStatus.BAD_REQUEST);
+  }
+
+  const localPayment = await prisma.payment.findUnique({
+    where: {
+      id: paymentId,
+    },
+    include: {
+      order: true,
+    },
+  });
+
+  if (!localPayment) {
+    throw new AppError("Payment not found", httpStatus.NOT_FOUND);
+  }
+
+  ensurePaymentAccess(localPayment, userId, guestToken);
+
+  const molliePaymentId = getMolliePaymentIdFromJSON(localPayment.paymentJSON);
+
+  if (molliePaymentId && localPayment.status === "pending") {
+    const molliePayment = await mollieClient.payments.get(molliePaymentId);
+    await handleMolliePaymentUpdate(molliePayment);
+  }
+
+  const refreshedPayment = await prisma.payment.findUnique({
+    where: {
+      id: paymentId,
+    },
+    include: {
+      order: {
+        select: {
+          id: true,
+          trackingNumber: true,
+          status: true,
+          paymentStatus: true,
+          isGuest: true,
+          guestOrderToken: true,
+        },
+      },
+    },
+  });
+
+  return {
+    paymentId: refreshedPayment?.id,
+    paymentStatus: refreshedPayment?.status,
+    order: refreshedPayment?.order,
   };
 };
 
 const paymentPaid = async (
   orderId: string,
   paymentId: string,
-  userId: string,
+  userId: string | undefined,
   molliePayment: any,
 ) => {
 console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
@@ -185,13 +342,16 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   /**
    * 3. Get user
    */
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
+  const paymentUserId = userId || updatedOrder.userId;
+  const user = paymentUserId
+    ? await prisma.user.findUnique({
+        where: {
+          id: paymentUserId,
+        },
+      })
+    : null;
 
-  if (!user) {
+  if (!user && !updatedOrder.isGuest) {
     console.error("User not found:", {
       userId,
       orderUserId: updatedOrder.userId,
@@ -205,10 +365,18 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   }
 
   console.log("User found:", {
-    userId: user.id,
-    email: user.email,
-    name: user.name,
+    userId: user?.id,
+    email: user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email,
+    name: user?.name || updatedOrder.guestName || updatedOrder.addresses?.name,
   });
+  const customerName =
+    user?.name || updatedOrder.guestName || updatedOrder.addresses?.name || "Customer";
+  const customerEmail =
+    user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email;
+
+  if (!customerEmail) {
+    throw new AppError("Customer email not found", httpStatus.BAD_REQUEST);
+  }
 
   /**
    * 4. Generate invoice
@@ -256,14 +424,14 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
    */
   try {
     console.log("Calling paymentSuccessTemplate:", {
-      to: user.email,
+      to: customerEmail,
       orderId,
       invoiceNumber: invoice.invoiceNumber,
     });
 
     await paymentSuccessTemplate({
-      userName: user.name || "Customer",
-      email: user.email,
+      userName: customerName,
+      email: customerEmail,
       amount: Number(updatedOrder.total || 0),
       transactionId: updatedPayment.transactionId,
       orderId: updatedOrder.trackingNumber || orderId,
@@ -292,8 +460,8 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
    * 7. Prepare order confirmation email data
    */
   const emailData: OrderConfirmedEmailData = {
-    userName: updatedOrder.user?.name || user.name || "Customer",
-    email: updatedOrder.user?.email || user.email,
+    userName: updatedOrder.user?.name || customerName,
+    email: updatedOrder.user?.email || customerEmail,
 
     orderId: updatedOrder.trackingNumber || orderId,
     orderDate: updatedOrder.createdAt.toLocaleString(),
@@ -497,4 +665,5 @@ const paymentExpired = async (
 export const paymentService = {
   createPayment,
   mollieWebhook,
+  syncPaymentStatus,
 };

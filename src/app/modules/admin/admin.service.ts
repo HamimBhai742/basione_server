@@ -246,6 +246,14 @@ const manageOrder = async (
   if (!order) {
     throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
+  const customerName =
+    order.user?.name || order.guestName || order.addresses?.name || "Customer";
+  const customerEmail =
+    order.user?.email || order.guestEmail || order.addresses?.email;
+
+  if (!customerEmail) {
+    throw new AppError("E-mailadres niet gevonden", httpStatus.BAD_REQUEST);
+  }
 
   const data = {
     orderNumber: orderId as string,
@@ -347,8 +355,8 @@ const manageOrder = async (
     });
 
     await orderReadyTemplate(
-      order.user.name,
-      order.user.email,
+      customerName,
+      customerEmail,
       "Bestelling klaar voor levering",
       orderReadyData,
     );
@@ -394,8 +402,8 @@ const manageOrder = async (
       },
     });
     await orderRefundedTemplate(
-      order.user.name,
-      order.user.email,
+      customerName,
+      customerEmail,
       "Bestelling terugbetaald",
       refundedData,
     );
@@ -460,8 +468,8 @@ const manageOrder = async (
     };
 
     await orderShippedTemplate(
-      order.user.name,
-      order.user.email,
+      customerName,
+      customerEmail,
       "Bestelling verzonden",
       shippedData,
     );

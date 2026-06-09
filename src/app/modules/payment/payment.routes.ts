@@ -1,11 +1,16 @@
 import { Router } from "express";
 import express from "express";
 import { paymentController } from "./payment.controller";
-import { checkAuth } from "../../middleware/checkAuth";
+import { checkAuth, optionalAuth } from "../../middleware/checkAuth";
 
 const router = Router();
 
 router.post("/create-payment",checkAuth("user"), paymentController.createPayment);
+router.get(
+  "/status/:paymentId",
+  optionalAuth("user"),
+  paymentController.syncPaymentStatus,
+);
 router.post(
   "/mollie/webhook",
   express.urlencoded({ extended: false }),

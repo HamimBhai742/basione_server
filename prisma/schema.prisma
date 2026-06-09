@@ -164,8 +164,15 @@ model Order {
   bannerId String
   banner   Banner @relation(fields: [bannerId], references: [id])
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id])
+
+  isGuest             Boolean   @default(false)
+  guestEmail          String?
+  guestName           String?
+  guestPhone          String?
+  guestOrderToken     String?   @unique
+  guestTokenExpiresAt DateTime?
 
   payment   Payment?
   addresses Address?
@@ -282,7 +289,7 @@ model Invoice {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   orderId   String @unique @db.ObjectId
-  userId    String @db.ObjectId
+  userId    String? @db.ObjectId
   paymentId String @db.ObjectId
 
   invoiceNumber   String  @unique
@@ -298,7 +305,7 @@ model Invoice {
   updatedAt DateTime @updatedAt
 
   order   Order   @relation(fields: [orderId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
   payment Payment @relation(fields: [paymentId], references: [id])
 }
 
@@ -345,8 +352,8 @@ model Payment {
   status        PaymentStatus
   orderId       String        @unique
   order         Order         @relation(fields: [orderId], references: [id])
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id])
   paymentJSON   Json?
 
   createdAt DateTime  @default(now())
@@ -365,8 +372,8 @@ model Address {
   city        String
   zipCode     String
   address     String?
-  userId      String
-  user        User    @relation(fields: [userId], references: [id])
+  userId      String?
+  user        User?   @relation(fields: [userId], references: [id])
   orderId     String  @unique
   order       Order   @relation(fields: [orderId], references: [id])
 

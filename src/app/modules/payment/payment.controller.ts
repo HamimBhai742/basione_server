@@ -8,7 +8,7 @@ const createPayment = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const payment = await paymentService.createPayment(
       req.body,
-      req.user.id as string,
+      req.user?.id as string | undefined,
     );
 
     sendResponse(res, {
@@ -34,7 +34,33 @@ const mollieWebhook = catchAsync(async (req: Request, res: Response) => {
   return res.status(200).send("OK");
 });
 
+const getRequestToken = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : undefined;
+  }
+
+  return typeof value === "string" ? value : undefined;
+};
+
+const syncPaymentStatus = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const payment = await paymentService.syncPaymentStatus(
+      getRequestToken(req.params.paymentId),
+      req.user?.id as string | undefined,
+      getRequestToken(req.query.token || req.body?.token),
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Payment status fetched successfully",
+      data: payment,
+    });
+  },
+);
+
 export const paymentController = {
   createPayment,
   mollieWebhook,
+  syncPaymentStatus,
 };

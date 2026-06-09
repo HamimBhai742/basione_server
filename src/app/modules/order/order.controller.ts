@@ -4,11 +4,32 @@ import { Request, Response } from "express";
 import { orderService } from "./order.service";
 import { calculatePagination } from "../../utils/calculatePagination";
 
+const isTruthyFlag = (value: unknown) => {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return ["1", "true", "yes", "guest"].includes(value.toLowerCase());
+  }
+
+  return value === 1;
+};
+
 const createOrder = async (req: Request & { user?: any }, res: Response) => {
+  const isGuest =
+    !req.user?.id ||
+    isTruthyFlag(req.body.isGuest) ||
+    isTruthyFlag(req.body.guest) ||
+    isTruthyFlag(req.query.guest);
+
   const order = await orderService.createOrder(
-    req.user.id,
+    req.user?.id,
     req.body.bannerId,
-    req.body,
+    {
+      ...req.body,
+      isGuest,
+    },
   );
 
   sendResponse(res, {
@@ -22,7 +43,7 @@ const createOrder = async (req: Request & { user?: any }, res: Response) => {
 const checkOut = async (req: Request & { user?: any }, res: Response) => {
   const order = await orderService.checkOut(
     req.body.orderId,
-    req.user.id,
+    req.user?.id,
     req.body,
   );
 
@@ -79,6 +100,20 @@ const getSingleOrder = async (req: Request & { user?: any }, res: Response) => {
   });
 };
 
+const getGuestOrder = async (req: Request, res: Response) => {
+  const order = await orderService.getGuestOrder(
+    req.params.id as string,
+    req.query.token as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Guest bestelling succesvol opgehaald",
+    data: order,
+  });
+};
+
 const cancledOrder = async (req: Request, res: Response) => {
   await orderService.cancledOrder(req.params.id as string);
 
@@ -97,6 +132,7 @@ export const orderController = {
   checkOut,
   getMyOrders,
   getSingleOrder,
+  getGuestOrder,
   cancledOrder,
   getMyDesigns
 };

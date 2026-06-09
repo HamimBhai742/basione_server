@@ -42,11 +42,22 @@ export const sendDeliveredOrderReviewEmail = async (orderId: string) => {
       ? order.banner.id
       : null;
 
-  const reviewLink = templateId ? buildOrderReviewLink(order.id) : undefined;
+  const reviewLink =
+    templateId && !order.isGuest && order.userId
+      ? buildOrderReviewLink(order.id)
+      : undefined;
+  const customerName =
+    order.user?.name || order.guestName || order.addresses?.name || "Customer";
+  const customerEmail =
+    order.user?.email || order.guestEmail || order.addresses?.email;
+
+  if (!customerEmail) {
+    return;
+  }
 
   await orderDeliveryCompleteTemplate(
-    order.user.name,
-    order.user.email,
+    customerName,
+    customerEmail,
     "Bestelling geleverd",
     {
       orderNumber: order.trackingNumber || order.id,

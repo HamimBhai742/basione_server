@@ -54,3 +54,51 @@ export const checkAuth = (...role: string[]) => {
     }
   };
 };
+
+export const optionalAuth = (...role: string[]) => {
+  return async (
+    req: Request & { user?: any },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const token = req.headers.authorization || req.cookies.accessToken;
+
+      if (!token) {
+        return next();
+      }
+
+      const decoded = verifyToken(token, config.jwt.secret);
+
+      const user = await prisma.user.findUnique({
+        where: {
+          email: decoded.email,
+        },
+      });
+
+      if (!user) {
+        throw new AppError("User not found", httpStatus.NOT_FOUND);
+      }
+
+      if (!user.isVerified) {
+        throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+      }
+
+      if (user.status !== "active") {
+        throw new AppError(`User is ${user.status}`, httpStatus.BAD_REQUEST);
+      }
+
+      if (role.length > 0 && !role.includes(user.role)) {
+        throw new AppError(
+          "User is not authorized to access this route",
+          httpStatus.FORBIDDEN,
+        );
+      }
+
+      req.user = user;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};

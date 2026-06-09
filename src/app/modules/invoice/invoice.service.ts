@@ -89,9 +89,9 @@ export const generateAndSaveInvoice = async ({
       orderDate: order.createdAt.toLocaleString(),
 
       customer: {
-        name: order.addresses?.name || user.name || "Customer",
+        name: order.addresses?.name || user?.name || order.guestName || "Customer",
         companyName: order.addresses?.companyName || null,
-        email: order.addresses?.email || user.email,
+        email: order.addresses?.email || user?.email || order.guestEmail || "",
         phone: order.addresses?.phone || null,
       },
 
@@ -159,7 +159,7 @@ export const generateAndSaveInvoice = async ({
         invoiceFilePath: savedPdf.fileName,
 
         orderId: order.id,
-        userId: user.id,
+        userId: user?.id || null,
 
         // Uncomment only if your Invoice model has paymentId field
         paymentId: payment?.id || "",
