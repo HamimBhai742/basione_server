@@ -17,7 +17,7 @@ export const buildOrderReviewLink = (orderId: string) => {
     return configuredReviewBaseUrl.replace(":orderId", orderId);
   }
 
-  return `${trimTrailingSlash(baseUrl)}/orders/${orderId}?review=1`;
+  return `${trimTrailingSlash(baseUrl)}/profile/${orderId}`;
 };
 
 export const sendDeliveredOrderReviewEmail = async (orderId: string) => {
