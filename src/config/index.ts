@@ -26,6 +26,7 @@ export default {
   },
   baseUrl: process.env.BASE_URL as string,
   client_url: process.env.CLIENT_URL as string,
+  reviewBaseUrl: process.env.REVIEW_BASE_URL as string,
   NODE_ENV: process.env.NODE_ENV as string,
   s3: {
     region: process.env.S3_REGION as string,

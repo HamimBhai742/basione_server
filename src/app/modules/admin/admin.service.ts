@@ -2,7 +2,6 @@ import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import { orderUserSearchableFields } from "./admin.contain";
 import httpStatus from "http-status";
-import { orderDeliveryCompleteTemplate } from "../../utils/emailTemplates/orderDeliveryTemplate";
 import { cancledOrder } from "../order/order.service";
 import { orderRefundedTemplate } from "../../utils/emailTemplates/orderRefunded";
 import { orderReadyTemplate } from "../../utils/emailTemplates/orderReadyTemplate";
@@ -13,6 +12,7 @@ import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
 import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
+import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 
 const bannerListSelect = {
   id: true,
@@ -374,12 +374,7 @@ const manageOrder = async (
       },
     });
 
-    await orderDeliveryCompleteTemplate(
-      order.user.name,
-      order.user.email,
-      "Bestelling geleverd",
-      data,
-    );
+    await sendDeliveredOrderReviewEmail(orderId);
   } else if (status === "cancelled") {
     await cancledOrder(orderId, "Bestelling geannuleerd door beheerder");
   } else if (status === "refunded") {

@@ -40,6 +40,7 @@ const bannerListSelect = {
   id: true,
   userId: true,
   templateCategoryId: true,
+  sourceTemplateId: true,
   templateCategory: true,
   occasion: true,
   style: true,
@@ -63,6 +64,38 @@ const bannerListSelect = {
   generationId: true,
   createdAt: true,
   updatedAt: true,
+};
+
+const buildReviewSummary = async (templateId: string) => {
+  const result = await prisma.templateReview.aggregate({
+    where: {
+      templateId,
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    },
+  });
+
+  return {
+    averageRating: result._avg.rating ? roundToTwo(result._avg.rating) : 0,
+    totalReviews: result._count.rating,
+  };
+};
+
+const attachReviewSummary = async <T extends { id: string }>(template: T) => {
+  return {
+    ...template,
+    reviewSummary: await buildReviewSummary(template.id),
+  };
+};
+
+const attachReviewSummaries = async <T extends { id: string }>(
+  templates: T[],
+) => {
+  return Promise.all(templates.map((template) => attachReviewSummary(template)));
 };
 
 export enum ICategory {
@@ -579,6 +612,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
       data: {
         userId: req.user?.id || null,
         templateCategoryId: banner.templateCategoryId || null,
+        sourceTemplateId: banner.id,
         occasion: occasion,
         style: banner.style,
         headline: bannerHeadline,
@@ -787,9 +821,10 @@ const getTemplates = async (
   });
 
   const total = await prisma.banner.count({ where });
+  const templatesWithReviews = await attachReviewSummaries(templates);
 
   return {
-    templates,
+    templates: templatesWithReviews,
     metaData: {
       total,
       page,
@@ -824,7 +859,7 @@ const getTemplateBySlug = async (slug: string) => {
     throw new AppError("Template niet gevonden", 404);
   }
 
-  return template;
+  return attachReviewSummary(template);
 };
 
 const createBannerFromTemplate = async (req: AuthRequest) => {
@@ -885,6 +920,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
     data: {
       userId: req.user?.id || null,
       templateCategoryId: template.templateCategoryId || null,
+      sourceTemplateId: template.id,
       occasion: template.occasion,
       style: template.style,
       headline: bannerHeadline,

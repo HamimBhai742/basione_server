@@ -11,6 +11,7 @@ import { getNextOrderNumber } from "../../utils/trackingNumber";
 import { formatLabel } from "../../utils/formatLable";
 import { DeliveryMethod, DeliveryType } from "@prisma/client";
 import { applyDesignNumberToBanner } from "../../utils/applyDesignNumberToBanner";
+import { buildOrderReviewLink } from "../../utils/orderReview";
 
 type FrontendDeliveryType =
   | "standard-delivery"
@@ -489,6 +490,39 @@ const checkOut = async (
   return result.checkoutUrl;
 };
 
+const getOrderTemplateId = (order: any) => {
+  if (!order?.banner) {
+    return null;
+  }
+
+  if (order.banner.sourceTemplateId) {
+    return order.banner.sourceTemplateId;
+  }
+
+  return order.banner.isTemplate ? order.banner.id : null;
+};
+
+const attachReviewInfo = (order: any) => {
+  const templateId = getOrderTemplateId(order);
+  const hasExistingReview = Boolean(order?.templateReview);
+  const canReview = Boolean(
+    templateId &&
+      order?.status === "delivered" &&
+      order?.paymentStatus === "paid" &&
+      !hasExistingReview,
+  );
+
+  return {
+    ...order,
+    reviewInfo: {
+      canReview,
+      templateId,
+      reviewLink: templateId ? buildOrderReviewLink(order.id) : null,
+      review: order?.templateReview || null,
+    },
+  };
+};
+
 const getMyOrders = async (
   userId: string,
   page: number,
@@ -502,6 +536,7 @@ const getMyOrders = async (
     include: {
       banner: true,
       payment: true,
+      templateReview: true,
     },
     orderBy: {
       updatedAt: "desc",
@@ -517,7 +552,7 @@ const getMyOrders = async (
   });
 
   return {
-    orders,
+    orders: orders.map(attachReviewInfo),
     metaData: {
       total,
       page,
@@ -540,6 +575,7 @@ const getMyDesigns = async (
     include: {
       banner: true,
       payment: true,
+      templateReview: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -554,7 +590,7 @@ const getMyDesigns = async (
     },
   });
   return {
-    orders,
+    orders: orders.map(attachReviewInfo),
     metaData: {
       total,
       page,
@@ -575,10 +611,11 @@ const getSingleOrder = async (orderId: string, userId: string) => {
       banner: true,
       addresses: true,
       payment: true,
+      templateReview: true,
     },
   });
 
-  return order;
+  return order ? attachReviewInfo(order) : order;
 };
 
 export const cancledOrder = async (orderId: string, reason?: string) => {

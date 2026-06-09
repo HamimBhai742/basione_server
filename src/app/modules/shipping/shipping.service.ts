@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import config from "../../../config";
 import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
+import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 import {
   qlsClient,
   QlsCreateShipmentPayload,
@@ -171,6 +172,17 @@ const persistShipmentResponse = async ({
 }) => {
   const status = normalizeQlsStatus(response?.status);
   const orderStatus = getOrderStatusForShipmentStatus(status);
+  const previousOrder =
+    orderStatus === OrderStatus.delivered
+      ? await prisma.order.findUnique({
+          where: {
+            id: orderId,
+          },
+          select: {
+            status: true,
+          },
+        })
+      : null;
 
   const shipmentData = {
     qlsShipmentId: response?.id,
@@ -241,6 +253,13 @@ const persistShipmentResponse = async ({
 
     return savedShipment;
   });
+
+  if (
+    orderStatus === OrderStatus.delivered &&
+    previousOrder?.status !== OrderStatus.delivered
+  ) {
+    await sendDeliveredOrderReviewEmail(orderId);
+  }
 
   return shipment;
 };
@@ -553,6 +572,17 @@ const handleWebhook = async (payload: any) => {
       ].filter(Boolean) as any[],
     },
   });
+  const previousOrder =
+    orderStatus === OrderStatus.delivered && existingShipment?.orderId
+      ? await prisma.order.findUnique({
+          where: {
+            id: existingShipment.orderId,
+          },
+          select: {
+            status: true,
+          },
+        })
+      : null;
 
   const event = await prisma.$transaction(async (tx) => {
     let shipment = existingShipment;
@@ -602,6 +632,14 @@ const handleWebhook = async (payload: any) => {
       },
     });
   });
+
+  if (
+    orderStatus === OrderStatus.delivered &&
+    existingShipment?.orderId &&
+    previousOrder?.status !== OrderStatus.delivered
+  ) {
+    await sendDeliveredOrderReviewEmail(existingShipment.orderId);
+  }
 
   return event;
 };
