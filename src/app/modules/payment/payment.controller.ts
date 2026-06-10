@@ -42,12 +42,22 @@ const getRequestToken = (value: unknown) => {
   return typeof value === "string" ? value : undefined;
 };
 
+const getGuestOrderToken = (req: Request) =>
+  getRequestToken(
+    req.query.token ||
+      req.query.guestToken ||
+      req.query.guestOrderToken ||
+      req.body?.token ||
+      req.body?.guestToken ||
+      req.body?.guestOrderToken,
+  );
+
 const syncPaymentStatus = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const payment = await paymentService.syncPaymentStatus(
       getRequestToken(req.params.paymentId),
-      req.user?.id as string | undefined,
-      getRequestToken(req.query.token || req.body?.token),
+      req.user as { id?: string; role?: string } | undefined,
+      getGuestOrderToken(req),
     );
 
     sendResponse(res, {

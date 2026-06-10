@@ -8,7 +8,7 @@ const router = Router();
 router.post("/create-payment",checkAuth("user"), paymentController.createPayment);
 router.get(
   "/status/:paymentId",
-  optionalAuth("user"),
+  optionalAuth("user", "admin"),
   paymentController.syncPaymentStatus,
 );
 router.post(

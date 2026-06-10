@@ -9,6 +9,7 @@ import { cancledOrder } from "../order/order.service";
 import { formatLabel } from "../../utils/formatLable";
 import { Prisma } from "@prisma/client";
 import fs from "fs";
+import crypto from "crypto";
 import {
   generateAndSaveInvoice,
   markInvoiceAsSent,
@@ -16,6 +17,10 @@ import {
 import { OrderConfirmedEmailData } from "../../../type/interface";
 
 type TransactionClient = Prisma.TransactionClient;
+type PaymentRequestUser = {
+  id?: string;
+  role?: string;
+};
 
 interface CreatePaymentPayload {
   orderId: string;
@@ -40,9 +45,27 @@ const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
   return null;
 };
 
+const isSecureStringEqual = (storedValue?: string | null, receivedValue?: string) => {
+  if (!storedValue || !receivedValue) {
+    return false;
+  }
+
+  const storedBuffer = Buffer.from(storedValue);
+  const receivedBuffer = Buffer.from(receivedValue);
+
+  if (storedBuffer.length !== receivedBuffer.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(storedBuffer, receivedBuffer);
+};
+
+const toFrontendDeliveryType = (deliveryType?: string | null) =>
+  deliveryType ? deliveryType.replace(/_/g, "-") : deliveryType;
+
 const ensurePaymentAccess = (
   payment: any,
-  userId?: string,
+  user?: PaymentRequestUser,
   guestToken?: string,
 ) => {
   const order = payment?.order;
@@ -51,24 +74,27 @@ const ensurePaymentAccess = (
     throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
-  if (order.userId) {
-    if (!userId || order.userId !== userId) {
-      throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
+  if (order.isGuest) {
+    if (!guestToken) {
+      throw new AppError("Guest token is verplicht", httpStatus.UNAUTHORIZED);
+    }
+
+    const isExpired =
+      order.guestTokenExpiresAt && order.guestTokenExpiresAt < new Date();
+
+    if (isExpired || !isSecureStringEqual(order.guestOrderToken, guestToken)) {
+      throw new AppError("Ongeldige guest token", httpStatus.FORBIDDEN);
     }
 
     return;
   }
 
-  if (!order.isGuest) {
-    throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
+  if (user?.role === "admin") {
+    return;
   }
 
-  if (
-    !guestToken ||
-    order.guestOrderToken !== guestToken ||
-    (order.guestTokenExpiresAt && order.guestTokenExpiresAt < new Date())
-  ) {
-    throw new AppError("Ongeldige guest token", httpStatus.UNAUTHORIZED);
+  if (!user?.id || order.userId !== user.id) {
+    throw new AppError("Je bent niet geautoriseerd", httpStatus.UNAUTHORIZED);
   }
 };
 
@@ -231,7 +257,7 @@ const handleMolliePaymentUpdate = async (payment: any) => {
 
 const syncPaymentStatus = async (
   paymentId: string | undefined,
-  userId?: string,
+  user?: PaymentRequestUser,
   guestToken?: string,
 ) => {
   if (!paymentId) {
@@ -243,7 +269,15 @@ const syncPaymentStatus = async (
       id: paymentId,
     },
     include: {
-      order: true,
+      order: {
+        select: {
+          id: true,
+          userId: true,
+          isGuest: true,
+          guestOrderToken: true,
+          guestTokenExpiresAt: true,
+        },
+      },
     },
   });
 
@@ -251,7 +285,7 @@ const syncPaymentStatus = async (
     throw new AppError("Payment not found", httpStatus.NOT_FOUND);
   }
 
-  ensurePaymentAccess(localPayment, userId, guestToken);
+  ensurePaymentAccess(localPayment, user, guestToken);
 
   const molliePaymentId = getMolliePaymentIdFromJSON(localPayment.paymentJSON);
 
@@ -268,20 +302,81 @@ const syncPaymentStatus = async (
       order: {
         select: {
           id: true,
+          bannerId: true,
+          quantity: true,
+          total: true,
           trackingNumber: true,
+          deliveryFee: true,
+          deliveryTime: true,
+          deliveryType: true,
+          deliveryMethod: true,
+          deliveryLabel: true,
+          hasEyelets: true,
+          eyeletsFee: true,
+          subtotal: true,
+          priceExcludingVat: true,
+          vatRate: true,
+          vatAmount: true,
           status: true,
           paymentStatus: true,
           isGuest: true,
-          guestOrderToken: true,
+          guestEmail: true,
+          guestName: true,
+          guestPhone: true,
+          createdAt: true,
+          updatedAt: true,
+          banner: {
+            select: {
+              id: true,
+              name: true,
+              headline: true,
+              imageUrl: true,
+              width: true,
+              height: true,
+              sizeLabel: true,
+              price: true,
+            },
+          },
+          payment: {
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              transactionId: true,
+            },
+          },
+          addresses: {
+            select: {
+              id: true,
+              name: true,
+              companyName: true,
+              phone: true,
+              email: true,
+              street: true,
+              houseNumber: true,
+              address: true,
+              zipCode: true,
+              city: true,
+            },
+          },
         },
       },
     },
   });
 
+  if (!refreshedPayment?.order) {
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const order = {
+    ...refreshedPayment.order,
+    deliveryType: toFrontendDeliveryType(refreshedPayment.order.deliveryType),
+  };
+
   return {
-    paymentId: refreshedPayment?.id,
-    paymentStatus: refreshedPayment?.status,
-    order: refreshedPayment?.order,
+    paymentId: refreshedPayment.id,
+    paymentStatus: refreshedPayment.status,
+    order,
   };
 };
 
