@@ -48,6 +48,13 @@ const bannerListSelect = {
   slug: true,
   name: true,
   price: true,
+  priceInclVat: true,
+  priceExclVat: true,
+  vatAmount: true,
+  vatRate: true,
+  areaM2: true,
+  pricePerM2: true,
+  isVatIncluded: true,
   hobbies: true,
   description: true,
   sizeType: true,
@@ -58,6 +65,15 @@ const bannerListSelect = {
   variant: true,
   designNumber: true,
   revisedPrompt: true,
+  canvasJSON: true,
+  source: true,
+  savedFromEditor: true,
+  isSavedDesign: true,
+  isOrdered: true,
+  designStatus: true,
+  lifecycleStatus: true,
+  orderedAt: true,
+  orderId: true,
   isSelected: true,
   isTemplate: true,
   status: true,
@@ -164,6 +180,164 @@ const calculateBannerPriceInclVat = (widthCm: number, heightCm: number) => {
 
 const roundToTwo = (value: number): number => {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+};
+
+const parseMultipartData = (rawData: unknown) => {
+  if (!rawData) {
+    return {};
+  }
+
+  if (typeof rawData !== "string") {
+    return rawData;
+  }
+
+  try {
+    return JSON.parse(rawData);
+  } catch {
+    throw new AppError("Ongeldige data JSON.", 400);
+  }
+};
+
+const getCanvasJson = (data: any) => {
+  const canvasJson = data?.canvasJson ?? data?.canvasJSON;
+
+  if (canvasJson === undefined || canvasJson === null) {
+    return null;
+  }
+
+  return typeof canvasJson === "string"
+    ? canvasJson
+    : JSON.stringify(canvasJson);
+};
+
+const getSizeType = (data: any, fallback = "custom") => {
+  if (typeof data?.size === "string") {
+    return data.size;
+  }
+
+  return data?.sizeType || data?.size?.type || fallback;
+};
+
+const getSizeLabel = (data: any, sizeType: string, fallback?: string | null) => {
+  return data?.sizeLabel || data?.size?.label || fallback || formatLabel(sizeType);
+};
+
+const getProvidedNumber = (value: unknown) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  const numberValue = Number(value);
+
+  return Number.isNaN(numberValue) ? undefined : numberValue;
+};
+
+const getProvidedBoolean = (value: unknown) => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.toLowerCase();
+
+    if (["1", "true", "yes"].includes(normalized)) {
+      return true;
+    }
+
+    if (["0", "false", "no"].includes(normalized)) {
+      return false;
+    }
+  }
+
+  if (typeof value === "number") {
+    return value === 1;
+  }
+
+  return undefined;
+};
+
+const normalizeStringArray = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.map(String);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+
+  return [];
+};
+
+const mapBannerForEditor = (banner: any) => {
+  const canvasJson = banner?.canvasJson ?? banner?.canvasJSON ?? null;
+
+  return {
+    ...banner,
+    canvasJson,
+    size: banner?.sizeLabel || banner?.sizeType,
+  };
+};
+
+const getSavedDesignDefaults = (data: any = {}) => ({
+  source: data.source || "editor",
+  savedFromEditor: getProvidedBoolean(data.savedFromEditor) ?? true,
+  isSavedDesign: getProvidedBoolean(data.isSavedDesign) ?? true,
+  isOrdered: getProvidedBoolean(data.isOrdered) ?? false,
+  designStatus: data.designStatus || "saved",
+  lifecycleStatus: data.lifecycleStatus || "saved",
+  orderedAt: data.orderedAt ? new Date(data.orderedAt) : null,
+  orderId: data.orderId || null,
+});
+
+const getLifecycleUpdateData = (data: any) => {
+  const updateData: any = {};
+
+  if (!data) {
+    return updateData;
+  }
+
+  if (data.source !== undefined) updateData.source = data.source;
+  if (data.savedFromEditor !== undefined) {
+    updateData.savedFromEditor = getProvidedBoolean(data.savedFromEditor) ?? false;
+  }
+  if (data.isSavedDesign !== undefined) {
+    updateData.isSavedDesign = getProvidedBoolean(data.isSavedDesign) ?? false;
+  }
+  if (data.isOrdered !== undefined) {
+    updateData.isOrdered = getProvidedBoolean(data.isOrdered) ?? false;
+  }
+  if (data.designStatus !== undefined) updateData.designStatus = data.designStatus;
+  if (data.lifecycleStatus !== undefined) {
+    updateData.lifecycleStatus = data.lifecycleStatus;
+  }
+  if (data.orderedAt !== undefined) {
+    updateData.orderedAt = data.orderedAt ? new Date(data.orderedAt) : null;
+  }
+  if (data.orderId !== undefined) updateData.orderId = data.orderId || null;
+
+  return updateData;
+};
+
+const canAccessOwnedBanner = (banner: any, user?: any) => {
+  if (banner?.isTemplate) {
+    return true;
+  }
+
+  if (!banner?.userId) {
+    return true;
+  }
+
+  return user?.role === "admin" || banner.userId === user?.id;
+};
+
+const assertCanAccessOwnedBanner = (banner: any, user?: any) => {
+  if (!canAccessOwnedBanner(banner, user)) {
+    throw new AppError("Je bent niet geautoriseerd", 403);
+  }
 };
 
 const createBanner = async (req: AuthRequest) => {
@@ -436,27 +610,32 @@ const createBanner = async (req: AuthRequest) => {
 };
 
 const createBannerByTemplate = async (req: AuthRequest) => {
-  const parsedData = JSON.parse(req?.body?.data);
-
-  let occ = "";
-  let headline = "";
-
-  if (parsedData.size === "party-banner") {
-    occ = "party";
-    headline = "Welcome to the party";
-  } else if (parsedData.size === "blessing-sign") {
-    occ = "wedding";
-    headline = "We are getting married";
-  } else if (parsedData.size === "birthday-backdrop") {
-    occ = "birthday";
-    headline = "Happy birthday";
-  } else {
-    occ = "custom";
-    headline = "Custom Banner";
+  if (!req.user?.id) {
+    throw new AppError("User is not authenticated to access this route", 401);
   }
 
-  const height = Number(parsedData.height);
-  const width = Number(parsedData.width);
+  const parsedData: any = parseMultipartData(req?.body?.data);
+  const sizeType = getSizeType(parsedData);
+
+  let occ = "";
+  let headline = parsedData.headline || parsedData.name || "";
+
+  if (sizeType === "party-banner") {
+    occ = "party";
+    headline = headline || "Welcome to the party";
+  } else if (sizeType === "blessing-sign") {
+    occ = "wedding";
+    headline = headline || "We are getting married";
+  } else if (sizeType === "birthday-backdrop") {
+    occ = "birthday";
+    headline = headline || "Happy birthday";
+  } else {
+    occ = parsedData.occasion || "custom";
+    headline = headline || "Custom Banner";
+  }
+
+  const height = Number(parsedData.height ?? parsedData?.size?.height);
+  const width = Number(parsedData.width ?? parsedData?.size?.width);
 
   if (
     Number.isNaN(width) ||
@@ -464,30 +643,40 @@ const createBannerByTemplate = async (req: AuthRequest) => {
     width <= 0 ||
     height <= 0
   ) {
-    throw new Error("Ongeldige bannerbreedte of -hoogte");
+    throw new AppError("Ongeldige bannerbreedte of -hoogte", 400);
   }
 
   const areaM2 = calculateAreaM2(width, height);
   const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
 
   // Final price is already INCLUDING VAT
-  const priceInclVat = calculatePriceInclVat(width, height);
-  const priceExclVat = calculatePriceExclVat(priceInclVat);
-  const vatAmount = calculateVatAmount(priceInclVat);
+  const priceInclVat =
+    getProvidedNumber(parsedData.priceInclVat) ??
+    getProvidedNumber(parsedData.price) ??
+    calculatePriceInclVat(width, height);
+  const priceExclVat =
+    getProvidedNumber(parsedData.priceExclVat) ??
+    calculatePriceExclVat(priceInclVat);
+  const vatAmount =
+    getProvidedNumber(parsedData.vatAmount) ?? calculateVatAmount(priceInclVat);
+  const vatRate = getProvidedNumber(parsedData.vatRate) ?? VAT_RATE;
 
-  let imgUrl = "";
+  let imgUrl = parsedData.imageUrl || "";
 
   if (req?.file) {
     const img = await uploadImageToS3(req.file);
     imgUrl = img;
   }
 
-  const sizeLabel = formatLabel(parsedData.size);
+  const sizeLabel = getSizeLabel(parsedData, sizeType);
 
   const slug = await generateUniqueBannerSlug(headline);
+  const canvasJson = getCanvasJson(parsedData);
+  const lifecycleData = getSavedDesignDefaults(parsedData);
 
   const banner = await prisma.banner.create({
     data: {
+      userId: req.user.id,
       headline,
       slug,
       occasion: occ,
@@ -495,26 +684,29 @@ const createBannerByTemplate = async (req: AuthRequest) => {
 
       // Main price field should store VAT-included final price
       price: Number(priceInclVat.toFixed(2)),
+      priceInclVat: Number(priceInclVat.toFixed(2)),
+      priceExclVat: Number(priceExclVat.toFixed(2)),
+      vatAmount: Number(vatAmount.toFixed(2)),
+      vatRate,
+      areaM2: Number(areaM2.toFixed(2)),
+      pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
+      isVatIncluded: parsedData.isVatIncluded ?? true,
 
       width,
       height,
-      sizeType: parsedData.size,
+      sizeType,
       sizeLabel,
-      style: "Template",
+      style: parsedData.style || "Template",
+      name: parsedData.name || null,
+      description: parsedData.description || null,
+      hobbies: normalizeStringArray(parsedData.hobbies),
       variant: 0,
-
-      // Uncomment these only if these fields exist in your Prisma schema
-      // areaM2: Number(areaM2.toFixed(2)),
-      // pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
-      // priceInclVat: Number(priceInclVat.toFixed(2)),
-      // priceExclVat: Number(priceExclVat.toFixed(2)),
-      // vatAmount: Number(vatAmount.toFixed(2)),
-      // vatRate: VAT_RATE,
-      // isVatIncluded: true,
+      canvasJSON: canvasJson,
+      ...lifecycleData,
     },
   });
 
-  return banner;
+  return mapBannerForEditor(banner);
 };
 
 const updateBanner = async (req: AuthRequest, bannerId: string) => {
@@ -525,55 +717,77 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   });
 
   if (!banner) {
-    throw new Error("Banner niet gevonden");
+    throw new AppError("Banner niet gevonden", 404);
+  }
+
+  if (!req.user?.id) {
+    throw new AppError("User is not authenticated to access this route", 401);
+  }
+
+  const shouldClaimBanner =
+    !banner.userId && !banner.isTemplate && req.user.role !== "admin";
+
+  if (banner.userId) {
+    assertCanAccessOwnedBanner(banner, req.user);
+  } else if (shouldClaimBanner) {
+    banner.userId = req.user.id;
+  }
+
+  if (!banner.isTemplate && banner.isOrdered && req.user.role !== "admin") {
+    throw new AppError("Bestelde ontwerpen kunnen niet worden bewerkt", 400);
   }
 
   let parsedData: any = null;
 
   if (req?.body?.data) {
-    parsedData =
-      typeof req.body.data === "string"
-        ? JSON.parse(req.body.data)
-        : req.body.data;
+    parsedData = parseMultipartData(req.body.data);
   }
 
   let occasion = banner.occasion;
   let headline = banner.headline;
+  const parsedSizeType = parsedData ? getSizeType(parsedData, banner.sizeType) : banner.sizeType;
 
-  if (parsedData?.size === "party-banner") {
+  if (parsedSizeType === "party-banner") {
     occasion = "party";
     headline = "Welcome to the party";
-  } else if (parsedData?.size === "blessing-sign") {
+  } else if (parsedSizeType === "blessing-sign") {
     occasion = "wedding";
     headline = "We are getting married";
-  } else if (parsedData?.size === "birthday-backdrop") {
+  } else if (parsedSizeType === "birthday-backdrop") {
     occasion = "birthday";
     headline = `Happy birthday ${banner.name || ""}`.trim();
   }
 
-  const width = parsedData?.width
-    ? Number(parsedData.width)
+  const width = parsedData?.width || parsedData?.size?.width
+    ? Number(parsedData.width ?? parsedData.size.width)
     : Number(banner.width);
-  const height = parsedData?.height
-    ? Number(parsedData.height)
+  const height = parsedData?.height || parsedData?.size?.height
+    ? Number(parsedData.height ?? parsedData.size.height)
     : Number(banner.height);
 
   let price = banner.price;
 
-  let areaM2 = 0;
-  let pricePerM2InclVat = 0;
-  let priceInclVat = Number(banner.price);
-  let priceExclVat = 0;
-  let vatAmount = 0;
+  let areaM2 = banner.areaM2 ?? calculateAreaM2(width, height);
+  let pricePerM2InclVat = banner.pricePerM2 ?? getPricePerM2InclVat(areaM2);
+  let priceInclVat = banner.priceInclVat ?? Number(banner.price);
+  let priceExclVat =
+    banner.priceExclVat ?? calculatePriceExclVat(priceInclVat);
+  let vatAmount = banner.vatAmount ?? calculateVatAmount(priceInclVat);
 
-  if (parsedData?.width && parsedData?.height) {
+  const hasWidthOrHeight =
+    parsedData?.width !== undefined ||
+    parsedData?.height !== undefined ||
+    parsedData?.size?.width !== undefined ||
+    parsedData?.size?.height !== undefined;
+
+  if (hasWidthOrHeight) {
     if (
       Number.isNaN(width) ||
       Number.isNaN(height) ||
       width <= 0 ||
       height <= 0
     ) {
-      throw new Error("Ongeldige bannerbreedte of -hoogte");
+      throw new AppError("Ongeldige bannerbreedte of -hoogte", 400);
     }
 
     areaM2 = calculateAreaM2(width, height);
@@ -585,6 +799,36 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     vatAmount = calculateVatAmount(priceInclVat);
 
     price = Number(priceInclVat.toFixed(2));
+  }
+
+  const providedPriceInclVat =
+    getProvidedNumber(parsedData?.priceInclVat) ??
+    getProvidedNumber(parsedData?.price);
+  const providedPriceExclVat = getProvidedNumber(parsedData?.priceExclVat);
+  const providedVatAmount = getProvidedNumber(parsedData?.vatAmount);
+  const providedVatRate = getProvidedNumber(parsedData?.vatRate);
+  const providedAreaM2 = getProvidedNumber(parsedData?.areaM2);
+  const providedPricePerM2 = getProvidedNumber(parsedData?.pricePerM2);
+
+  if (providedPriceInclVat !== undefined) {
+    priceInclVat = providedPriceInclVat;
+    price = Number(providedPriceInclVat.toFixed(2));
+  }
+
+  if (providedPriceExclVat !== undefined) {
+    priceExclVat = providedPriceExclVat;
+  }
+
+  if (providedVatAmount !== undefined) {
+    vatAmount = providedVatAmount;
+  }
+
+  if (providedAreaM2 !== undefined) {
+    areaM2 = providedAreaM2;
+  }
+
+  if (providedPricePerM2 !== undefined) {
+    pricePerM2InclVat = providedPricePerM2;
   }
 
   let imageUrl = banner?.imageUrl;
@@ -608,6 +852,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   if (banner.isTemplate) {
     const bannerHeadline = parsedData?.headline || banner.headline;
     const slug = await generateUniqueBannerSlug(bannerHeadline);
+    const lifecycleData = getSavedDesignDefaults(parsedData);
     const newBanner = await prisma.banner.create({
       data: {
         userId: req.user?.id || null,
@@ -619,23 +864,33 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         slug,
         name: parsedData?.name || banner.name,
         description: parsedData?.description || banner.description,
-        hobbies: parsedData?.hobbies || banner.hobbies || [],
-        sizeType: parsedData?.size || banner.sizeType,
-        sizeLabel: parsedData?.size
-          ? formatLabel(parsedData.size)
-          : banner.sizeLabel,
+        hobbies:
+          parsedData?.hobbies !== undefined
+            ? normalizeStringArray(parsedData.hobbies)
+            : banner.hobbies || [],
+        sizeType: parsedSizeType || banner.sizeType,
+        sizeLabel: getSizeLabel(parsedData, parsedSizeType, banner.sizeLabel),
         width,
         height,
         imageUrl,
         price,
+        priceInclVat: Number(priceInclVat.toFixed(2)),
+        priceExclVat: Number(priceExclVat.toFixed(2)),
+        vatAmount: Number(vatAmount.toFixed(2)),
+        vatRate: providedVatRate ?? VAT_RATE,
+        areaM2: Number(areaM2.toFixed(2)),
+        pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
+        isVatIncluded: parsedData?.isVatIncluded ?? true,
         variant: 0,
         isTemplate: false,
         isSelected: true,
         status: "SELECTED",
+        canvasJSON: getCanvasJson(parsedData) ?? banner.canvasJSON,
+        ...lifecycleData,
       },
     });
 
-    return newBanner;
+    return mapBannerForEditor(newBanner);
   }
 
   const updateData: any = {};
@@ -646,13 +901,13 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
 
   let finalHeadline = banner.headline;
 
-  if (parsedData?.size) {
+  if (parsedData?.size !== undefined || parsedData?.sizeType !== undefined) {
     finalHeadline = headline;
     updateData.headline = headline;
     updateData.occasion = occasion;
     updateData.price = price;
-    updateData.sizeType = parsedData.size;
-    updateData.sizeLabel = formatLabel(parsedData.size);
+    updateData.sizeType = parsedSizeType;
+    updateData.sizeLabel = getSizeLabel(parsedData, parsedSizeType, banner.sizeLabel);
   }
 
   if (parsedData?.headline && parsedData.headline !== banner.headline) {
@@ -664,24 +919,88 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     updateData.slug = await generateUniqueBannerSlug(finalHeadline, bannerId);
   }
 
-  if (parsedData?.width) {
+  if (parsedData?.name !== undefined) {
+    updateData.name = parsedData.name;
+  }
+
+  if (parsedData?.description !== undefined) {
+    updateData.description = parsedData.description;
+  }
+
+  if (parsedData?.hobbies !== undefined) {
+    updateData.hobbies = normalizeStringArray(parsedData.hobbies);
+  }
+
+  if (parsedData?.width !== undefined || parsedData?.size?.width !== undefined) {
     updateData.width = width;
   }
 
-  if (parsedData?.height) {
+  if (parsedData?.height !== undefined || parsedData?.size?.height !== undefined) {
     updateData.height = height;
   }
 
-  // Uncomment only if these fields exist in your Prisma schema
-  // if (parsedData?.width && parsedData?.height) {
-  //   updateData.areaM2 = Number(areaM2.toFixed(2));
-  //   updateData.pricePerM2 = Number(pricePerM2InclVat.toFixed(2));
-  //   updateData.priceInclVat = Number(priceInclVat.toFixed(2));
-  //   updateData.priceExclVat = Number(priceExclVat.toFixed(2));
-  //   updateData.vatAmount = Number(vatAmount.toFixed(2));
-  //   updateData.vatRate = VAT_RATE;
-  //   updateData.isVatIncluded = true;
-  // }
+  if (hasWidthOrHeight || providedPriceInclVat !== undefined) {
+    updateData.price = price;
+  }
+
+  if (hasWidthOrHeight || providedAreaM2 !== undefined) {
+    updateData.areaM2 = Number(areaM2.toFixed(2));
+  }
+
+  if (hasWidthOrHeight || providedPricePerM2 !== undefined) {
+    updateData.pricePerM2 = Number(pricePerM2InclVat.toFixed(2));
+  }
+
+  if (hasWidthOrHeight || providedPriceInclVat !== undefined) {
+    updateData.priceInclVat = Number(priceInclVat.toFixed(2));
+  }
+
+  if (hasWidthOrHeight || providedPriceExclVat !== undefined) {
+    updateData.priceExclVat = Number(priceExclVat.toFixed(2));
+  }
+
+  if (hasWidthOrHeight || providedVatAmount !== undefined) {
+    updateData.vatAmount = Number(vatAmount.toFixed(2));
+  }
+
+  if (providedVatRate !== undefined || hasWidthOrHeight) {
+    updateData.vatRate = providedVatRate ?? VAT_RATE;
+  }
+
+  if (parsedData?.isVatIncluded !== undefined) {
+    updateData.isVatIncluded = parsedData.isVatIncluded;
+  } else if (hasWidthOrHeight || providedPriceInclVat !== undefined) {
+    updateData.isVatIncluded = true;
+  }
+
+  if (
+    parsedData?.canvasJson !== undefined ||
+    parsedData?.canvasJSON !== undefined
+  ) {
+    updateData.canvasJSON = getCanvasJson(parsedData);
+  }
+
+  Object.assign(updateData, getLifecycleUpdateData(parsedData));
+
+  const isEditorSave =
+    parsedData?.source === "editor" ||
+    parsedData?.savedFromEditor !== undefined ||
+    parsedData?.isSavedDesign !== undefined ||
+    parsedData?.canvasJson !== undefined ||
+    parsedData?.canvasJSON !== undefined;
+
+  if (isEditorSave && !banner.isOrdered) {
+    updateData.source = updateData.source ?? banner.source ?? "editor";
+    updateData.savedFromEditor = updateData.savedFromEditor ?? true;
+    updateData.isSavedDesign = updateData.isSavedDesign ?? true;
+    updateData.isOrdered = updateData.isOrdered ?? false;
+    updateData.designStatus = updateData.designStatus ?? "saved";
+    updateData.lifecycleStatus = updateData.lifecycleStatus ?? "saved";
+  }
+
+  if (shouldClaimBanner) {
+    updateData.userId = req.user.id;
+  }
 
   const updatedBanner = await prisma.banner.update({
     where: {
@@ -690,7 +1009,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     data: updateData,
   });
 
-  return updatedBanner;
+  return mapBannerForEditor(updatedBanner);
 };
 
 const mybanner = async (id: string) => {
@@ -759,8 +1078,20 @@ const getAllbanners = async (
   };
 };
 
-const getSelectedBanner = async (id: string) => {
-  await prisma.banner.update({
+const getSelectedBanner = async (id: string, user?: any) => {
+  const banner = await prisma.banner.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if (!banner) {
+    throw new AppError("Banner niet gevonden", 404);
+  }
+
+  assertCanAccessOwnedBanner(banner, user);
+
+  const selectedBanner = await prisma.banner.update({
     where: {
       id,
     },
@@ -769,12 +1100,8 @@ const getSelectedBanner = async (id: string) => {
       status: "SELECTED",
     },
   });
-  const banner = await prisma.banner.findUnique({
-    where: {
-      id,
-    },
-  });
-  return banner;
+
+  return mapBannerForEditor(selectedBanner);
 };
 
 const getTemplates = async (

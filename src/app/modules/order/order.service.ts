@@ -35,6 +35,11 @@ interface CreateOrderPayload {
   hasEyelets?: boolean;
   isGuest?: boolean;
   guest?: boolean;
+  source?: string;
+  markDesignAsOrdered?: boolean;
+  isOrdered?: boolean;
+  designStatus?: string;
+  lifecycleStatus?: string;
 }
 
 const isTruthyFlag = (value: unknown) => {
@@ -210,6 +215,29 @@ const calculateOrderPrice = ({
   };
 };
 
+const mapBannerDesign = (banner: any) => ({
+  id: banner.id,
+  imageUrl: banner.imageUrl,
+  headline: banner.headline,
+  name: banner.name,
+  price: banner.price,
+  width: banner.width,
+  height: banner.height,
+  size: banner.sizeLabel || banner.sizeType,
+  sizeType: banner.sizeType,
+  canvasJson: banner.canvasJson ?? banner.canvasJSON ?? null,
+});
+
+const shouldMarkDesignAsOrdered = (banner: any, payload: CreateOrderPayload) => {
+  return (
+    isTruthyFlag(payload.markDesignAsOrdered) ||
+    isTruthyFlag(payload.isOrdered) ||
+    payload.source === "saved_design_order" ||
+    banner.isSavedDesign ||
+    banner.savedFromEditor
+  );
+};
+
 const createOrder = async (
   userId: string | undefined,
   bannerId: string,
@@ -251,6 +279,10 @@ const createOrder = async (
     throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
   }
 
+  if (banner.userId && banner.userId !== userId) {
+    throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
+  }
+
   // banner.price is already INCLUDING VAT
   const bannerPrice = Number(banner.price);
 
@@ -270,6 +302,8 @@ const createOrder = async (
 
   const trackingNumber = await getNextOrderNumber();
   const designNumber = getDesignNumberFromTrackingNumber(trackingNumber);
+  const orderedAt = new Date();
+  const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
   const finalBannerImageUrl = await applyDesignNumberToBanner({
     imageUrl: banner.imageUrl,
     designNumber,
@@ -278,18 +312,7 @@ const createOrder = async (
   });
 
   const order = await prisma.$transaction(async (tx) => {
-    await tx.banner.update({
-      where: {
-        id: bannerId,
-      },
-      data: {
-        ...(userId ? { userId } : {}),
-        designNumber,
-        imageUrl: finalBannerImageUrl,
-      },
-    });
-
-    return tx.order.create({
+    const createdOrder = await tx.order.create({
       data: {
         quantity,
 
@@ -330,6 +353,31 @@ const createOrder = async (
         trackingNumber,
       },
     });
+
+    await tx.banner.update({
+      where: {
+        id: bannerId,
+      },
+      data: {
+        ...(userId ? { userId } : {}),
+        designNumber,
+        imageUrl: finalBannerImageUrl,
+        ...(markDesignAsOrdered
+          ? {
+              isOrdered: true,
+              isSavedDesign: true,
+              savedFromEditor: true,
+              source: payload.source || banner.source || "saved_design_order",
+              designStatus: payload.designStatus || "ordered",
+              lifecycleStatus: payload.lifecycleStatus || "ordered",
+              orderedAt,
+              orderId: createdOrder.id,
+            }
+          : {}),
+      },
+    });
+
+    return createdOrder;
   });
 
   return order;
@@ -605,15 +653,46 @@ const getMyDesigns = async (
   page: number,
   limit: number,
   skip: number,
+  options: {
+    savedOnly?: boolean;
+    includeOrdered?: boolean;
+  } = {},
 ) => {
-  const orders = await prisma.order.findMany({
-    where: {
-      userId,
-    },
-    include: {
-      banner: true,
-      payment: true,
-      templateReview: true,
+  const where: any = {
+    userId,
+    isTemplate: false,
+    isSavedDesign: true,
+    savedFromEditor: true,
+  };
+
+  if (options.includeOrdered !== true) {
+    where.orders = {
+      none: {},
+    };
+    where.isOrdered = false;
+  }
+
+  const banners = await prisma.banner.findMany({
+    where,
+    select: {
+      id: true,
+      imageUrl: true,
+      headline: true,
+      name: true,
+      price: true,
+      width: true,
+      height: true,
+      sizeType: true,
+      sizeLabel: true,
+      canvasJSON: true,
+      source: true,
+      savedFromEditor: true,
+      isSavedDesign: true,
+      isOrdered: true,
+      designStatus: true,
+      lifecycleStatus: true,
+      orderedAt: true,
+      orderId: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -622,13 +701,15 @@ const getMyDesigns = async (
     skip,
   });
 
-  const total = await prisma.order.count({
-    where: {
-      userId,
-    },
+  const total = await prisma.banner.count({
+    where,
   });
+
   return {
-    orders: orders.map(attachReviewInfo),
+    designs: banners.map((banner) => ({
+      id: banner.id,
+      banner: mapBannerDesign(banner),
+    })),
     metaData: {
       total,
       page,

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { bannerController } from "./banner.controller";
-import { checkAuth } from "../../middleware/checkAuth";
+import { checkAuth, optionalAuth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { upload } from "../../middleware/upload";
 import { bannerGenerateSchema } from "./banner.zod.schema";
@@ -25,11 +25,11 @@ router.get("/template-categories", bannerController.getTemplateCategories);
 
 router.get("/templates/:slug", bannerController.getTemplateBySlug);
 
-router.get("/:id", bannerController.getSelectedBanner);
+router.get("/:id", optionalAuth("user", "admin"), bannerController.getSelectedBanner);
 
 router.post(
   "/create-banner-by-template",
-  // checkAuth("user"),
+  checkAuth("user"),
   upload.single("image"),
   bannerController.createBannerByTemplate,
 );
@@ -43,7 +43,7 @@ router.post(
 
 router.patch(
   "/update-banner/:id",
-  // checkAuth("user"),
+  checkAuth("user", "admin"),
   upload.single("image"),
   bannerController.updateBanner,
 );

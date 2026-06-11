@@ -57,6 +57,13 @@ model Banner {
   slug     String?
   name     String?
   price    Float
+  priceInclVat Float?
+  priceExclVat Float?
+  vatAmount Float?
+  vatRate Float?
+  areaM2 Float?
+  pricePerM2 Float?
+  isVatIncluded Boolean?
 
   hobbies String[] // PostgreSQL array
 
@@ -75,6 +82,14 @@ model Banner {
   revisedPrompt String?
 
   canvasJSON String?
+  source String?
+  savedFromEditor Boolean @default(false)
+  isSavedDesign Boolean @default(false)
+  isOrdered Boolean @default(false)
+  designStatus String @default("saved")
+  lifecycleStatus String @default("saved")
+  orderedAt DateTime?
+  orderId String? @db.ObjectId
 
   metaTitle       String?
   metaDescription String?

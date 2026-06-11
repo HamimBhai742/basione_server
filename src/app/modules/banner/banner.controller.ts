@@ -80,7 +80,10 @@ const getAllbanners = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSelectedBanner = catchAsync(async (req: Request, res: Response) => {
-  const banner = await bannerService.getSelectedBanner(req.params.id as string);
+  const banner = await bannerService.getSelectedBanner(
+    req.params.id as string,
+    (req as Request & { user?: any }).user,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

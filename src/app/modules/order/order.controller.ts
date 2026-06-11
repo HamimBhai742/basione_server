@@ -75,13 +75,17 @@ const getMyDesigns = async (req: Request & { user?: any }, res: Response) => {
     page,
     limit,
     skip,
+    {
+      savedOnly: isTruthyFlag(req.query.savedOnly),
+      includeOrdered: isTruthyFlag(req.query.includeOrdered),
+    },
   );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Ontwerpen succesvol opgehaald",
-    data: designs.orders,
+    data: designs.designs,
     metaData: designs.metaData,
   });
 };
