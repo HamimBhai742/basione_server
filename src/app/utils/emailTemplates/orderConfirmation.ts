@@ -1,5 +1,6 @@
 import { OrderConfirmedEmailData } from "../../../type/interface";
 import sendEmail from "./nodemailerTransport";
+import config from "../../../config";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("nl-NL", {
@@ -222,6 +223,26 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
  Uw bestelling is succesvol geplaatst en wordt nu verwerkt door ons team.
  Hieronder vindt u een volledig overzicht van uw order.
  </p>
+
+ <!-- Bekijk bestelling button -->
+ <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
+ <tr>
+ <td align="center">
+ <a href="${config.client_url}/profile/${data.dbOrderId || data.orderId}" target="_blank" style="
+ display: inline-block;
+ background: linear-gradient(135deg, #1d4ed8, #2563eb);
+ color: #ffffff;
+ text-decoration: none;
+ font-size: 14px;
+ font-weight: 700;
+ padding: 12px 28px;
+ border-radius: 8px;
+ letter-spacing: 0.2px;
+ box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+ ">Bekijk bestelling</a>
+ </td>
+ </tr>
+ </table>
 
  <!-- Order Info -->
  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
@@ -471,9 +492,9 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
  font-size: 12px;
  line-height: 1.7;
  ">
- <a href="#" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Klantenservice</a>
- <a href="#" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Privacybeleid</a>
- <a href="#" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Algemene voorwaarden</a>
+ <a href="${config.client_url}/contact" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Klantenservice</a>
+ <a href="${config.client_url}/privacy" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Privacybeleid</a>
+ <a href="${config.client_url}/terms-and-conditions" style="color:#60a5fa;text-decoration:none;margin:0 8px;">Algemene voorwaarden</a>
  </p>
 
  <p style="

@@ -1,4 +1,5 @@
 import sendEmail from "./nodemailerTransport";
+import config from "../../../config";
 
 interface PaymentFailedData {
  userName: string;
@@ -385,7 +386,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
  <p style="margin: 0; font-size: 13.5px; color: #78450f; line-height: 1.6;">
  <strong>Nog steeds problemen?</strong> Onze klantenservice staat klaar om u snel te helpen.
  Beantwoord deze e-mail of bezoek ons
- <a href="https://your-frontend-url.com/support" style="color: #1a3faa; font-weight: 600;">Helpcenter</a>.
+ <a href="${config.client_url}/contact" style="color: #1a3faa; font-weight: 600;">Helpcenter</a>.
  </p>
  </td>
  </tr>
@@ -410,8 +411,8 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
  />
  <p style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #1a3faa;">Spandoek Print</p>
  <p style="margin: 0 0 12px; font-size: 12px; color: #9ca3b8; line-height: 1.6;">
- 123 Print Avenue, Amsterdam, Netherlands<br/>
- <a href="mailto:support@spandoekprint.com" style="color: #9ca3b8;">support@spandoekprint.com</a>
+ Neonweg 200, 1362 AE Almere, Netherlands<br/>
+ <a href="mailto:info@spandoekprint.nl" style="color: #9ca3b8;">info@spandoekprint.nl</a>
  </p>
  <p style="margin: 0; font-size: 11.5px; color: #b0b8cc; line-height: 1.6;">
  Deze e-mail is verzonden naar <strong>${email}</strong> omdat er een betaalpoging is gedaan op uw account.<br/>

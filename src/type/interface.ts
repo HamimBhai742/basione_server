@@ -1,6 +1,7 @@
 export type OrderConfirmedEmailData = {
   userName: string;
   email: string;
+  dbOrderId?: string;
 
   orderId: string;
   orderDate: string;

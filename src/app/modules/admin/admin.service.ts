@@ -1,5 +1,6 @@
 import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
+import config from "../../../config";
 import { orderUserSearchableFields } from "./admin.contain";
 import httpStatus from "http-status";
 import { cancledOrder } from "../order/order.service";
@@ -302,7 +303,7 @@ const manageOrder = async (
 
     estimatedArrival: "", // optional (refund case-এ usually empty)
 
-    supportLink: "https://yourwebsite.com/support", // optional
+    supportLink: `${config.client_url}/contact`, // optional
   };
 
   const orderReadyData = {
@@ -328,7 +329,7 @@ const manageOrder = async (
     } ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
 
     trackingLink: "",
-    supportLink: "https://yourwebsite.com/support",
+    supportLink: `${config.client_url}/contact`,
   };
 
   if (status === "ready") {
@@ -450,7 +451,7 @@ const manageOrder = async (
         shipment?.barcode ||
         (order?.trackingNumber as string),
       trackingLink:
-        shipment?.trackingUrl || `http://localhost:3000/profile/${orderId}`,
+        shipment?.trackingUrl || `${config.client_url}/profile/${orderId}`,
 
       items: [
         {
@@ -464,7 +465,7 @@ const manageOrder = async (
       deliveryAddress: `${order?.addresses?.houseNumber || ""}, ${
         order?.addresses?.street || ""
       }, ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
-      supportLink: "", // optional
+      supportLink: `${config.client_url}/contact`, // optional
     };
 
     await orderShippedTemplate(

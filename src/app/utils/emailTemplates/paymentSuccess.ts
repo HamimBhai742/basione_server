@@ -490,11 +490,11 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  color: #cbd5e1;
  line-height: 1.7;
  ">
- 123 Print Avenue, Amsterdam, Netherlands<br/>
- <a href="mailto:support@spandoekprint.com" style="
+ Neonweg 200, 1362 AE Almere, Netherlands<br/>
+ <a href="mailto:info@spandoekprint.nl" style="
  color: #cbd5e1;
  text-decoration: none;
- ">support@spandoekprint.com</a>
+ ">info@spandoekprint.nl</a>
  </p>
 
  <p style="

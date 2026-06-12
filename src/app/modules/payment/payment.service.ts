@@ -390,7 +390,34 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   const cleanPayment = JSON.parse(JSON.stringify(molliePayment));
 
   /**
-   * 1. Update order without transaction
+   * 1. Update payment status atomically from "pending" to "paid"
+   */
+  let updatedPayment;
+  try {
+    updatedPayment = await prisma.payment.update({
+      where: {
+        id: paymentId,
+        status: "pending",
+      },
+      data: {
+        status: "paid",
+        paymentJSON: cleanPayment,
+      },
+    });
+  } catch (error: any) {
+    if (error.code === "P2025") {
+      console.log(
+        `Payment ${paymentId} already processed (status is not pending). Ignoring duplicate request.`
+      );
+      return {
+        alreadyProcessed: true,
+      };
+    }
+    throw error;
+  }
+
+  /**
+   * 2. Update order without transaction
    */
   const updatedOrder = await prisma.order.update({
     where: {
@@ -413,19 +440,6 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
     paymentStatus: updatedOrder.paymentStatus,
     status: updatedOrder.status,
     userEmail: updatedOrder.user?.email,
-  });
-
-  /**
-   * 2. Update payment without transaction
-   */
-  const updatedPayment = await prisma.payment.update({
-    where: {
-      id: paymentId,
-    },
-    data: {
-      status: "paid",
-      paymentJSON: cleanPayment,
-    },
   });
 
   console.log("Payment updated successfully:", {
@@ -530,6 +544,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
       amount: Number(updatedOrder.total || 0),
       transactionId: updatedPayment.transactionId,
       orderId: updatedOrder.trackingNumber || orderId,
+      profileOrderId: updatedOrder.id,
       date: updatedOrder.createdAt.toDateString(),
       invoiceUrl: invoice.invoiceUrl,
       invoiceNumber: invoice.invoiceNumber,
@@ -559,6 +574,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
     email: updatedOrder.user?.email || customerEmail,
 
     orderId: updatedOrder.trackingNumber || orderId,
+    dbOrderId: updatedOrder.id,
     orderDate: updatedOrder.createdAt.toLocaleString(),
     estimatedDelivery: updatedOrder.deliveryTime,
 
