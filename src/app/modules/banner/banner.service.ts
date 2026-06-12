@@ -610,10 +610,6 @@ const createBanner = async (req: AuthRequest) => {
 };
 
 const createBannerByTemplate = async (req: AuthRequest) => {
-  if (!req.user?.id) {
-    throw new AppError("User is not authenticated to access this route", 401);
-  }
-
   const parsedData: any = parseMultipartData(req?.body?.data);
   const sizeType = getSizeType(parsedData);
 
@@ -676,7 +672,7 @@ const createBannerByTemplate = async (req: AuthRequest) => {
 
   const banner = await prisma.banner.create({
     data: {
-      userId: req.user.id,
+      userId: req.user?.id || null,
       headline,
       slug,
       occasion: occ,
@@ -720,16 +716,12 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     throw new AppError("Banner niet gevonden", 404);
   }
 
-  if (!req.user?.id) {
-    throw new AppError("User is not authenticated to access this route", 401);
-  }
-
   const shouldClaimBanner =
-    !banner.userId && !banner.isTemplate && req.user.role !== "admin";
+    !banner.userId && !banner.isTemplate && req.user && req.user.role !== "admin";
 
   if (banner.userId) {
     assertCanAccessOwnedBanner(banner, req.user);
-  } else if (shouldClaimBanner) {
+  } else if (shouldClaimBanner && req.user) {
     banner.userId = req.user.id;
   }
 
@@ -998,7 +990,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     updateData.lifecycleStatus = updateData.lifecycleStatus ?? "saved";
   }
 
-  if (shouldClaimBanner) {
+  if (shouldClaimBanner && req.user) {
     updateData.userId = req.user.id;
   }
 

@@ -29,7 +29,7 @@ router.get("/:id", optionalAuth("user", "admin"), bannerController.getSelectedBa
 
 router.post(
   "/create-banner-by-template",
-  checkAuth("user"),
+  optionalAuth("user"),
   upload.single("image"),
   bannerController.createBannerByTemplate,
 );
@@ -43,7 +43,7 @@ router.post(
 
 router.patch(
   "/update-banner/:id",
-  checkAuth("user", "admin"),
+  optionalAuth("user", "admin"),
   upload.single("image"),
   bannerController.updateBanner,
 );
