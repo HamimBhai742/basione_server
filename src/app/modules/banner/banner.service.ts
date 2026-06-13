@@ -65,7 +65,6 @@ const bannerListSelect = {
   variant: true,
   designNumber: true,
   revisedPrompt: true,
-  canvasJSON: true,
   source: true,
   savedFromEditor: true,
   isSavedDesign: true,

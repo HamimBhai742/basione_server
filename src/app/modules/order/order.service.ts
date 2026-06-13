@@ -684,7 +684,6 @@ const getMyDesigns = async (
       height: true,
       sizeType: true,
       sizeLabel: true,
-      canvasJSON: true,
       source: true,
       savedFromEditor: true,
       isSavedDesign: true,
