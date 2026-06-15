@@ -242,9 +242,66 @@ const getMyTemplateReviewEligibility = async (
   };
 };
 
+const getAllReviews = async (
+  page: number,
+  limit: number,
+  skip: number,
+) => {
+  const [reviews, total, aggregate] = await Promise.all([
+    prisma.templateReview.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      skip,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+        template: {
+          select: {
+            id: true,
+            headline: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    prisma.templateReview.count(),
+    prisma.templateReview.aggregate({
+      _avg: {
+        rating: true,
+      },
+    }),
+  ]);
+
+  const averageRating = aggregate._avg.rating
+    ? roundToTwo(aggregate._avg.rating)
+    : 4.8;
+
+  return {
+    reviews,
+    summary: {
+      averageRating,
+      totalReviews: total,
+    },
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 export const templateReviewService = {
   createOrUpdateReview,
   getTemplateReviews,
   getTemplateReviewSummary,
   getMyTemplateReviewEligibility,
+  getAllReviews,
 };

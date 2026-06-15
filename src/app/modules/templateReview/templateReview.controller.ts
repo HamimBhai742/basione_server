@@ -74,9 +74,26 @@ const getMyTemplateReviewEligibility = catchAsync(
   },
 );
 
+const getAllReviews = catchAsync(async (req: Request, res: Response) => {
+  const { page, limit, skip } = calculatePagination(req.query);
+  const result = await templateReviewService.getAllReviews(page, limit, skip);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Alle reviews succesvol opgehaald",
+    data: {
+      reviews: result.reviews,
+      summary: result.summary,
+    },
+    metaData: result.metaData,
+  });
+});
+
 export const templateReviewController = {
   createOrUpdateReview,
   getTemplateReviews,
   getTemplateReviewSummary,
   getMyTemplateReviewEligibility,
+  getAllReviews,
 };

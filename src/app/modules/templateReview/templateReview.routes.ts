@@ -26,4 +26,6 @@ router.get(
 
 router.get("/templates/:templateId", templateReviewController.getTemplateReviews);
 
+router.get("/", templateReviewController.getAllReviews);
+
 export const templateReviewRoutes = router;

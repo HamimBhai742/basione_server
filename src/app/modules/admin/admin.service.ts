@@ -103,6 +103,17 @@ const totalOrder = async (
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
+  for (const key of Object.keys(cleanFilter)) {
+    if (
+      cleanFilter[key] === "" ||
+      cleanFilter[key] === "all" ||
+      cleanFilter[key] === undefined ||
+      cleanFilter[key] === null
+    ) {
+      delete cleanFilter[key];
+    }
+  }
+
   const andConditions: any[] = [];
 
   if (Object.keys(cleanFilter).length > 0) {
@@ -184,11 +195,23 @@ const totalOrder = async (
       ? { AND: [...andConditions] }
       : {}
 
-  const [orders, total] = await prisma.$transaction([
+  const [orders, total] = await Promise.all([
     prisma.order.findMany({
       where: where,
       include: {
-        banner: true,
+        banner: {
+          select: {
+            id: true,
+            occasion: true,
+            style: true,
+            name: true,
+            price: true,
+            imageUrl: true,
+            variant: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
         payment: true,
         addresses: true,
         invoice: true,
@@ -490,6 +513,17 @@ const manageUsers = async (
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
+  for (const key of Object.keys(cleanFilter)) {
+    if (
+      cleanFilter[key] === "" ||
+      cleanFilter[key] === "all" ||
+      cleanFilter[key] === undefined ||
+      cleanFilter[key] === null
+    ) {
+      delete cleanFilter[key];
+    }
+  }
+
   const andConditions: any[] = [{ role: "user" }];
 
   if (Object.keys(cleanFilter).length > 0) {
@@ -639,6 +673,17 @@ const totalTransaction = async (
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
+  for (const key of Object.keys(cleanFilter)) {
+    if (
+      cleanFilter[key] === "" ||
+      cleanFilter[key] === "all" ||
+      cleanFilter[key] === undefined ||
+      cleanFilter[key] === null
+    ) {
+      delete cleanFilter[key];
+    }
+  }
+
   const andConditions: any[] = [];
 
   if (Object.keys(cleanFilter).length > 0) {
@@ -713,8 +758,20 @@ const getAllDecoration = async (
   sortBy: string,
   sortOrder: "asc" | "desc",
 ) => {
+  const cleanFilter = { ...filter };
+  for (const key of Object.keys(cleanFilter)) {
+    if (
+      cleanFilter[key] === "" ||
+      cleanFilter[key] === "all" ||
+      cleanFilter[key] === undefined ||
+      cleanFilter[key] === null
+    ) {
+      delete cleanFilter[key];
+    }
+  }
+
   const decorations = await prisma.decoration.findMany({
-    where: filter && Object.keys(filter).length > 0 ? filter : undefined,
+    where: Object.keys(cleanFilter).length > 0 ? cleanFilter : undefined,
     orderBy: {
       [sortBy]: sortOrder,
     },
