@@ -20,6 +20,8 @@ const bannerListSelect = {
   userId: true,
   templateCategoryId: true,
   templateCategory: true,
+  templateCategoryIds: true,
+  templateCategories: true,
   occasion: true,
   style: true,
   headline: true,
@@ -1081,7 +1083,10 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const areaM2 = (width / 100) * (height / 100);
   const pricePerM2 = areaM2 < 1 ? 25 : 20;
   const calculatedPrice = areaM2 * pricePerM2;
-  const finalPrice = Math.max(calculatedPrice, 12);
+  const fallbackPrice = Math.max(calculatedPrice, 12);
+  const finalPrice = parsedData.price !== undefined && parsedData.price !== "" && parsedData.price !== null && !isNaN(Number(parsedData.price))
+    ? Number(parsedData.price)
+    : fallbackPrice;
 
   const headline = parsedData.headline || "Template Headline";
   const slug = parsedData.slug || await generateUniqueBannerSlug(headline);
@@ -1090,6 +1095,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const template = await prisma.banner.create({
     data: {
       templateCategoryId: templateCategory?.id || null,
+      templateCategoryIds: parsedData.categoryIds || (templateCategory?.id ? [templateCategory.id] : []),
       occasion: parsedData.occasion || templateCategory?.slug || "custom",
       style: parsedData.style || "Template",
       headline,
@@ -1134,7 +1140,10 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   const updateData: any = {};
 
   if (parsedData.occasion !== undefined) updateData.occasion = parsedData.occasion;
-  if (
+  if (parsedData.categoryIds !== undefined) {
+    updateData.templateCategoryIds = parsedData.categoryIds;
+    updateData.templateCategoryId = parsedData.categoryIds[0] || null;
+  } else if (
     parsedData.templateCategoryId !== undefined ||
     parsedData.categoryId !== undefined ||
     parsedData.templateCategorySlug !== undefined ||
@@ -1142,6 +1151,11 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   ) {
     const templateCategory = await resolveTemplateCategory(parsedData);
     updateData.templateCategoryId = templateCategory?.id || null;
+    if (templateCategory) {
+      updateData.templateCategoryIds = [templateCategory.id];
+    } else {
+      updateData.templateCategoryIds = [];
+    }
     if (parsedData.occasion === undefined && templateCategory) {
       updateData.occasion = templateCategory.slug;
     }
@@ -1180,7 +1194,17 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     updateData.height = height;
   }
 
-  if (parsedData.width !== undefined || parsedData.height !== undefined) {
+  if (parsedData.price !== undefined) {
+    if (parsedData.price === "" || parsedData.price === null) {
+      const areaM2 = (width / 100) * (height / 100);
+      const pricePerM2 = areaM2 < 1 ? 25 : 20;
+      const calculatedPrice = areaM2 * pricePerM2;
+      const finalPrice = Math.max(calculatedPrice, 12);
+      updateData.price = Number(finalPrice.toFixed(2));
+    } else {
+      updateData.price = Number(parsedData.price);
+    }
+  } else if (parsedData.width !== undefined || parsedData.height !== undefined) {
     if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
       throw new AppError("Ongeldige template-afmetingen.", 400);
     }
@@ -1247,7 +1271,10 @@ const getAllTemplates = async (
   };
 
   if (categoryId) {
-    where.templateCategoryId = categoryId;
+    where.OR = [
+      { templateCategoryId: categoryId },
+      { templateCategoryIds: { has: categoryId } },
+    ];
   } else if (category) {
     const templateCategory = await prisma.templateCategory.findFirst({
       where: {
@@ -1256,7 +1283,10 @@ const getAllTemplates = async (
     });
 
     if (templateCategory) {
-      where.templateCategoryId = templateCategory.id;
+      where.OR = [
+        { templateCategoryId: templateCategory.id },
+        { templateCategoryIds: { has: templateCategory.id } },
+      ];
     } else {
       where.occasion = category;
     }

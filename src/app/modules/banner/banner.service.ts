@@ -42,6 +42,8 @@ const bannerListSelect = {
   templateCategoryId: true,
   sourceTemplateId: true,
   templateCategory: true,
+  templateCategoryIds: true,
+  templateCategories: true,
   occasion: true,
   style: true,
   headline: true,
@@ -848,6 +850,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
       data: {
         userId: req.user?.id || null,
         templateCategoryId: banner.templateCategoryId || null,
+        templateCategoryIds: banner.templateCategoryIds || [],
         sourceTemplateId: banner.id,
         occasion: occasion,
         style: banner.style,
@@ -1024,7 +1027,10 @@ const getAllbanners = async (
   const where: any = {};
 
   if (categoryId && categoryId !== "all" && categoryId !== "undefined") {
-    where.templateCategoryId = categoryId;
+    where.OR = [
+      { templateCategoryId: categoryId },
+      { templateCategoryIds: { has: categoryId } },
+    ];
   } else if (category && category !== "all" && category !== "undefined") {
     const templateCategory = await prisma.templateCategory.findFirst({
       where: {
@@ -1034,7 +1040,10 @@ const getAllbanners = async (
     });
 
     if (templateCategory) {
-      where.templateCategoryId = templateCategory.id;
+      where.OR = [
+        { templateCategoryId: templateCategory.id },
+        { templateCategoryIds: { has: templateCategory.id } },
+      ];
     } else {
       where.occasion = category;
     }
@@ -1108,7 +1117,10 @@ const getTemplates = async (
   };
 
   if (categoryId) {
-    where.templateCategoryId = categoryId;
+    where.OR = [
+      { templateCategoryId: categoryId },
+      { templateCategoryIds: { has: categoryId } },
+    ];
   } else if (category) {
     const templateCategory = await prisma.templateCategory.findFirst({
       where: {
@@ -1118,7 +1130,10 @@ const getTemplates = async (
     });
 
     if (templateCategory) {
-      where.templateCategoryId = templateCategory.id;
+      where.OR = [
+        { templateCategoryId: templateCategory.id },
+        { templateCategoryIds: { has: templateCategory.id } },
+      ];
     } else {
       where.occasion = category;
     }
@@ -1238,6 +1253,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
     data: {
       userId: req.user?.id || null,
       templateCategoryId: template.templateCategoryId || null,
+      templateCategoryIds: template.templateCategoryIds || [],
       sourceTemplateId: template.id,
       occasion: template.occasion,
       style: template.style,

@@ -106,7 +106,9 @@ model Banner {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User?    @relation(fields: [userId], references: [id])
-  templateCategory TemplateCategory? @relation(fields: [templateCategoryId], references: [id])
+  templateCategory TemplateCategory? @relation("OldCategoryRelation", fields: [templateCategoryId], references: [id])
+  templateCategoryIds String[] @db.ObjectId
+  templateCategories TemplateCategory[] @relation("CategoryRelation", fields: [templateCategoryIds], references: [id])
   orders    Order[]
   sourceTemplateId String? @db.ObjectId
   sourceTemplate   Banner? @relation("TemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -128,7 +130,9 @@ model TemplateCategory {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  templates Banner[]
+  oldTemplates Banner[] @relation("OldCategoryRelation")
+  templateIds String[] @db.ObjectId
+  templates Banner[] @relation("CategoryRelation", fields: [templateIds], references: [id])
 }
 
 enum BannerStatus {
