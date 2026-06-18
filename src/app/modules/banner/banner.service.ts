@@ -726,7 +726,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     banner.userId = req.user.id;
   }
 
-  if (!banner.isTemplate && banner.isOrdered && req.user.role !== "admin") {
+  if (!banner.isTemplate && banner.isOrdered && req.user?.role !== "admin") {
     throw new AppError("Bestelde ontwerpen kunnen niet worden bewerkt", 400);
   }
 

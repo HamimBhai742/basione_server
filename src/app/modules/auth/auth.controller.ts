@@ -13,7 +13,10 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Gebruiker succesvol ingelogd",
-    data: user.user,
+    data: {
+      ...user.user,
+      accessToken: user.accessToken,
+    },
   });
 });
 

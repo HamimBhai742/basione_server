@@ -31,15 +31,15 @@ interface CreatePaymentPayload {
 }
 
 const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
-  if (
-    paymentJSON &&
-    typeof paymentJSON === "object" &&
-    !Array.isArray(paymentJSON) &&
-    "molliePaymentId" in paymentJSON
-  ) {
-    const molliePaymentId = paymentJSON.molliePaymentId;
-
-    return typeof molliePaymentId === "string" ? molliePaymentId : null;
+  if (paymentJSON && typeof paymentJSON === "object" && !Array.isArray(paymentJSON)) {
+    if ("molliePaymentId" in paymentJSON) {
+      const molliePaymentId = paymentJSON.molliePaymentId;
+      if (typeof molliePaymentId === "string") return molliePaymentId;
+    }
+    if ("id" in paymentJSON) {
+      const id = paymentJSON.id;
+      if (typeof id === "string") return id;
+    }
   }
 
   return null;
@@ -219,7 +219,11 @@ const handleMolliePaymentUpdate = async (payment: any) => {
   const localPayment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
-      order: true,
+      order: {
+        include: {
+          invoice: true,
+        },
+      },
     },
   });
 
@@ -229,10 +233,11 @@ const handleMolliePaymentUpdate = async (payment: any) => {
 
   if (
     localPayment.status === payment.status &&
-    localPayment.order.paymentStatus === payment.status
+    localPayment.order.paymentStatus === payment.status &&
+    localPayment.order.invoice?.status === "sent"
   ) {
     console.log(
-      `Payment ${paymentId} already processed with status ${payment.status}, ignoring webhook duplicate.`,
+      `Payment ${paymentId} already processed with status ${payment.status} and invoice is sent, ignoring webhook duplicate.`,
     );
     return { message: "Already processed" };
   }
@@ -276,6 +281,11 @@ const syncPaymentStatus = async (
           isGuest: true,
           guestOrderToken: true,
           guestTokenExpiresAt: true,
+          invoice: {
+            select: {
+              status: true,
+            },
+          },
         },
       },
     },
@@ -289,7 +299,12 @@ const syncPaymentStatus = async (
 
   const molliePaymentId = getMolliePaymentIdFromJSON(localPayment.paymentJSON);
 
-  if (molliePaymentId && localPayment.status === "pending") {
+  const shouldSync =
+    localPayment.status === "pending" ||
+    (localPayment.status === "paid" &&
+      localPayment.order?.invoice?.status !== "sent");
+
+  if (molliePaymentId && shouldSync) {
     const molliePayment = await mollieClient.payments.get(molliePaymentId);
     await handleMolliePaymentUpdate(molliePayment);
   }
@@ -407,13 +422,40 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   } catch (error: any) {
     if (error.code === "P2025") {
       console.log(
-        `Payment ${paymentId} already processed (status is not pending). Ignoring duplicate request.`
+        `Payment ${paymentId} already processed (status is not pending). Checking if invoice was sent...`
       );
-      return {
-        alreadyProcessed: true,
-      };
+      const existingPayment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          order: {
+            include: {
+              invoice: true,
+            },
+          },
+        },
+      });
+
+      if (
+        existingPayment &&
+        existingPayment.status === "paid" &&
+        existingPayment.order?.invoice?.status === "sent"
+      ) {
+        console.log(
+          `Invoice for payment ${paymentId} is already marked as sent. Skipping duplicate email flow.`
+        );
+        return {
+          alreadyProcessed: true,
+        };
+      }
+
+      if (!existingPayment || !existingPayment.order) {
+        throw new AppError("Payment or order not found", httpStatus.NOT_FOUND);
+      }
+
+      updatedPayment = existingPayment;
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   /**
