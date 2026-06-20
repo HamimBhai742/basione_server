@@ -2,46 +2,46 @@ import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 export interface OrderCancelledData {
- userName: string;
- email: string;
- orderId: string;
- orderDate: string;
- cancelledDate: string;
- items: {
- name: string;
- quantity: number;
- price: number;
- }[];
- subtotal: number;
- cancelReason?: string;
- cancelledBy?: "user" | "admin" | "system";
+  userName: string;
+  email: string;
+  orderId: string;
+  orderDate: string;
+  cancelledDate: string;
+  items: {
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+  subtotal: number;
+  cancelReason?: string;
+  cancelledBy?: "user" | "admin" | "system";
 }
 
 export const orderCancelledTemplate = async (data: OrderCancelledData) => {
- const {
- userName,
- email,
- orderId,
- orderDate,
- cancelledDate,
- items,
- subtotal,
- cancelReason,
- cancelledBy = "user",
- } = data;
+  const {
+    userName,
+    email,
+    orderId,
+    orderDate,
+    cancelledDate,
+    items,
+    subtotal,
+    cancelReason,
+    cancelledBy = "user",
+  } = data;
 
- const subject = `Bestelling #${orderId} is geannuleerd`;
+  const subject = `Bestelling #${orderId} is geannuleerd`;
 
- const cancelledByLabel =
- cancelledBy === "admin"
- ? "Geannuleerd door de klantenservice"
- : cancelledBy === "system"
- ? "Automatisch geannuleerd door het systeem"
- : "Door u geannuleerd";
+  const cancelledByLabel =
+    cancelledBy === "admin"
+      ? "Geannuleerd door de klantenservice"
+      : cancelledBy === "system"
+        ? "Automatisch geannuleerd door het systeem"
+        : "Door u geannuleerd";
 
- const itemRows = items
- .map(
- (item, index) => `
+  const itemRows = items
+    .map(
+      (item, index) => `
  <tr>
  <td style="
  padding: 13px 18px;
@@ -70,10 +70,10 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
  ">EUR ${(item.price * item.quantity).toFixed(2)}</td>
  </tr>
  `,
- )
- .join("");
+    )
+    .join("");
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -112,7 +112,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="300"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 24px; border-radius: 8px; background:#ffffff; padding:10px 18px;"
@@ -215,8 +215,8 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
 
  <!-- ===== CANCEL REASON ===== -->
  ${
- cancelReason
- ? `
+   cancelReason
+     ? `
  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
  background: #fafafa;
  border: 1px solid #d1d5db;
@@ -232,7 +232,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
  </tr>
  </table>
  `
- : ""
+     : ""
  }
 
  <!-- ===== ORDER ITEMS ===== -->
@@ -414,7 +414,7 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="200"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 12px; opacity: 0.85; background:#ffffff; padding:8px 14px; border-radius:8px;"
@@ -441,5 +441,5 @@ export const orderCancelledTemplate = async (data: OrderCancelledData) => {
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

@@ -151,7 +151,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
  padding: 10px 18px;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  alt="Spandoek Print"
  width="150"
  style="
@@ -474,7 +474,7 @@ export const orderConfirmedTemplate = async (data: OrderConfirmedEmailData) => {
  padding: 10px 18px;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  alt="Spandoek Print"
  width="150"
  style="

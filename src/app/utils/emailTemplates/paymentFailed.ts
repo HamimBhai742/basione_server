@@ -2,31 +2,31 @@ import sendEmail from "./nodemailerTransport";
 import config from "../../../config";
 
 interface PaymentFailedData {
- userName: string;
- email: string;
- amount: number;
- transactionId: string;
- orderId: string;
- date: string;
- failureReason?: string;
- sessionUrl?: string;
+  userName: string;
+  email: string;
+  amount: number;
+  transactionId: string;
+  orderId: string;
+  date: string;
+  failureReason?: string;
+  sessionUrl?: string;
 }
 
 export const paymentFailedTemplate = async (data: PaymentFailedData) => {
- const {
- userName,
- email,
- amount,
- transactionId,
- orderId,
- date,
- failureReason,
- sessionUrl,
- } = data;
+  const {
+    userName,
+    email,
+    amount,
+    transactionId,
+    orderId,
+    date,
+    failureReason,
+    sessionUrl,
+  } = data;
 
- const subject = "Betaling mislukt - Actie vereist";
+  const subject = "Betaling mislukt - Actie vereist";
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -67,7 +67,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
  ">
  <!-- Logo -->
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="300"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 24px; border-radius: 8px; background:#ffffff; padding:10px 18px;"
@@ -144,8 +144,8 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
 
  <!-- ===== FAILURE REASON BOX ===== -->
  ${
- failureReason
- ? `
+   failureReason
+     ? `
  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
  background: #fff8f0;
  border: 1px solid #fbd38d;
@@ -161,7 +161,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
  </tr>
  </table>
  `
- : ""
+     : ""
  }
 
  <!-- ===== ORDER DETAILS TABLE ===== -->
@@ -404,7 +404,7 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="200"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 12px; opacity: 0.85; background:#ffffff; padding:8px 14px; border-radius:8px;"
@@ -432,5 +432,5 @@ export const paymentFailedTemplate = async (data: PaymentFailedData) => {
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

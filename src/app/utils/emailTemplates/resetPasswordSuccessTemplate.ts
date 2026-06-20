@@ -2,22 +2,22 @@ import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface ResetPasswordSuccessData {
- userName: string;
- email: string;
- resetAt: string;
- ipAddress?: string;
- device?: string;
- location?: string;
+  userName: string;
+  email: string;
+  resetAt: string;
+  ipAddress?: string;
+  device?: string;
+  location?: string;
 }
 
 export const resetPasswordSuccessTemplate = async (
- data: ResetPasswordSuccessData,
+  data: ResetPasswordSuccessData,
 ) => {
- const { userName, email, resetAt, ipAddress, device, location } = data;
+  const { userName, email, resetAt, ipAddress, device, location } = data;
 
- const subject = "Uw wachtwoord is succesvol opnieuw ingesteld";
+  const subject = "Uw wachtwoord is succesvol opnieuw ingesteld";
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -57,7 +57,7 @@ export const resetPasswordSuccessTemplate = async (
  ">
  <!-- Logo -->
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="300"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 24px; border-radius: 8px; background:#ffffff; padding:10px 18px;"
@@ -175,8 +175,8 @@ export const resetPasswordSuccessTemplate = async (
 
  <!-- Apparaat (conditional) -->
  ${
- device
- ? `
+   device
+     ? `
  <tr>
  <td style="
  padding: 13px 18px;
@@ -196,13 +196,13 @@ export const resetPasswordSuccessTemplate = async (
  ">${device}</td>
  </tr>
  `
- : ""
+     : ""
  }
 
  <!-- Locatie (conditional) -->
  ${
- location
- ? `
+   location
+     ? `
  <tr>
  <td style="
  padding: 13px 18px;
@@ -222,13 +222,13 @@ export const resetPasswordSuccessTemplate = async (
  ">${location}</td>
  </tr>
  `
- : ""
+     : ""
  }
 
  <!-- IP-adres (conditional) -->
  ${
- ipAddress
- ? `
+   ipAddress
+     ? `
  <tr>
  <td style="
  padding: 13px 18px;
@@ -247,7 +247,7 @@ export const resetPasswordSuccessTemplate = async (
  ">${ipAddress}</td>
  </tr>
  `
- : ""
+     : ""
  }
  </table>
 
@@ -417,7 +417,7 @@ export const resetPasswordSuccessTemplate = async (
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="200"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 12px; opacity: 0.85; background:#ffffff; padding:8px 14px; border-radius:8px;"
@@ -444,5 +444,5 @@ export const resetPasswordSuccessTemplate = async (
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

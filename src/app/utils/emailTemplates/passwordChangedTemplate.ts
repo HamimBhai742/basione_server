@@ -3,12 +3,12 @@
 import sendEmail from "./nodemailerTransport";
 
 export const passwordChangedTemplate = async (
- userName: string,
- subject: string,
- email: string,
- secureLink: string,
+  userName: string,
+  subject: string,
+  email: string,
+  secureLink: string,
 ) => {
- const html = `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="nl">
 
 <head>
@@ -110,7 +110,7 @@ export const passwordChangedTemplate = async (
  <!-- Header -->
  <div class="email-header">
  <div class="company-logo">
- <img src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png" alt="Spandoek Print" />
+ <img src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png" alt="Spandoek Print" />
  </div>
  </div>
 
@@ -154,6 +154,6 @@ export const passwordChangedTemplate = async (
 </body>
 
 </html>`;
- // await sendEmail(email, subject, html);
- await sendEmail(email, subject, html);
+  // await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

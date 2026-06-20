@@ -1,35 +1,35 @@
 import sendEmail from "./nodemailerTransport";
 
 interface PaymentSuccessData {
- userName: string;
- email: string;
- amount: number;
- transactionId: string;
- orderId: string;
- profileOrderId?: string;
- date: string;
- invoiceUrl?: string | null;
- invoiceNumber?: string | null;
- invoiceFilePath?: string | null;
+  userName: string;
+  email: string;
+  amount: number;
+  transactionId: string;
+  orderId: string;
+  profileOrderId?: string;
+  date: string;
+  invoiceUrl?: string | null;
+  invoiceNumber?: string | null;
+  invoiceFilePath?: string | null;
 }
 
 export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
- const {
- userName,
- email,
- amount,
- transactionId,
- orderId,
- profileOrderId,
- date,
- invoiceUrl,
- invoiceNumber,
- invoiceFilePath,
- } = data;
+  const {
+    userName,
+    email,
+    amount,
+    transactionId,
+    orderId,
+    profileOrderId,
+    date,
+    invoiceUrl,
+    invoiceNumber,
+    invoiceFilePath,
+  } = data;
 
- const subject = "Betaling bevestigd - Uw bestelling is onderweg!";
+  const subject = "Betaling bevestigd - Uw bestelling is onderweg!";
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -137,7 +137,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="220"
  alt="Spandoek Print"
  class="main-logo"
@@ -301,8 +301,8 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  </tr>
 
  ${
- invoiceNumber
- ? `
+   invoiceNumber
+     ? `
  <tr>
  <td class="table-label" style="
  padding: 15px 18px;
@@ -328,7 +328,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  ">${invoiceNumber}</td>
  </tr>
  `
- : ""
+     : ""
  }
 
  <tr>
@@ -372,8 +372,8 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  </table>
 
  ${
- invoiceUrl || invoiceFilePath
- ? `
+   invoiceUrl || invoiceFilePath
+     ? `
  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="
  background: #eff6ff;
  border: 1px solid #bfdbfe;
@@ -395,7 +395,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  </tr>
  </table>
  `
- : ""
+     : ""
  }
 
  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
@@ -460,7 +460,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="150"
  alt="Spandoek Print"
  class="footer-logo"
@@ -516,5 +516,5 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

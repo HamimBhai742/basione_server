@@ -2,21 +2,21 @@ import sendEmail from "./nodemailerTransport";
 import config from "../../../config";
 
 interface RegistrationOTPData {
- userName: string;
- email: string;
- otp: string;
- requestedAt: string;
+  userName: string;
+  email: string;
+  otp: string;
+  requestedAt: string;
 }
 
 export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
- const { userName, email, otp, requestedAt } = data;
+  const { userName, email, otp, requestedAt } = data;
 
- const subject = "Welkom bij Spandoek Print - Verifieer uw e-mailadres";
+  const subject = "Welkom bij Spandoek Print - Verifieer uw e-mailadres";
 
- const otpDigits = otp
- .split("")
- .map(
- (digit) => `
+  const otpDigits = otp
+    .split("")
+    .map(
+      (digit) => `
  <td style="padding: 0 5px;">
  <div style="
  width: 50px;
@@ -33,10 +33,10 @@ export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
  ">${digit}</div>
  </td>
  `,
- )
- .join("");
+    )
+    .join("");
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -76,7 +76,7 @@ export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
  ">
  <!-- Logo -->
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="300"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 24px; border-radius: 8px; background:#ffffff; padding:10px 18px;"
@@ -354,7 +354,7 @@ export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="200"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 12px; opacity: 0.85; background:#ffffff; padding:8px 14px; border-radius:8px;"
@@ -382,5 +382,5 @@ export const registrationOtpTemplate = async (data: RegistrationOTPData) => {
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };

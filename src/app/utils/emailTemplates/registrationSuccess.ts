@@ -2,21 +2,20 @@ import config from "../../../config";
 import sendEmail from "./nodemailerTransport";
 
 interface RegistrationSuccessData {
- userName: string;
- email: string;
- registeredAt: string;
- avatarUrl?: string;
+  userName: string;
+  email: string;
+  registeredAt: string;
+  avatarUrl?: string;
 }
 
 export const registrationSuccessTemplate = async (
- data: RegistrationSuccessData,
+  data: RegistrationSuccessData,
 ) => {
- const { userName, email, registeredAt, avatarUrl } = data;
+  const { userName, email, registeredAt, avatarUrl } = data;
 
- const subject =
- "Welkom bij Spandoek Print - Account succesvol aangemaakt!";
+  const subject = "Welkom bij Spandoek Print - Account succesvol aangemaakt!";
 
- const html = `
+  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -55,7 +54,7 @@ export const registrationSuccessTemplate = async (
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="300"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 24px; border-radius: 8px; background:#ffffff; padding:10px 18px;"
@@ -63,15 +62,15 @@ export const registrationSuccessTemplate = async (
 
  <!-- Avatar or default icon -->
  ${
- avatarUrl
- ? `<img src="${avatarUrl}" width="80" height="80" alt="${userName}" style="
+   avatarUrl
+     ? `<img src="${avatarUrl}" width="80" height="80" alt="${userName}" style="
  display: block;
  margin: 0 auto 16px;
  border-radius: 50%;
  border: 3px solid rgba(255,255,255,0.5);
  object-fit: cover;
  "/>`
- : `<div style="
+     : `<div style="
  display: inline-block;
  background: rgba(255,255,255,0.15);
  border: 3px solid rgba(255,255,255,0.4);
@@ -413,7 +412,7 @@ export const registrationSuccessTemplate = async (
  text-align: center;
  ">
  <img
- src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/image-removebg-preview.png"
+ src="https://spandeokprint-assets.s3.eu-north-1.amazonaws.com/images/logo.png"
  width="200"
  alt="Spandoek Print"
  style="display:block; margin: 0 auto 12px; opacity: 0.85; background:#ffffff; padding:8px 14px; border-radius:8px;"
@@ -440,5 +439,5 @@ export const registrationSuccessTemplate = async (
 </html>
  `;
 
- await sendEmail(email, subject, html);
+  await sendEmail(email, subject, html);
 };
