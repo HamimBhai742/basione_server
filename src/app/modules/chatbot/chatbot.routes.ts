@@ -132,6 +132,7 @@ const streamHandler = async (req: any, res: any) => {
         if (typeof obj?.delta === "string") return emitDelta(obj.delta);
         if (typeof obj?.content === "string") return emitDelta(obj.content);
         if (typeof obj?.answer === "string") return emitDelta(obj.answer);
+        if (typeof obj?.data === "string") return emitDelta(obj.data);
         return;
       } catch {
         // Not JSON, treat as plain text
