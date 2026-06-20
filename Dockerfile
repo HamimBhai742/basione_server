@@ -9,6 +9,7 @@ RUN apk add --no-cache libc6-compat openssl fontconfig ttf-dejavu
 WORKDIR /app
 
 COPY package*.json ./
+COPY prisma ./prisma/
 # Install all dependencies (including devDependencies needed for build)
 RUN npm ci
 
