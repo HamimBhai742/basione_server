@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        DATABASE_URL: ${DATABASE_URL:-mongodb://mongodb:27017/basione_db?replicaSet=rs0}
     container_name: basione-server
     restart: always
     ports:
@@ -12,66 +10,4 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=${DATABASE_URL:-mongodb+srv://Hamim_742:Hamim%40742@cluster0.bls3tyg.mongodb.net/basione_db?appName=Cluster0}
-      - REDIS_HOST=${REDIS_HOST:-redis}
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      mongodb-rs-init:
-        condition: service_completed_successfully
-      redis:
-        condition: service_started
-    networks:
-      - basione-network
-
-  # Local MongoDB database service (configured as a single-node replica set for Prisma transaction support)
-  mongodb:
-    image: mongo:6.0
-    container_name: basione-mongodb
-    command: ["--replSet", "rs0", "--bind_ip_all"]
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - basione-network
-    healthcheck:
-      test: mongosh --eval "db.adminCommand('ping')" --quiet
-      interval: 5s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-
-  # Initialization helper service to configure the replica set on the mongo container
-  mongodb-rs-init:
-    image: mongo:6.0
-    container_name: basione-mongodb-rs-init
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    entrypoint: [ "mongosh", "--host", "mongodb:27017", "--eval", "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]})" ]
-    networks:
-      - basione-network
-
-  # Local Redis database service
-  redis:
-    image: redis:7-alpine
-    container_name: basione-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - basione-network
-
-volumes:
-  mongodb_data:
-  redis_data:
-
-networks:
-  basione-network:
-    driver: bridge
+      - DATABASE_URL=${DATABASE_URL}
