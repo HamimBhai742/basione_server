@@ -288,9 +288,9 @@ body {
  .map(
  (item) => `
  <div class="product">
- <img src="${item.image}" alt="${item.name}" />
+ <img src="${item.image}" alt="${item.name || 'Banner'}" />
  <div class="product-info">
- <div class="product-name">${item.name}</div>
+ <div class="product-name">${item.name || 'Banner'}</div>
  <div class="product-meta">Aantal: ${item.quantity}</div>
  <div class="product-meta">Prijs: EUR ${item.price}</div>
  </div>

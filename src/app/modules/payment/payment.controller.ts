@@ -25,12 +25,12 @@ const mollieWebhook = catchAsync(async (req: Request, res: Response) => {
   if (!payId) {
     return res.status(httpStatus.BAD_REQUEST).send("Payment ID not found");
   }
-  
+
   // Fire and forget to respond within Mollie's 10-second timeout window
-  paymentService.mollieWebhook(payId).catch(err => {
+  paymentService.mollieWebhook(payId).catch((err) => {
     console.error("Error processing mollie webhook:", err);
   });
-  
+
   return res.status(200).send("OK");
 });
 

@@ -12,6 +12,7 @@ import { chatbotRoutes } from "../modules/chatbot/chatbot.routes";
 import { fontRoutes } from "../modules/font/font.routes";
 import { shippingRoutes } from "../modules/shipping/shipping.routes";
 import { templateReviewRoutes } from "../modules/templateReview/templateReview.routes";
+import { contactRoutes } from "../modules/contact/contact.routes";
 
 export const router = Router();
 
@@ -68,9 +69,12 @@ const routes = [
     path: "/template-review",
     route: templateReviewRoutes,
   },
+  {
+    path: "/contact",
+    route: contactRoutes,
+  },
 ];
 
 routes.forEach((route) => {
   router.use(route.path, route.route);
 });
-

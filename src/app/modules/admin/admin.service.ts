@@ -14,6 +14,7 @@ import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
 import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
 import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
+import { formatLabel } from "../../utils/formatLable";
 
 const bannerListSelect = {
   id: true,
@@ -290,7 +291,7 @@ const manageOrder = async (
 
     items: [
       {
-        name: order?.banner?.name as string,
+        name: (order?.banner?.name || (order?.banner?.occasion ? `${formatLabel(order.banner.occasion)} Banner` : "Banner")) as string,
         quantity: order?.quantity as number,
         price: order?.banner?.price as number,
         image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
@@ -319,7 +320,7 @@ const manageOrder = async (
 
     items: [
       {
-        name: order?.banner?.name as string,
+        name: (order?.banner?.name || (order?.banner?.occasion ? `${formatLabel(order.banner.occasion)} Banner` : "Banner")) as string,
         quantity: order?.quantity as number,
         price: order?.banner?.price as number,
         image: order?.banner?.imageUrl as string,
@@ -341,7 +342,7 @@ const manageOrder = async (
       : `${order?.addresses?.houseNumber || ""} ${order?.addresses?.street || ""} ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
     items: [
       {
-        name: order?.banner?.name as string,
+        name: (order?.banner?.name || (order?.banner?.occasion ? `${formatLabel(order.banner.occasion)} Banner` : "Banner")) as string,
         quantity: order?.quantity as number,
         price: order?.banner?.price as number,
         image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
@@ -480,7 +481,7 @@ const manageOrder = async (
 
       items: [
         {
-          name: order?.banner?.name as string,
+          name: (order?.banner?.name || (order?.banner?.occasion ? `${formatLabel(order.banner.occasion)} Banner` : "Banner")) as string,
           quantity: order?.quantity as number,
           price: order?.banner?.price as number,
           image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
