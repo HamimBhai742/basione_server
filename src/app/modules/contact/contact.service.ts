@@ -12,7 +12,7 @@ interface ContactData {
 const sendContactEmails = async (data: ContactData) => {
   const { name, email, phone, subject, message } = data;
 
-  const adminEmail = config.admin.email || "adminbasione123@gmail.com";
+  const adminEmail = config.admin.contact.email || "info@spandoekprint.nl";
 
   // HTML template for admin email
   const adminHtml = `

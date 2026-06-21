@@ -17,6 +17,9 @@ export default {
   },
   admin: {
     email: process.env.ADMIN_EMAIL as string,
+    contact: {
+      email: process.env.ADMIN_EMAIL_CONTACT as string,
+    },
     password: process.env.ADMIN_PASSWORD as string,
   },
   cloudinary: {
