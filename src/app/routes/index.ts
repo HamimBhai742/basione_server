@@ -13,6 +13,7 @@ import { fontRoutes } from "../modules/font/font.routes";
 import { shippingRoutes } from "../modules/shipping/shipping.routes";
 import { templateReviewRoutes } from "../modules/templateReview/templateReview.routes";
 import { contactRoutes } from "../modules/contact/contact.routes";
+import { svgMaskRoutes } from "../modules/svgMask/svgMask.routes";
 
 export const router = Router();
 
@@ -73,7 +74,12 @@ const routes = [
     path: "/contact",
     route: contactRoutes,
   },
+  {
+    path: "/svg-mask",
+    route: svgMaskRoutes,
+  },
 ];
+
 
 routes.forEach((route) => {
   router.use(route.path, route.route);

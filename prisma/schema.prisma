@@ -115,12 +115,26 @@ model Banner {
   templateCopies    Banner[] @relation("TemplateCopies")
   templateReviews   TemplateReview[] @relation("TemplateReviews")
 
+  svgMaskId   String?  @db.ObjectId
+  svgMask     SvgMask? @relation("BannerToSvgMask", fields: [svgMaskId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   @@index([userId])
   @@index([generationId])
   @@index([designNumber])
   @@index([templateCategoryId])
   @@index([sourceTemplateId])
+  @@index([svgMaskId])
 }
+
+model SvgMask {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  svgUrl    String   // URL of the SVG on S3
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  banners   Banner[] @relation("BannerToSvgMask")
+}
+
 
 model TemplateCategory {
   id       String  @id @default(auto()) @map("_id") @db.ObjectId

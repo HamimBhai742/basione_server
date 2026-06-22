@@ -41,10 +41,17 @@ const bannerListSelect = {
   revisedPrompt: true,
   isSelected: true,
   isTemplate: true,
-  status: true,
   generationId: true,
   createdAt: true,
   updatedAt: true,
+  svgMaskId: true,
+  svgMask: {
+    select: {
+      id: true,
+      name: true,
+      svgUrl: true,
+    },
+  },
 };
 
 const generateUniqueTemplateCategorySlug = async (
@@ -1118,6 +1125,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       h1Title: parsedData.h1Title || null,
       introText: parsedData.introText || null,
       seoDescription: parsedData.seoDescription || null,
+      svgMaskId: parsedData.svgMaskId || null,
     },
   });
 
@@ -1180,8 +1188,10 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   if (parsedData.metaTitle !== undefined) updateData.metaTitle = parsedData.metaTitle;
   if (parsedData.metaDescription !== undefined) updateData.metaDescription = parsedData.metaDescription;
   if (parsedData.h1Title !== undefined) updateData.h1Title = parsedData.h1Title;
-  if (parsedData.introText !== undefined) updateData.introText = parsedData.introText;
   if (parsedData.seoDescription !== undefined) updateData.seoDescription = parsedData.seoDescription;
+  if (parsedData.svgMaskId !== undefined) {
+    updateData.svgMaskId = parsedData.svgMaskId || null;
+  }
 
   let width = isExist.width;
   let height = isExist.height;

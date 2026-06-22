@@ -81,6 +81,14 @@ const bannerListSelect = {
   generationId: true,
   createdAt: true,
   updatedAt: true,
+  svgMaskId: true,
+  svgMask: {
+    select: {
+      id: true,
+      name: true,
+      svgUrl: true,
+    },
+  },
 };
 
 const buildReviewSummary = async (templateId: string) => {
@@ -852,6 +860,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         templateCategoryId: banner.templateCategoryId || null,
         templateCategoryIds: banner.templateCategoryIds || [],
         sourceTemplateId: banner.id,
+        svgMaskId: banner.svgMaskId,
         occasion: occasion,
         style: banner.style,
         headline: bannerHeadline,
@@ -1083,6 +1092,9 @@ const getSelectedBanner = async (id: string, user?: any) => {
     where: {
       id,
     },
+    include: {
+      svgMask: true,
+    },
   });
 
   if (!banner) {
@@ -1098,6 +1110,9 @@ const getSelectedBanner = async (id: string, user?: any) => {
     data: {
       isSelected: true,
       status: "SELECTED",
+    },
+    include: {
+      svgMask: true,
     },
   });
 
@@ -1185,6 +1200,9 @@ const getTemplateBySlug = async (slug: string) => {
     where: {
       slug,
       isTemplate: true,
+    },
+    include: {
+      svgMask: true,
     },
   });
 
