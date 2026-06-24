@@ -38,13 +38,17 @@ const uploadSvgMask = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllSvgMasks = catchAsync(async (req: Request, res: Response) => {
-  const result = await svgMaskService.getAllSvgMasks();
+  const page = req.query.page ? Number(req.query.page) : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+  const result = await svgMaskService.getAllSvgMasks(page, limit);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "SVG Maskers succesvol opgehaald",
-    data: result,
+    data: result.masks,
+    metaData: result.metaData,
   });
 });
 
@@ -60,8 +64,21 @@ const bindMaskToTemplate = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteSvgMask = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  await svgMaskService.deleteSvgMask(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "SVG Masker succesvol verwijderd",
+    data: null,
+  });
+});
+
 export const svgMaskController = {
   uploadSvgMask,
   getAllSvgMasks,
   bindMaskToTemplate,
+  deleteSvgMask,
 };

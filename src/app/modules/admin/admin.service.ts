@@ -1097,7 +1097,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
     : fallbackPrice;
 
   const headline = parsedData.headline || "Template Headline";
-  const slug = parsedData.slug || await generateUniqueBannerSlug(headline);
+  const slug = await generateUniqueBannerSlug(parsedData.slug || headline);
   const templateCategory = await resolveTemplateCategory(parsedData);
 
   const template = await prisma.banner.create({
@@ -1173,12 +1173,12 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   if (parsedData.headline !== undefined) {
     updateData.headline = parsedData.headline;
     if (parsedData.slug) {
-      updateData.slug = parsedData.slug;
+      updateData.slug = await generateUniqueBannerSlug(parsedData.slug, templateId);
     } else if (parsedData.headline !== isExist.headline) {
       updateData.slug = await generateUniqueBannerSlug(parsedData.headline, templateId);
     }
   } else if (parsedData.slug !== undefined) {
-    updateData.slug = parsedData.slug;
+    updateData.slug = await generateUniqueBannerSlug(parsedData.slug, templateId);
   }
   if (parsedData.name !== undefined) updateData.name = parsedData.name;
   if (parsedData.description !== undefined) updateData.description = parsedData.description;
@@ -1255,13 +1255,30 @@ const deleteTemplate = async (templateId: string) => {
     throw new AppError("Template niet gevonden", httpStatus.NOT_FOUND);
   }
 
+  // 1. Delete associated template reviews to prevent relational constraints block
+  await prisma.templateReview.deleteMany({
+    where: { templateId },
+  });
+
+  // 2. Set sourceTemplateId of copies to null to prevent relational constraints block
+  await prisma.banner.updateMany({
+    where: { sourceTemplateId: templateId },
+    data: { sourceTemplateId: null },
+  });
+
+  // 3. Delete background image from S3 (safeguarded to avoid blocking database deletion)
   if (isExist.imageUrl) {
     const key = getS3KeyFromUrl(isExist.imageUrl);
     if (key) {
-      await deleteImageFromS3(key);
+      try {
+        await deleteImageFromS3(key);
+      } catch (s3Error) {
+        console.error("Failed to delete template image from S3:", s3Error);
+      }
     }
   }
 
+  // 4. Delete the template banner itself
   await prisma.banner.delete({
     where: { id: templateId },
   });

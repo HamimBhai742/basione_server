@@ -92,11 +92,13 @@ const resolveReviewableTemplateFromOrder = async (
     );
   }
 
-  const templateId = order.banner.sourceTemplateId
-    ? order.banner.sourceTemplateId
-    : order.banner.isTemplate
-      ? order.banner.id
-      : null;
+  const templateId = order.banner
+    ? (order.banner.sourceTemplateId
+      ? order.banner.sourceTemplateId
+      : order.banner.isTemplate
+        ? order.banner.id
+        : null)
+    : null;
 
   if (!templateId) {
     throw new AppError(

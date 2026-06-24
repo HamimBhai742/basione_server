@@ -36,11 +36,13 @@ export const sendDeliveredOrderReviewEmail = async (orderId: string) => {
     return;
   }
 
-  const templateId = order.banner.sourceTemplateId
-    ? order.banner.sourceTemplateId
-    : order.banner.isTemplate
-      ? order.banner.id
-      : null;
+  const templateId = order.banner
+    ? (order.banner.sourceTemplateId
+      ? order.banner.sourceTemplateId
+      : order.banner.isTemplate
+        ? order.banner.id
+        : null)
+    : null;
 
   const reviewLink =
     templateId && !order.isGuest && order.userId
@@ -64,10 +66,10 @@ export const sendDeliveredOrderReviewEmail = async (orderId: string) => {
       deliveredDate: new Date().toLocaleString(),
       items: [
         {
-          name: order.banner.name || order.banner.headline || "Banner",
+          name: order.banner?.name || order.banner?.headline || "Banner",
           quantity: order.quantity,
-          price: order.banner.price,
-          image: order.banner.imageUrl,
+          price: order.banner?.price || 0,
+          image: order.banner?.imageUrl || "",
         },
       ],
       totalAmount: order.total,

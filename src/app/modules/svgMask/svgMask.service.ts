@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../error/AppError";
+import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
+import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 
 const createSvgMask = async (name: string, svgUrl: string) => {
   if (!name || !svgUrl) {
@@ -16,13 +18,80 @@ const createSvgMask = async (name: string, svgUrl: string) => {
   return newMask;
 };
 
-const getAllSvgMasks = async () => {
+const getAllSvgMasks = async (page?: number, limit?: number) => {
+  if (page === undefined || limit === undefined) {
+    const masks = await prisma.svgMask.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return {
+      masks,
+      metaData: {
+        total: masks.length,
+        page: 1,
+        limit: masks.length,
+        totalPages: 1,
+      },
+    };
+  }
+
+  const skip = (page - 1) * limit;
   const masks = await prisma.svgMask.findMany({
     orderBy: {
       createdAt: "desc",
     },
+    skip,
+    take: limit,
   });
-  return masks;
+
+  const total = await prisma.svgMask.count();
+
+  return {
+    masks,
+    metaData: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const deleteSvgMask = async (id: string) => {
+  const mask = await prisma.svgMask.findUnique({
+    where: { id },
+  });
+
+  if (!mask) {
+    throw new AppError("SVG Mask not found", 404);
+  }
+
+  // Check if it's bound to any template first
+  const boundCount = await prisma.banner.count({
+    where: { svgMaskId: id },
+  });
+
+  if (boundCount > 0) {
+    throw new AppError("This SVG Mask is currently bound to templates and cannot be deleted", 400);
+  }
+
+  // Delete from S3
+  const key = getS3KeyFromUrl(mask.svgUrl);
+  if (key) {
+    try {
+      await deleteImageFromS3(key);
+    } catch (err) {
+      console.error("Failed to delete SVG Mask from S3:", err);
+    }
+  }
+
+  // Delete from DB
+  await prisma.svgMask.delete({
+    where: { id },
+  });
+
+  return true;
 };
 
 const bindMaskToTemplate = async (templateId: string, svgMaskId: string | null) => {
@@ -65,5 +134,6 @@ const bindMaskToTemplate = async (templateId: string, svgMaskId: string | null) 
 export const svgMaskService = {
   createSvgMask,
   getAllSvgMasks,
+  deleteSvgMask,
   bindMaskToTemplate,
 };

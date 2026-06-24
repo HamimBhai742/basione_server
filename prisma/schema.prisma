@@ -195,7 +195,7 @@ model Order {
   paymentStatus PaymentStatus @default(pending)
 
   bannerId String
-  banner   Banner @relation(fields: [bannerId], references: [id])
+  banner   Banner? @relation(fields: [bannerId], references: [id])
 
   userId String?
   user   User?  @relation(fields: [userId], references: [id])

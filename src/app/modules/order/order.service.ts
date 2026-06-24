@@ -311,74 +311,79 @@ const createOrder = async (
     heightCm: banner.height,
   });
 
-  const order = await prisma.$transaction(async (tx) => {
-    const createdOrder = await tx.order.create({
-      data: {
-        quantity,
+  const order = await prisma.$transaction(
+    async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          quantity,
 
-        deliveryType: selectedDeliveryOption.prismaDeliveryType,
-        deliveryMethod: selectedDeliveryOption.method,
-        deliveryLabel: selectedDeliveryOption.label,
-        deliveryFee: priceCalculation.deliveryFee,
-        deliveryTime: selectedDeliveryOption.time,
+          deliveryType: selectedDeliveryOption.prismaDeliveryType,
+          deliveryMethod: selectedDeliveryOption.method,
+          deliveryLabel: selectedDeliveryOption.label,
+          deliveryFee: priceCalculation.deliveryFee,
+          deliveryTime: selectedDeliveryOption.time,
 
-        hasEyelets,
-        eyeletsFee: priceCalculation.eyeletsFee,
+          hasEyelets,
+          eyeletsFee: priceCalculation.eyeletsFee,
 
-        // Banner price including VAT
-        subtotal: priceCalculation.subtotal,
+          // Banner price including VAT
+          subtotal: priceCalculation.subtotal,
 
-        /**
-         * Now this is full order price excluding VAT:
-         * banner + delivery + eyelets
-         */
-        priceExcludingVat: priceCalculation.priceExcludingVat,
+          /**
+           * Now this is full order price excluding VAT:
+           * banner + delivery + eyelets
+           */
+          priceExcludingVat: priceCalculation.priceExcludingVat,
 
-        vatRate: priceCalculation.vatRate,
+          vatRate: priceCalculation.vatRate,
 
-        /**
-         * Now this is full VAT amount:
-         * banner VAT + delivery VAT + eyelets VAT
-         */
-        vatAmount: priceCalculation.vatAmount,
+          /**
+           * Now this is full VAT amount:
+           * banner VAT + delivery VAT + eyelets VAT
+           */
+          vatAmount: priceCalculation.vatAmount,
 
-        // Final total stays same because all prices are already incl. VAT
-        total: priceCalculation.total,
+          // Final total stays same because all prices are already incl. VAT
+          total: priceCalculation.total,
 
-        userId: userId || null,
-        isGuest: isGuestOrder,
-        guestOrderToken: isGuestOrder ? generateGuestOrderToken() : null,
-        guestTokenExpiresAt: isGuestOrder ? getGuestOrderTokenExpiry() : null,
-        bannerId,
-        trackingNumber,
-      },
-    });
+          userId: userId || null,
+          isGuest: isGuestOrder,
+          guestOrderToken: isGuestOrder ? generateGuestOrderToken() : null,
+          guestTokenExpiresAt: isGuestOrder ? getGuestOrderTokenExpiry() : null,
+          bannerId,
+          trackingNumber,
+        },
+      });
 
-    await tx.banner.update({
-      where: {
-        id: bannerId,
-      },
-      data: {
-        ...(userId ? { userId } : {}),
-        designNumber,
-        imageUrl: finalBannerImageUrl,
-        ...(markDesignAsOrdered
-          ? {
-              isOrdered: true,
-              isSavedDesign: true,
-              savedFromEditor: true,
-              source: payload.source || banner.source || "saved_design_order",
-              designStatus: payload.designStatus || "ordered",
-              lifecycleStatus: payload.lifecycleStatus || "ordered",
-              orderedAt,
-              orderId: createdOrder.id,
-            }
-          : {}),
-      },
-    });
+      await tx.banner.update({
+        where: {
+          id: bannerId,
+        },
+        data: {
+          ...(userId ? { userId } : {}),
+          designNumber,
+          imageUrl: finalBannerImageUrl,
+          ...(markDesignAsOrdered
+            ? {
+                isOrdered: true,
+                isSavedDesign: true,
+                savedFromEditor: true,
+                source: payload.source || banner.source || "saved_design_order",
+                designStatus: payload.designStatus || "ordered",
+                lifecycleStatus: payload.lifecycleStatus || "ordered",
+                orderedAt,
+                orderId: createdOrder.id,
+              }
+            : {}),
+        },
+      });
 
-    return createdOrder;
-  });
+      return createdOrder;
+    },
+    {
+      timeout: 15000,
+    }
+  );
 
   return order;
 };
@@ -812,9 +817,9 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     cancelledDate: new Date().toLocaleString(),
     items: [
       {
-        name: `${formatLabel(order?.banner.occasion) as string} Banner`,
+        name: `${formatLabel(order?.banner?.occasion || "custom") as string} Banner`,
         quantity: order?.quantity as number,
-        price: order?.banner.price as number,
+        price: (order?.banner?.price || 0) as number,
       },
     ],
     subtotal: order.total,

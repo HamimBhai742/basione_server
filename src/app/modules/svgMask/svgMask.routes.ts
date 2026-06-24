@@ -26,4 +26,11 @@ router.post(
   svgMaskController.bindMaskToTemplate,
 );
 
+// Only admin can delete SVG masks
+router.delete(
+  "/:id",
+  checkAuth("admin"),
+  svgMaskController.deleteSvgMask,
+);
+
 export const svgMaskRoutes = router;

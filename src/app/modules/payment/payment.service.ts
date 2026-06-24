@@ -31,7 +31,11 @@ interface CreatePaymentPayload {
 }
 
 const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
-  if (paymentJSON && typeof paymentJSON === "object" && !Array.isArray(paymentJSON)) {
+  if (
+    paymentJSON &&
+    typeof paymentJSON === "object" &&
+    !Array.isArray(paymentJSON)
+  ) {
     if ("molliePaymentId" in paymentJSON) {
       const molliePaymentId = paymentJSON.molliePaymentId;
       if (typeof molliePaymentId === "string") return molliePaymentId;
@@ -45,7 +49,10 @@ const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
   return null;
 };
 
-const isSecureStringEqual = (storedValue?: string | null, receivedValue?: string) => {
+const isSecureStringEqual = (
+  storedValue?: string | null,
+  receivedValue?: string,
+) => {
   if (!storedValue || !receivedValue) {
     return false;
   }
@@ -231,13 +238,16 @@ const handleMolliePaymentUpdate = async (payment: any) => {
     throw new AppError("Payment not found", httpStatus.NOT_FOUND);
   }
 
+  const invoice = localPayment.order.invoice;
+  const timeSinceCreation = invoice ? Date.now() - new Date(invoice.createdAt).getTime() : 0;
   if (
     localPayment.status === payment.status &&
     localPayment.order.paymentStatus === payment.status &&
-    localPayment.order.invoice?.status === "sent"
+    invoice &&
+    (invoice.status === "sent" || timeSinceCreation < 60000)
   ) {
     console.log(
-      `Payment ${paymentId} already processed with status ${payment.status} and invoice is sent, ignoring webhook duplicate.`,
+      `Payment ${paymentId} already processed with status ${payment.status} and invoice is sent or recently generated (${timeSinceCreation}ms ago), ignoring duplicate call.`,
     );
     return { message: "Already processed" };
   }
@@ -401,7 +411,7 @@ const paymentPaid = async (
   userId: string | undefined,
   molliePayment: any,
 ) => {
-console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
+  console.log(orderId, paymentId, molliePayment, "fsdfgdsgdfghdfg");
   const cleanPayment = JSON.parse(JSON.stringify(molliePayment));
 
   /**
@@ -422,7 +432,7 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
   } catch (error: any) {
     if (error.code === "P2025") {
       console.log(
-        `Payment ${paymentId} already processed (status is not pending). Checking if invoice was sent...`
+        `Payment ${paymentId} already processed (status is not pending). Checking if invoice was sent...`,
       );
       const existingPayment = await prisma.payment.findUnique({
         where: { id: paymentId },
@@ -435,17 +445,19 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
         },
       });
 
-      if (
-        existingPayment &&
-        existingPayment.status === "paid" &&
-        existingPayment.order?.invoice?.status === "sent"
-      ) {
-        console.log(
-          `Invoice for payment ${paymentId} is already marked as sent. Skipping duplicate email flow.`
-        );
-        return {
-          alreadyProcessed: true,
-        };
+      if (existingPayment && existingPayment.status === "paid") {
+        const invoice = existingPayment.order?.invoice;
+        if (invoice) {
+          const timeSinceCreation = Date.now() - new Date(invoice.createdAt).getTime();
+          if (invoice.status === "sent" || timeSinceCreation < 60000) {
+            console.log(
+              `Invoice for payment ${paymentId} already exists and is sent or recently generated (${timeSinceCreation}ms ago). Skipping duplicate email flow.`,
+            );
+            return {
+              alreadyProcessed: true,
+            };
+          }
+        }
       }
 
       if (!existingPayment || !existingPayment.order) {
@@ -517,11 +529,15 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
 
   console.log("User found:", {
     userId: user?.id,
-    email: user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email,
+    email:
+      user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email,
     name: user?.name || updatedOrder.guestName || updatedOrder.addresses?.name,
   });
   const customerName =
-    user?.name || updatedOrder.guestName || updatedOrder.addresses?.name || "Customer";
+    user?.name ||
+    updatedOrder.guestName ||
+    updatedOrder.addresses?.name ||
+    "Customer";
   const customerEmail =
     user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email;
 
@@ -545,6 +561,21 @@ console.log(orderId,paymentId,molliePayment,"fsdfgdsgdfghdfg")
       "Invoice generation failed",
       httpStatus.INTERNAL_SERVER_ERROR,
     );
+  }
+
+  const timeSinceCreation = Date.now() - new Date(invoice.createdAt).getTime();
+  if (invoice.status === "sent" || timeSinceCreation < 60000) {
+    console.log(
+      `Invoice ${invoice.invoiceNumber} is already sent or was recently generated (${timeSinceCreation}ms ago). Skipping duplicate email flow.`
+    );
+    return {
+      order: updatedOrder,
+      payment: updatedPayment,
+      invoice,
+      shipment: null,
+      shipmentCreated: false,
+      orderEmailSent: false,
+    };
   }
 
   console.log("Invoice generated successfully:", {
