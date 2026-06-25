@@ -563,10 +563,9 @@ const paymentPaid = async (
     );
   }
 
-  const timeSinceCreation = Date.now() - new Date(invoice.createdAt).getTime();
-  if (invoice.status === "sent" || timeSinceCreation < 60000) {
+  if (invoice.status === "sent") {
     console.log(
-      `Invoice ${invoice.invoiceNumber} is already sent or was recently generated (${timeSinceCreation}ms ago). Skipping duplicate email flow.`
+      `Invoice ${invoice.invoiceNumber} is already sent. Skipping duplicate email flow.`
     );
     return {
       order: updatedOrder,
