@@ -1349,7 +1349,21 @@ const getAllTemplates = async (
 };
 
 const createBackgroundImage = async (data: any) => {
-  const name = data.name || "Background";
+  let name = data.name;
+
+  if (data.data && typeof data.data === "string") {
+    try {
+      const parsed = JSON.parse(data.data);
+      if (parsed.name) {
+        name = parsed.name;
+      }
+    } catch (e) {
+      console.error("Failed to parse background data:", e);
+    }
+  }
+
+  name = name || "Background";
+
   const backgroundImage = await prisma.backgroundImage.create({
     data: {
       name,
