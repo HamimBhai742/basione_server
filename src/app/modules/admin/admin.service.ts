@@ -1348,6 +1348,33 @@ const getAllTemplates = async (
   };
 };
 
+const createBackgroundImage = async (data: any) => {
+  const name = data.name || "Background";
+  const backgroundImage = await prisma.backgroundImage.create({
+    data: {
+      name,
+      imageUrl: data.imageUrl,
+    },
+  });
+  return backgroundImage;
+};
+
+const deleteBackgroundImage = async (id: string) => {
+  await prisma.backgroundImage.delete({
+    where: { id },
+  });
+  return true;
+};
+
+const getAllBackgroundImages = async () => {
+  const backgrounds = await prisma.backgroundImage.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  return backgrounds;
+};
+
 export const adminService = {
   totalOrder,
   manageOrder,
@@ -1375,4 +1402,7 @@ export const adminService = {
   updateTemplate,
   deleteTemplate,
   getAllTemplates,
+  createBackgroundImage,
+  deleteBackgroundImage,
+  getAllBackgroundImages,
 };

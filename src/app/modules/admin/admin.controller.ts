@@ -405,6 +405,45 @@ const getAllTemplates = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createBackgroundImage = catchAsync(async (req: Request, res: Response) => {
+  const file = req.file;
+  if (file) {
+    const fileUrl = await uploadImageToS3(file);
+    req.body.imageUrl = fileUrl;
+  }
+
+  const backgroundImage = await adminService.createBackgroundImage(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Achtergrondafbeelding succesvol aangemaakt",
+    data: backgroundImage,
+  });
+});
+
+const deleteBackgroundImage = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteBackgroundImage(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    data: null,
+    message: "Achtergrondafbeelding succesvol verwijderd",
+  });
+});
+
+const getAllBackgroundImages = catchAsync(async (req: Request, res: Response) => {
+  const backgrounds = await adminService.getAllBackgroundImages();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Achtergrondafbeeldingen succesvol opgehaald",
+    data: backgrounds,
+  });
+});
+
 export const adminController = {
   totalOrder,
   manageOrder,
@@ -432,4 +471,7 @@ export const adminController = {
   updateTemplate,
   deleteTemplate,
   getAllTemplates,
+  createBackgroundImage,
+  deleteBackgroundImage,
+  getAllBackgroundImages,
 };

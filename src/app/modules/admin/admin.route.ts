@@ -178,4 +178,22 @@ router.get(
   chatbotController.searchDocumentation,
 );
 
+router.post(
+  "/create-background-image",
+  checkAuth("admin"),
+  upload.single("file"),
+  adminController.createBackgroundImage,
+);
+
+router.delete(
+  "/background-image/:id",
+  checkAuth("admin"),
+  adminController.deleteBackgroundImage,
+);
+
+router.get(
+  "/background-images",
+  adminController.getAllBackgroundImages,
+);
+
 export const adminRoutes = router;

@@ -529,3 +529,11 @@ model ChatbotSetting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model BackgroundImage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  imageUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
