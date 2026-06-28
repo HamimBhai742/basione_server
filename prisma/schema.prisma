@@ -124,6 +124,7 @@ model Banner {
   @@index([templateCategoryId])
   @@index([sourceTemplateId])
   @@index([svgMaskId])
+  @@index([createdAt])
 }
 
 model SvgMask {

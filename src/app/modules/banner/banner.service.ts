@@ -381,6 +381,19 @@ const createBanner = async (req: AuthRequest) => {
   const vatAmount = calculateVatAmount(price);
   const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
 
+  const name = parsedData?.name || "";
+  const age = parsedData?.age || "";
+  let description = parsedData.description || "";
+
+  if (name || age) {
+    const textParts = [];
+    if (name) textParts.push(`the name "${name}"`);
+    if (age) textParts.push(`the age "${age}"`);
+    const textStr = textParts.join(" and ");
+    
+    description = `${description}\n\n[IMPORTANT INSTRUCTION]: The banner must clearly and visibly display the text for ${textStr}. Please render the text "${name}"${age ? ` and "${age}"` : ""} in a very clean, large, beautiful, and highly legible typography that matches the ${parsedData?.style || "modern"} style of the banner. Make sure the text is spelled correctly.`.trim();
+  }
+
   const formData = new FormData();
 
   formData.append(
@@ -390,10 +403,9 @@ const createBanner = async (req: AuthRequest) => {
       style: parsedData?.style,
       headline: parsedData?.headline || "",
       subtext: parsedData?.subheadline || "",
-      name: parsedData?.name || "",
-      age: parsedData?.age || "",
-      description:
-        parsedData.description || "A banner for a wedding invitation",
+      name,
+      age,
+      description: description || "A beautiful custom banner",
     }),
   );
 
@@ -407,24 +419,6 @@ const createBanner = async (req: AuthRequest) => {
   formData.append("ref_image_2", "");
   formData.append("ref_image_3", "");
   formData.append("ref_image_4", "");
-  console.log({
-    occasion: parsedData?.occasion,
-    style: parsedData?.style,
-    headline: parsedData?.headline || "",
-    subtext: parsedData?.subheadline || "",
-    name: parsedData?.name || "",
-    age: parsedData?.age || "",
-    description: parsedData.description || "A banner for a wedding invitation",
-  });
-
-  
-  // const banners = await prisma.banner.findMany({
-  //   take: 4,
-  //   orderBy: { createdAt: "desc" },
-  // });
-  // return {
-  //   variants: banners,
-  // };
 
   const response = await axios.post(
     "https://ai.spandoekprint.nl/generate",
