@@ -99,6 +99,8 @@ model Banner {
 
   isSelected Boolean      @default(false)
   isTemplate Boolean      @default(false)
+  isReadymade Boolean     @default(false)
+  mockupUrl   String?
   status     BannerStatus @default(GENERATED)
 
   generationId String? // group 4 variants

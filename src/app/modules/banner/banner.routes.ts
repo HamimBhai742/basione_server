@@ -36,7 +36,7 @@ router.post(
 
 router.post(
   "/create-banner-from-template",
-  checkAuth("user"),
+  optionalAuth("user"),
   upload.single("image"),
   bannerController.createBannerFromTemplate,
 );

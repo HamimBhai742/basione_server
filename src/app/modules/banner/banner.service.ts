@@ -77,6 +77,8 @@ const bannerListSelect = {
   orderId: true,
   isSelected: true,
   isTemplate: true,
+  isReadymade: true,
+  mockupUrl: true,
   status: true,
   generationId: true,
   createdAt: true,
@@ -1120,9 +1122,11 @@ const getTemplates = async (
   occasion?: string,
   categoryId?: string,
   category?: string,
+  isReadymade?: boolean,
 ) => {
   const where: any = {
     isTemplate: true,
+    isReadymade: isReadymade ?? false,
   };
 
   if (categoryId) {
