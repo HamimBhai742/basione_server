@@ -44,6 +44,11 @@ const bannerListSelect = {
   templateCategory: true,
   templateCategoryIds: true,
   templateCategories: true,
+  tuinposterCategoryId: true,
+  tuinposterCategory: true,
+  tuinposterCategoryIds: true,
+  tuinposterCategories: true,
+  sku: true,
   occasion: true,
   style: true,
   headline: true,
@@ -1130,25 +1135,50 @@ const getTemplates = async (
   };
 
   if (categoryId) {
-    where.OR = [
-      { templateCategoryId: categoryId },
-      { templateCategoryIds: { has: categoryId } },
-    ];
-  } else if (category) {
-    const templateCategory = await prisma.templateCategory.findFirst({
-      where: {
-        slug: category,
-        isActive: true,
-      },
-    });
-
-    if (templateCategory) {
+    if (isReadymade) {
       where.OR = [
-        { templateCategoryId: templateCategory.id },
-        { templateCategoryIds: { has: templateCategory.id } },
+        { tuinposterCategoryId: categoryId },
+        { tuinposterCategoryIds: { has: categoryId } },
       ];
     } else {
-      where.occasion = category;
+      where.OR = [
+        { templateCategoryId: categoryId },
+        { templateCategoryIds: { has: categoryId } },
+      ];
+    }
+  } else if (category) {
+    if (isReadymade) {
+      const tuinCategory = await prisma.tuinposterCategory.findFirst({
+        where: {
+          slug: category,
+          isActive: true,
+        },
+      });
+
+      if (tuinCategory) {
+        where.OR = [
+          { tuinposterCategoryId: tuinCategory.id },
+          { tuinposterCategoryIds: { has: tuinCategory.id } },
+        ];
+      } else {
+        where.occasion = category;
+      }
+    } else {
+      const templateCategory = await prisma.templateCategory.findFirst({
+        where: {
+          slug: category,
+          isActive: true,
+        },
+      });
+
+      if (templateCategory) {
+        where.OR = [
+          { templateCategoryId: templateCategory.id },
+          { templateCategoryIds: { has: templateCategory.id } },
+        ];
+      } else {
+        where.occasion = category;
+      }
     }
   }
 
@@ -1182,6 +1212,19 @@ const getTemplates = async (
 
 const getTemplateCategories = async () => {
   const categories = await prisma.templateCategory.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return categories;
+};
+
+const getTuinposterCategories = async () => {
+  const categories = await prisma.tuinposterCategory.findMany({
     where: {
       isActive: true,
     },
@@ -1303,6 +1346,7 @@ export const bannerService = {
   updateBanner,
   getTemplates,
   getTemplateCategories,
+  getTuinposterCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
 };

@@ -129,6 +129,17 @@ const getTemplateCategories = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
+const getTuinposterCategories = catchAsync(async (req: Request, res: Response) => {
+  const categories = await bannerService.getTuinposterCategories();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tuinpostercategorieen succesvol opgehaald",
+    data: categories,
+  });
+});
+
 const createBannerFromTemplate = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const banner = await bannerService.createBannerFromTemplate(req);
@@ -162,6 +173,7 @@ export const bannerController = {
   updateBanner,
   getTemplates,
   getTemplateCategories,
+  getTuinposterCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
 };

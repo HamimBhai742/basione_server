@@ -25,6 +25,9 @@ const bannerListSelect = {
   generationId: true,
   createdAt: true,
   updatedAt: true,
+  tuinposterCategoryId: true,
+  tuinposterCategoryIds: true,
+  sku: true,
 };
 
 const getAggregateData = async (userId?: string) => {

@@ -343,6 +343,53 @@ const deleteTemplateCategory = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+const createTuinposterCategory = catchAsync(async (req: Request, res: Response) => {
+  const category = await adminService.createTuinposterCategory(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Tuinpostercategorie succesvol aangemaakt",
+    data: category,
+  });
+});
+
+const getAllTuinposterCategories = catchAsync(async (req: Request, res: Response) => {
+  const categories = await adminService.getAllTuinposterCategories();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tuinpostercategorieen succesvol opgehaald",
+    data: categories,
+  });
+});
+
+const updateTuinposterCategory = catchAsync(async (req: Request, res: Response) => {
+  const category = await adminService.updateTuinposterCategory(
+    req.params.id as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tuinpostercategorie succesvol bijgewerkt",
+    data: category,
+  });
+});
+
+const deleteTuinposterCategory = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteTuinposterCategory(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tuinpostercategorie succesvol verwijderd",
+    data: null,
+  });
+});
+
 const createTemplate = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   const result = await adminService.createTemplate(req.body, file);
@@ -469,6 +516,10 @@ export const adminController = {
   getAllTemplateCategories,
   updateTemplateCategory,
   deleteTemplateCategory,
+  createTuinposterCategory,
+  getAllTuinposterCategories,
+  updateTuinposterCategory,
+  deleteTuinposterCategory,
   createTemplate,
   updateTemplate,
   deleteTemplate,

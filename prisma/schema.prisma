@@ -111,6 +111,11 @@ model Banner {
   templateCategory TemplateCategory? @relation("OldCategoryRelation", fields: [templateCategoryId], references: [id])
   templateCategoryIds String[] @db.ObjectId
   templateCategories TemplateCategory[] @relation("CategoryRelation", fields: [templateCategoryIds], references: [id])
+  tuinposterCategoryId String? @db.ObjectId
+  tuinposterCategory TuinposterCategory? @relation("OldTuinposterCategoryRelation", fields: [tuinposterCategoryId], references: [id])
+  tuinposterCategoryIds String[] @db.ObjectId
+  tuinposterCategories TuinposterCategory[] @relation("TuinposterCategoryRelation", fields: [tuinposterCategoryIds], references: [id])
+  sku String?
   orders    Order[]
   sourceTemplateId String? @db.ObjectId
   sourceTemplate   Banner? @relation("TemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -124,6 +129,7 @@ model Banner {
   @@index([generationId])
   @@index([designNumber])
   @@index([templateCategoryId])
+  @@index([tuinposterCategoryId])
   @@index([sourceTemplateId])
   @@index([svgMaskId])
   @@index([createdAt])
@@ -150,6 +156,19 @@ model TemplateCategory {
   oldTemplates Banner[] @relation("OldCategoryRelation")
   templateIds String[] @db.ObjectId
   templates Banner[] @relation("CategoryRelation", fields: [templateIds], references: [id])
+}
+
+model TuinposterCategory {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String  @unique
+  slug     String  @unique
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  oldTemplates Banner[] @relation("OldTuinposterCategoryRelation")
+  templateIds String[] @db.ObjectId
+  templates Banner[] @relation("TuinposterCategoryRelation", fields: [templateIds], references: [id])
 }
 
 enum BannerStatus {

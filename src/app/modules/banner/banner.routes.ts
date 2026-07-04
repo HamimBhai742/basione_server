@@ -23,6 +23,8 @@ router.get("/templates", bannerController.getTemplates);
 
 router.get("/template-categories", bannerController.getTemplateCategories);
 
+router.get("/tuinposter-categories", bannerController.getTuinposterCategories);
+
 router.get("/templates/:slug", bannerController.getTemplateBySlug);
 
 router.get("/:id", optionalAuth("user", "admin"), bannerController.getSelectedBanner);

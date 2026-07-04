@@ -80,6 +80,31 @@ router.delete(
   adminController.deleteTemplateCategory,
 );
 
+// --- Admin Tuinposter Category Management Endpoints ---
+router.post(
+  "/tuinposter-categories",
+  checkAuth("admin"),
+  adminController.createTuinposterCategory,
+);
+
+router.get(
+  "/tuinposter-categories",
+  checkAuth("admin"),
+  adminController.getAllTuinposterCategories,
+);
+
+router.patch(
+  "/tuinposter-categories/:id",
+  checkAuth("admin"),
+  adminController.updateTuinposterCategory,
+);
+
+router.delete(
+  "/tuinposter-categories/:id",
+  checkAuth("admin"),
+  adminController.deleteTuinposterCategory,
+);
+
 // --- Admin Template Management Endpoints ---
 router.post(
   "/create-template",

@@ -1,5 +1,6 @@
 import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
+import path from "path";
 import config from "../../../config";
 import { orderUserSearchableFields } from "./admin.contain";
 import httpStatus from "http-status";
@@ -25,6 +26,11 @@ const bannerListSelect = {
   templateCategory: true,
   templateCategoryIds: true,
   templateCategories: true,
+  tuinposterCategoryId: true,
+  tuinposterCategory: true,
+  tuinposterCategoryIds: true,
+  tuinposterCategories: true,
+  sku: true,
   occasion: true,
   style: true,
   headline: true,
@@ -1040,6 +1046,161 @@ const deleteTemplateCategory = async (id: string) => {
   return true;
 };
 
+const generateUniqueTuinposterCategorySlug = async (
+  name: string,
+  currentId?: string,
+): Promise<string> => {
+  const baseSlug = generateSlug(name || "category");
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const isExist = await prisma.tuinposterCategory.findFirst({
+      where: {
+        slug,
+        ...(currentId ? { id: { not: currentId } } : {}),
+      },
+    });
+
+    if (!isExist) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+};
+
+const createTuinposterCategory = async (data: {
+  name: string;
+  slug?: string;
+  isActive?: boolean;
+}) => {
+  const name = data.name?.trim();
+
+  if (!name) {
+    throw new AppError("Categorienaam is verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  const slug = data.slug?.trim()
+    ? generateSlug(data.slug)
+    : await generateUniqueTuinposterCategorySlug(name);
+
+  const category = await prisma.tuinposterCategory.create({
+    data: {
+      name,
+      slug,
+      isActive: data.isActive ?? true,
+    },
+  });
+
+  return category;
+};
+
+const getAllTuinposterCategories = async () => {
+  const categories = await prisma.tuinposterCategory.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return categories;
+};
+
+const updateTuinposterCategory = async (
+  id: string,
+  data: Partial<{
+    name: string;
+    slug: string;
+    isActive: boolean;
+  }>,
+) => {
+  const isExist = await prisma.tuinposterCategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Tuinpostercategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const updateData: any = {};
+
+  if (data.name !== undefined) {
+    const name = data.name.trim();
+    if (!name) {
+      throw new AppError("Categorienaam is verplicht", httpStatus.BAD_REQUEST);
+    }
+    updateData.name = name;
+  }
+
+  if (data.slug !== undefined) {
+    updateData.slug = await generateUniqueTuinposterCategorySlug(data.slug, id);
+  } else if (data.name !== undefined && data.name !== isExist.name) {
+    updateData.slug = await generateUniqueTuinposterCategorySlug(data.name, id);
+  }
+
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  const category = await prisma.tuinposterCategory.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return category;
+};
+
+const deleteTuinposterCategory = async (id: string) => {
+  const isExist = await prisma.tuinposterCategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Tuinpostercategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.banner.updateMany({
+      where: {
+        tuinposterCategoryId: id,
+      },
+      data: {
+        tuinposterCategoryId: null,
+      },
+    });
+
+    await tx.tuinposterCategory.delete({
+      where: { id },
+    });
+  });
+
+  return true;
+};
+
+const resolveTuinposterCategory = async (parsedData: any) => {
+  if (parsedData.tuinposterCategoryId || parsedData.categoryId) {
+    const category = await prisma.tuinposterCategory.findUnique({
+      where: { id: parsedData.tuinposterCategoryId || parsedData.categoryId },
+    });
+
+    if (!category) {
+      throw new AppError("Tuinposter categorie niet gevonden", httpStatus.NOT_FOUND);
+    }
+
+    return category;
+  }
+
+  const categorySlug = parsedData.tuinposterCategorySlug || parsedData.category;
+  if (categorySlug) {
+    return prisma.tuinposterCategory.findFirst({
+      where: {
+        slug: categorySlug,
+      },
+    });
+  }
+
+  return null;
+};
+
 const resolveTemplateCategory = async (parsedData: any) => {
   if (parsedData.templateCategoryId || parsedData.categoryId) {
     const category = await prisma.templateCategory.findUnique({
@@ -1116,16 +1277,28 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
 
   const headline = parsedData.headline || "Template Headline";
   const slug = await generateUniqueBannerSlug(parsedData.slug || headline);
-  const templateCategory = await resolveTemplateCategory(parsedData);
+  
+  let templateCategory = null;
+  let tuinCategory = null;
+  if (isReadymade) {
+    tuinCategory = await resolveTuinposterCategory(parsedData);
+  } else {
+    templateCategory = await resolveTemplateCategory(parsedData);
+  }
+
+  const sku = file ? (file.originalname ? path.parse(file.originalname).name : null) : (parsedData.sku || null);
 
   const template = await prisma.banner.create({
     data: {
       templateCategoryId: templateCategory?.id || null,
-      templateCategoryIds: parsedData.categoryIds || (templateCategory?.id ? [templateCategory.id] : []),
-      occasion: parsedData.occasion || templateCategory?.slug || "custom",
+      templateCategoryIds: !isReadymade ? (parsedData.categoryIds || (templateCategory?.id ? [templateCategory.id] : [])) : [],
+      tuinposterCategoryId: tuinCategory?.id || null,
+      tuinposterCategoryIds: isReadymade ? (parsedData.categoryIds || (tuinCategory?.id ? [tuinCategory.id] : [])) : [],
+      occasion: parsedData.occasion || templateCategory?.slug || tuinCategory?.slug || "custom",
       style: parsedData.style || "Template",
       headline,
       slug,
+      sku,
       name: parsedData.name || null,
       description: parsedData.description || null,
       sizeType: parsedData.sizeType || "custom",
@@ -1166,27 +1339,56 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     parsedData = JSON.parse(payload.data || payload);
   }
 
+  const isReadymade = parsedData.isReadymade !== undefined
+    ? (parsedData.isReadymade === true || parsedData.isReadymade === "true")
+    : isExist.isReadymade;
+
   const updateData: any = {};
 
   if (parsedData.occasion !== undefined) updateData.occasion = parsedData.occasion;
+  if (parsedData.sku !== undefined) updateData.sku = parsedData.sku;
+  if (file) {
+    updateData.sku = file.originalname ? path.parse(file.originalname).name : null;
+  }
+
   if (parsedData.categoryIds !== undefined) {
-    updateData.templateCategoryIds = parsedData.categoryIds;
-    updateData.templateCategoryId = parsedData.categoryIds[0] || null;
+    if (isReadymade) {
+      updateData.tuinposterCategoryIds = parsedData.categoryIds;
+      updateData.tuinposterCategoryId = parsedData.categoryIds[0] || null;
+      updateData.templateCategoryIds = [];
+      updateData.templateCategoryId = null;
+    } else {
+      updateData.templateCategoryIds = parsedData.categoryIds;
+      updateData.templateCategoryId = parsedData.categoryIds[0] || null;
+      updateData.tuinposterCategoryIds = [];
+      updateData.tuinposterCategoryId = null;
+    }
   } else if (
     parsedData.templateCategoryId !== undefined ||
     parsedData.categoryId !== undefined ||
     parsedData.templateCategorySlug !== undefined ||
-    parsedData.category !== undefined
+    parsedData.category !== undefined ||
+    parsedData.tuinposterCategoryId !== undefined ||
+    parsedData.tuinposterCategorySlug !== undefined
   ) {
-    const templateCategory = await resolveTemplateCategory(parsedData);
-    updateData.templateCategoryId = templateCategory?.id || null;
-    if (templateCategory) {
-      updateData.templateCategoryIds = [templateCategory.id];
-    } else {
+    if (isReadymade) {
+      const tuinCategory = await resolveTuinposterCategory(parsedData);
+      updateData.tuinposterCategoryId = tuinCategory?.id || null;
+      updateData.tuinposterCategoryIds = tuinCategory ? [tuinCategory.id] : [];
+      updateData.templateCategoryId = null;
       updateData.templateCategoryIds = [];
-    }
-    if (parsedData.occasion === undefined && templateCategory) {
-      updateData.occasion = templateCategory.slug;
+      if (parsedData.occasion === undefined && tuinCategory) {
+        updateData.occasion = tuinCategory.slug;
+      }
+    } else {
+      const templateCategory = await resolveTemplateCategory(parsedData);
+      updateData.templateCategoryId = templateCategory?.id || null;
+      updateData.templateCategoryIds = templateCategory ? [templateCategory.id] : [];
+      updateData.tuinposterCategoryId = null;
+      updateData.tuinposterCategoryIds = [];
+      if (parsedData.occasion === undefined && templateCategory) {
+        updateData.occasion = templateCategory.slug;
+      }
     }
   }
   if (parsedData.style !== undefined) updateData.style = parsedData.style;
@@ -1245,10 +1447,6 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     const finalPrice = Math.max(calculatedPrice, 12);
     updateData.price = Number(finalPrice.toFixed(2));
   }
-
-  const isReadymade = parsedData.isReadymade !== undefined
-    ? (parsedData.isReadymade === true || parsedData.isReadymade === "true")
-    : isExist.isReadymade;
 
   updateData.isReadymade = isReadymade;
 
@@ -1387,24 +1585,48 @@ const getAllTemplates = async (
   };
 
   if (categoryId) {
-    where.OR = [
-      { templateCategoryId: categoryId },
-      { templateCategoryIds: { has: categoryId } },
-    ];
-  } else if (category) {
-    const templateCategory = await prisma.templateCategory.findFirst({
-      where: {
-        slug: category,
-      },
-    });
-
-    if (templateCategory) {
+    if (isReadymade) {
       where.OR = [
-        { templateCategoryId: templateCategory.id },
-        { templateCategoryIds: { has: templateCategory.id } },
+        { tuinposterCategoryId: categoryId },
+        { tuinposterCategoryIds: { has: categoryId } },
       ];
     } else {
-      where.occasion = category;
+      where.OR = [
+        { templateCategoryId: categoryId },
+        { templateCategoryIds: { has: categoryId } },
+      ];
+    }
+  } else if (category) {
+    if (isReadymade) {
+      const tuinCategory = await prisma.tuinposterCategory.findFirst({
+        where: {
+          slug: category,
+        },
+      });
+
+      if (tuinCategory) {
+        where.OR = [
+          { tuinposterCategoryId: tuinCategory.id },
+          { tuinposterCategoryIds: { has: tuinCategory.id } },
+        ];
+      } else {
+        where.occasion = category;
+      }
+    } else {
+      const templateCategory = await prisma.templateCategory.findFirst({
+        where: {
+          slug: category,
+        },
+      });
+
+      if (templateCategory) {
+        where.OR = [
+          { templateCategoryId: templateCategory.id },
+          { templateCategoryIds: { has: templateCategory.id } },
+        ];
+      } else {
+        where.occasion = category;
+      }
     }
   }
 
@@ -1500,6 +1722,10 @@ export const adminService = {
   getAllTemplateCategories,
   updateTemplateCategory,
   deleteTemplateCategory,
+  createTuinposterCategory,
+  getAllTuinposterCategories,
+  updateTuinposterCategory,
+  deleteTuinposterCategory,
   createTemplate,
   updateTemplate,
   deleteTemplate,
