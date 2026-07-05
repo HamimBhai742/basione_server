@@ -98,6 +98,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
   const occasion = req.query.occasion as string;
   const categoryId = req.query.categoryId as string;
   const category = req.query.category as string;
+  const searchTerm = req.query.searchTerm as string;
   const isReadymade = req.query.isReadymade === "true" ? true : req.query.isReadymade === "false" ? false : undefined;
   const result = await bannerService.getTemplates(
     page,
@@ -107,6 +108,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
     categoryId,
     category,
     isReadymade,
+    searchTerm,
   );
 
   sendResponse(res, {

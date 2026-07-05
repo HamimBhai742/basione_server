@@ -59,4 +59,8 @@ export default {
     defaultCountry: process.env.QLS_DEFAULT_COUNTRY || "NL",
     webhookSecret: process.env.QLS_WEBHOOK_SECRET as string,
   },
+  webwinkelkeur: {
+    shopId: process.env.WEBWINKELKEUR_SHOP_ID as string,
+    apiKey: process.env.WEBWINKELKEUR_API_KEY as string,
+  },
 };

@@ -46,42 +46,99 @@ const getBgPath = (): string => {
 export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer> => {
   try {
     const bgPath = getBgPath();
-    const width = 705;
-    const height = 469;
+    const originalWidth = 705;
+    const originalHeight = 469;
 
-    // Resize the input design image to fit inside the frame (413x192 pixels)
+    // Get input design image metadata to find aspect ratio
+    const bannerMetadata = await sharp(bannerBuffer).metadata();
+    const bannerWidth = bannerMetadata.width || 413;
+    const bannerHeight = bannerMetadata.height || 192;
+
+    // Frame bounding box inside tuinposter_bg.png
+    const frameLeft = 152;
+    const frameTop = 94;
+    const frameWidth = 413;
+    const frameHeight = 192;
+    const frameRatio = frameWidth / frameHeight;
+
+    // Calculate poster dimensions maintaining aspect ratio
+    const designRatio = bannerWidth / bannerHeight;
+    let newWidth = frameWidth;
+    let newHeight = frameHeight;
+
+    if (designRatio > frameRatio) {
+      newWidth = frameWidth;
+      newHeight = Math.round(frameWidth / designRatio);
+    } else {
+      newHeight = frameHeight;
+      newWidth = Math.round(frameHeight * designRatio);
+    }
+
+    // Resize design banner
     const resizedBanner = await sharp(bannerBuffer)
-      .resize(413, 192, {
-        fit: "fill"
-      })
+      .resize(newWidth, newHeight, { fit: "fill" })
       .toBuffer();
 
-    // 1. Create a transparent base canvas of 705x469 and place the banner at the frame offset
+    // Calculate horizontal scale factor to shrink/adjust background frame width
+    const scaleX = newWidth / frameWidth;
+    const finalMockupWidth = Math.round(originalWidth * scaleX);
+
+    // Resize background image (tuinposter_bg.png) horizontally
+    const scaledBg = await sharp(bgPath)
+      .resize(finalMockupWidth, originalHeight, { fit: "fill" })
+      .toBuffer();
+
+    // Extract a tile of brick wall from the top of the scaled background image
+    // to fill any vertical cutout gaps (for panoramic banners)
+    const wallTile = await sharp(scaledBg)
+      .extract({ left: 0, top: 0, width: finalMockupWidth, height: 94 })
+      .resize(newWidth, frameHeight, { fit: "cover" })
+      .toBuffer();
+
+    // Position of the banner inside the wall tile
+    const bannerLeftInCutout = 0;
+    const bannerTopInCutout = Math.round((frameHeight - newHeight) / 2);
+
+    // Composite banner onto the wall tile
+    const cutoutContent = await sharp(wallTile)
+      .composite([
+        {
+          input: resizedBanner,
+          left: bannerLeftInCutout,
+          top: bannerTopInCutout
+        }
+      ])
+      .png()
+      .toBuffer();
+
+    const newFrameLeft = Math.round(frameLeft * scaleX);
+
+    // Create base canvas and composite cutoutContent
     const baseCanvas = await sharp({
       create: {
-        width,
-        height,
+        width: finalMockupWidth,
+        height: originalHeight,
         channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 }
       }
     })
     .composite([
       {
-        input: resizedBanner,
-        left: 152,
-        top: 94,
+        input: cutoutContent,
+        left: newFrameLeft,
+        top: frameTop
       }
     ])
     .png()
     .toBuffer();
 
-    // 2. Composite the transparent wall template background ON TOP of the base canvas
+    // Composite the scaled background on top
     const mockupBuffer = await sharp(baseCanvas)
       .composite([
         {
-          input: bgPath,
+          input: scaledBg,
           left: 0,
-          top: 0,
+          top: 0
         }
       ])
       .png()

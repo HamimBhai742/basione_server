@@ -14,6 +14,7 @@ import { shippingRoutes } from "../modules/shipping/shipping.routes";
 import { templateReviewRoutes } from "../modules/templateReview/templateReview.routes";
 import { contactRoutes } from "../modules/contact/contact.routes";
 import { svgMaskRoutes } from "../modules/svgMask/svgMask.routes";
+import { webwinkelkeurRoutes } from "../modules/webwinkelkeur/webwinkelkeur.routes";
 
 export const router = Router();
 
@@ -77,6 +78,10 @@ const routes = [
   {
     path: "/svg-mask",
     route: svgMaskRoutes,
+  },
+  {
+    path: "/webwinkelkeur",
+    route: webwinkelkeurRoutes,
   },
 ];
 

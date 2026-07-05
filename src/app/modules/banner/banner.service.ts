@@ -1128,6 +1128,7 @@ const getTemplates = async (
   categoryId?: string,
   category?: string,
   isReadymade?: boolean,
+  searchTerm?: string,
 ) => {
   const where: any = {
     isTemplate: true,
@@ -1184,6 +1185,24 @@ const getTemplates = async (
 
   if (occasion) {
     where.occasion = occasion;
+  }
+
+  if (searchTerm) {
+    const searchConditions = [
+      { headline: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } },
+      { occasion: { contains: searchTerm, mode: "insensitive" } },
+      { name: { contains: searchTerm, mode: "insensitive" } },
+    ];
+    if (where.OR) {
+      where.AND = [
+        { OR: where.OR },
+        { OR: searchConditions }
+      ];
+      delete where.OR;
+    } else {
+      where.OR = searchConditions;
+    }
   }
 
   const templates = await prisma.banner.findMany({
@@ -1313,6 +1332,9 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
       userId: req.user?.id || null,
       templateCategoryId: template.templateCategoryId || null,
       templateCategoryIds: template.templateCategoryIds || [],
+      tuinposterCategoryId: template.tuinposterCategoryId || null,
+      tuinposterCategoryIds: template.tuinposterCategoryIds || [],
+      sku: template.sku || null,
       sourceTemplateId: template.id,
       occasion: template.occasion,
       style: template.style,

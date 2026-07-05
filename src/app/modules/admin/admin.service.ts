@@ -18,6 +18,7 @@ import { generateUniqueBannerSlug } from "../banner/banner.service";
 import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
 import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 import { formatLabel } from "../../utils/formatLable";
+import { webwinkelkeurService } from "../webwinkelkeur/webwinkelkeur.service";
 
 const bannerListSelect = {
   id: true,
@@ -425,6 +426,7 @@ const manageOrder = async (
     });
 
     await sendDeliveredOrderReviewEmail(orderId);
+    await webwinkelkeurService.sendReviewInvitation(order);
   } else if (status === "cancelled") {
     await cancledOrder(orderId, "Bestelling geannuleerd door beheerder");
   } else if (status === "refunded") {
@@ -1578,6 +1580,7 @@ const getAllTemplates = async (
   categoryId?: string,
   category?: string,
   isReadymade?: boolean,
+  searchTerm?: string,
 ) => {
   const where: any = {
     isTemplate: true,
@@ -1632,6 +1635,24 @@ const getAllTemplates = async (
 
   if (occasion) {
     where.occasion = occasion;
+  }
+
+  if (searchTerm) {
+    const searchConditions = [
+      { headline: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } },
+      { occasion: { contains: searchTerm, mode: "insensitive" } },
+      { name: { contains: searchTerm, mode: "insensitive" } },
+    ];
+    if (where.OR) {
+      where.AND = [
+        { OR: where.OR },
+        { OR: searchConditions }
+      ];
+      delete where.OR;
+    } else {
+      where.OR = searchConditions;
+    }
   }
 
   const [templates, total] = await prisma.$transaction([
