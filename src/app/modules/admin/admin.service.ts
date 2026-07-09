@@ -890,6 +890,11 @@ const getSingleOrder = async (orderId: string) => {
       banner: true,
       addresses: true,
       payment: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 

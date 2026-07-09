@@ -4,6 +4,37 @@ import { bannerService, ICategory } from "./banner.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { calculatePagination } from "../../utils/calculatePagination";
+import axios from "axios";
+import { AppError } from "../../error/AppError";
+
+const downloadImage = catchAsync(async (req: Request, res: Response) => {
+  const { url, filename } = req.query;
+
+  if (!url) {
+    throw new AppError("Afbeelding URL is verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  // Fetch the image as a stream
+  const response = await axios({
+    method: "GET",
+    url: url as string,
+    responseType: "stream",
+  });
+
+  // Set Content-Disposition to force attachment download
+  const cleanFilename = (filename as string) || "ontwerp.png";
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${encodeURIComponent(cleanFilename)}"`
+  );
+
+  const contentType = response.headers["content-type"];
+  if (contentType) {
+    res.setHeader("Content-Type", contentType);
+  }
+
+  response.data.pipe(res);
+});
 
 const createBanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
@@ -178,4 +209,5 @@ export const bannerController = {
   getTuinposterCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
+  downloadImage,
 };
