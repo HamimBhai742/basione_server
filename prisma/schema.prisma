@@ -230,7 +230,7 @@ model Order {
   guestEmail          String?
   guestName           String?
   guestPhone          String?
-  guestOrderToken     String?   @unique
+  guestOrderToken     String?
   guestTokenExpiresAt DateTime?
 
   payment   Payment?

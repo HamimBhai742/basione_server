@@ -428,10 +428,18 @@ const createOrder = async (
 
           userId: userId || null,
           isGuest: isGuestOrder,
-          guestOrderToken: isGuestOrder ? generateGuestOrderToken() : null,
-          guestTokenExpiresAt: isGuestOrder ? getGuestOrderTokenExpiry() : null,
           bannerId: items[0].bannerId,
           trackingNumber,
+
+          // Only include guest token fields for actual guest orders.
+          // Passing `null` for a @unique field causes a constraint violation
+          // when multiple logged-in users place orders.
+          ...(isGuestOrder
+            ? {
+                guestOrderToken: generateGuestOrderToken(),
+                guestTokenExpiresAt: getGuestOrderTokenExpiry(),
+              }
+            : {}),
         },
       });
 
