@@ -28,6 +28,7 @@ interface CreatePaymentPayload {
   customerName: string;
   companyName?: string | null;
   customerEmail?: string;
+  method?: string;
 }
 
 const getMolliePaymentIdFromJSON = (paymentJSON: Prisma.JsonValue | null) => {
@@ -112,7 +113,7 @@ export const createPayment = async (
 ) => {
   const db = tx || prisma;
 
-  const { amount, orderId, customerName, companyName, customerEmail } = payload;
+  const { amount, orderId, customerName, companyName, customerEmail, method } = payload;
 
   const transactionId = generateTransactionId();
   const order = await db.order.findUnique({
@@ -165,14 +166,15 @@ export const createPayment = async (
       currency: "EUR",
       value: Number(amount).toFixed(2),
     },
+    ...(method ? { method: method as any } : {}),
 
     description: `Order #${orderId} - ${displayName}`,
 
-    redirectUrl: `http://localhost:3000/payment/success?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
+    redirectUrl: `https://spandoekprint.nl/payment/success?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 
-    webhookUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/api/v1/payment/mollie/webhook`,
+    webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
 
-    cancelUrl: `http://localhost:3000/payment/canceled?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
+    cancelUrl: `https://spandoekprint.nl/payment/canceled?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 
     metadata: {
       orderId,

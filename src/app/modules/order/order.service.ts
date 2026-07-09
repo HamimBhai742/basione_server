@@ -493,6 +493,7 @@ interface CheckOutPayload {
   zipCode: string;
   city: string;
   orderId?: string;
+  selectedPaymentMethod?: string;
 }
 
 const sanitizeString = (value?: string) => {
@@ -557,6 +558,15 @@ const validateCheckoutPayload = (payload: CheckOutPayload) => {
     zipCode,
     city,
   };
+};
+
+const mapToMollieMethod = (method?: string): string | undefined => {
+  if (!method) return undefined;
+  const m = method.toLowerCase();
+  if (["visa", "mastercard", "amex", "maestro"].includes(m)) {
+    return "creditcard";
+  }
+  return m;
 };
 
 const checkOut = async (
@@ -666,6 +676,7 @@ const checkOut = async (
       customerName: validatedAddress.name,
       companyName: validatedAddress.companyName,
       customerEmail: validatedAddress.email,
+      method: mapToMollieMethod(payload.selectedPaymentMethod),
     },
     order.userId || userId,
   );
