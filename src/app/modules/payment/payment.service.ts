@@ -362,6 +362,11 @@ const syncPaymentStatus = async (
               price: true,
             },
           },
+          items: {
+            include: {
+              banner: true,
+            },
+          },
           payment: {
             select: {
               id: true,
@@ -486,6 +491,11 @@ const paymentPaid = async (
       user: true,
       addresses: true,
       invoice: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 
@@ -650,16 +660,23 @@ const paymentPaid = async (
     orderDate: updatedOrder.createdAt.toLocaleString(),
     estimatedDelivery: updatedOrder.deliveryTime,
 
-    items: [
-      {
-        name: `${
-          formatLabel(updatedOrder.banner?.occasion || "custom") || "Custom"
-        } Banner`,
-        quantity: Number(updatedOrder.quantity || 1),
-        price: Number(updatedOrder.banner?.price || updatedOrder.total || 0),
-        imageUrl: updatedOrder.banner?.imageUrl || "",
-      },
-    ],
+    items: (updatedOrder as any).items && (updatedOrder as any).items.length > 0
+      ? (updatedOrder as any).items.map((item: any) => ({
+          name: `${formatLabel(item.banner?.occasion || "custom") || "Custom"} Banner`,
+          quantity: Number(item.quantity || 1),
+          price: Number(item.banner?.price || item.price || 0),
+          imageUrl: item.banner?.imageUrl || "",
+        }))
+      : [
+          {
+            name: `${
+              formatLabel(updatedOrder.banner?.occasion || "custom") || "Custom"
+            } Banner`,
+            quantity: Number(updatedOrder.quantity || 1),
+            price: Number(updatedOrder.banner?.price || updatedOrder.total || 0),
+            imageUrl: updatedOrder.banner?.imageUrl || "",
+          },
+        ],
 
     subtotal: Number(updatedOrder.subtotal || 0),
     deliveryFee: Number(updatedOrder.deliveryFee || 0),

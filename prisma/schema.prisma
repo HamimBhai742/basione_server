@@ -27,6 +27,7 @@ model User {
   addresses                  Address[]
   payments                   Payment[]
   templateReviews            TemplateReview[]
+  cartItems                  CartItem[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -121,6 +122,8 @@ model Banner {
   sourceTemplate   Banner? @relation("TemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   templateCopies    Banner[] @relation("TemplateCopies")
   templateReviews   TemplateReview[] @relation("TemplateReviews")
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
 
   svgMaskId   String?  @db.ObjectId
   svgMask     SvgMask? @relation("BannerToSvgMask", fields: [svgMaskId], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -216,8 +219,9 @@ model Order {
   status        OrderStatus   @default(pending)
   paymentStatus PaymentStatus @default(pending)
 
-  bannerId String
+  bannerId String? @db.ObjectId
   banner   Banner? @relation(fields: [bannerId], references: [id])
+  items    OrderItem[]
 
   userId String?
   user   User?  @relation(fields: [userId], references: [id])
@@ -558,4 +562,39 @@ model BackgroundImage {
   imageUrl  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bannerId   String   @db.ObjectId
+  banner     Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  quantity   Int      @default(1)
+  hasEyelets Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([bannerId])
+}
+
+model OrderItem {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String   @db.ObjectId
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  bannerId   String   @db.ObjectId
+  banner     Banner   @relation(fields: [bannerId], references: [id])
+  quantity   Int
+  hasEyelets Boolean  @default(false)
+  eyeletsFee Float    @default(0)
+  price      Float
+  subtotal   Float
+  priceExcludingVat Float
+  vatAmount         Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([bannerId])
 }

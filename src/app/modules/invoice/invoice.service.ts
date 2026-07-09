@@ -35,19 +35,19 @@ const getDesignNumberFromTrackingNumber = (trackingNumber?: string | null) => {
 
 export const generateAndSaveInvoice = async ({
   user,
-  order,
+  order: inputOrder,
   payment,
 }: GenerateInvoicePayload) => {
   try {
     console.log("generateAndSaveInvoice started:", {
-      orderId: order?.id,
+      orderId: inputOrder?.id,
       userId: user?.id,
       paymentId: payment?.id,
     });
 
     const existingInvoice = await prisma.invoice.findUnique({
       where: {
-        orderId: order.id,
+        orderId: inputOrder.id,
       },
     });
 
@@ -58,6 +58,25 @@ export const generateAndSaveInvoice = async ({
       });
 
       return existingInvoice;
+    }
+
+    let order = inputOrder as any;
+    if (!order.items) {
+      const fullOrder = await prisma.order.findUnique({
+        where: { id: inputOrder.id },
+        include: {
+          banner: true,
+          addresses: true,
+          items: {
+            include: {
+              banner: true,
+            },
+          },
+        },
+      });
+      if (fullOrder) {
+        order = fullOrder as any;
+      }
     }
 
     const invoiceNumber = await generateInvoiceNumber();
@@ -121,6 +140,26 @@ export const generateAndSaveInvoice = async ({
           order.id,
         size: order.banner?.size || null,
       },
+
+      items: order.items && order.items.length > 0
+        ? order.items.map((item: any, i: number) => {
+            const itemDesignNumber =
+              item.banner?.designNumber ||
+              (i === 0
+                ? getDesignNumberFromTrackingNumber(order.trackingNumber)
+                : `${getDesignNumberFromTrackingNumber(order.trackingNumber)}-${i + 1}`);
+            return {
+              name: `${formatLabel(item.banner?.occasion || "custom")} Banner`,
+              quantity: Number(item.quantity || 1),
+              unitPrice: Number(item.price || 0),
+              designType: "Uploaded / Generated design",
+              designFileName: item.banner?.fileName || null,
+              designNumber: itemDesignNumber,
+              designReference: itemDesignNumber || order.trackingNumber || item.id,
+              size: item.banner?.size || item.banner?.sizeLabel || null,
+            };
+          })
+        : undefined,
 
       pricing: {
         subtotal: Number(order.subtotal || 0),

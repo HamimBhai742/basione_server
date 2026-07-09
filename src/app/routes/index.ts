@@ -15,10 +15,15 @@ import { templateReviewRoutes } from "../modules/templateReview/templateReview.r
 import { contactRoutes } from "../modules/contact/contact.routes";
 import { svgMaskRoutes } from "../modules/svgMask/svgMask.routes";
 import { webwinkelkeurRoutes } from "../modules/webwinkelkeur/webwinkelkeur.routes";
+import { cartRoutes } from "../modules/cart/cart.routes";
 
 export const router = Router();
 
 const routes = [
+  {
+    path: "/cart",
+    route: cartRoutes,
+  },
   {
     path: "/user",
     route: userRoutes,

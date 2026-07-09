@@ -17,17 +17,25 @@ import {
   getGuestOrderTokenExpiry,
 } from "../../utils/guestOrderToken";
 
+
 type FrontendDeliveryType =
   | "standard-delivery"
   | "express-delivery"
   | "express-pickup"
   | "standard-pickup";
 
+interface CreateOrderPayloadItem {
+  bannerId: string;
+  quantity: number;
+  hasEyelets?: boolean;
+}
+
 interface CreateOrderPayload {
   deliveryType: FrontendDeliveryType;
   deliveryMethod?: "delivery" | "pickup";
-  quantity: number;
+  quantity?: number;
   bannerId?: string;
+  items?: CreateOrderPayloadItem[];
   termsAccepted: boolean;
 
   // Client requested default should be Yes.
@@ -240,11 +248,10 @@ const shouldMarkDesignAsOrdered = (banner: any, payload: CreateOrderPayload) => 
 
 const createOrder = async (
   userId: string | undefined,
-  bannerId: string,
+  bannerId: string | undefined,
   payload: CreateOrderPayload,
 ) => {
-  // Backend default true, because client requested rings option should be Yes by default.
-  const { deliveryType, quantity, hasEyelets = true } = payload;
+  const { deliveryType } = payload;
   const isGuestOrder =
     !userId || isTruthyFlag(payload.isGuest) || isTruthyFlag(payload.guest);
 
@@ -252,12 +259,14 @@ const createOrder = async (
     throw new AppError("Gebruikers-id is verplicht.", httpStatus.UNAUTHORIZED);
   }
 
-  if (!bannerId) {
-    throw new AppError("Banner-id is verplicht.", httpStatus.BAD_REQUEST);
-  }
+  const items = payload.items && payload.items.length > 0
+    ? payload.items
+    : bannerId
+      ? [{ bannerId, quantity: payload.quantity || 1, hasEyelets: payload.hasEyelets !== undefined ? payload.hasEyelets : true }]
+      : [];
 
-  if (!quantity || !Number.isInteger(quantity) || quantity < 1) {
-    throw new AppError("Aantal moet minstens 1 zijn.", httpStatus.BAD_REQUEST);
+  if (items.length === 0) {
+    throw new AppError("Geen producten opgegeven voor de bestelling.", httpStatus.BAD_REQUEST);
   }
 
   const selectedDeliveryOption = DELIVERY_OPTIONS[deliveryType];
@@ -269,114 +278,191 @@ const createOrder = async (
     );
   }
 
-  const banner = await prisma.banner.findUnique({
-    where: {
-      id: bannerId,
-    },
-  });
+  const orderItemsData: any[] = [];
+  let totalBannerPriceExclVat = 0;
+  let totalBannerVatAmount = 0;
+  let totalBannerPriceInclVat = 0;
 
-  if (!banner) {
-    throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
-  }
-
-  if (banner.userId && banner.userId !== userId) {
-    throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
-  }
-
-  // banner.price is already INCLUDING VAT
-  const bannerPrice = Number(banner.price);
-
-  if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
-    throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
-  }
-
-  // Eyelets fee is per banner (€3.50 incl. VAT each), so multiply by quantity
-  const eyeletsFee = hasEyelets ? EYELETS_FEE * quantity : 0;
-
-  const priceCalculation = calculateOrderPrice({
-    bannerPrice,
-    quantity,
-    deliveryFee: selectedDeliveryOption.fee,
-    eyeletsFee,
-  });
+  let totalEyeletsFeeExclVat = 0;
+  let totalEyeletsVatAmount = 0;
+  let totalEyeletsFeeInclVat = 0;
 
   const trackingNumber = await getNextOrderNumber();
-  const designNumber = getDesignNumberFromTrackingNumber(trackingNumber);
+  const baseDesignNumber = getDesignNumberFromTrackingNumber(trackingNumber);
   const orderedAt = new Date();
-  const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
-  const finalBannerImageUrl = await applyDesignNumberToBanner({
-    imageUrl: banner.imageUrl,
-    designNumber,
-    widthCm: banner.width,
-    heightCm: banner.height,
-  });
+
+  const bannerUpdates: Array<{ id: string; data: any }> = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const itemBannerId = item.bannerId;
+    const itemQuantity = item.quantity;
+    const itemHasEyelets = item.hasEyelets !== undefined ? item.hasEyelets : true;
+
+    if (!itemBannerId) {
+      throw new AppError("Banner-id is verplicht.", httpStatus.BAD_REQUEST);
+    }
+
+    if (!itemQuantity || !Number.isInteger(itemQuantity) || itemQuantity < 1) {
+      throw new AppError("Aantal moet minstens 1 zijn.", httpStatus.BAD_REQUEST);
+    }
+
+    const banner = await prisma.banner.findUnique({
+      where: {
+        id: itemBannerId,
+      },
+    });
+
+    if (!banner) {
+      throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
+    }
+
+    if (banner.userId && banner.userId !== userId) {
+      throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
+    }
+
+    const bannerPrice = Number(banner.price);
+
+    if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
+      throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
+    }
+
+    const eyeletsFee = itemHasEyelets ? EYELETS_FEE * itemQuantity : 0;
+
+    const bannerTotalPriceInclVat = roundToTwo(bannerPrice * itemQuantity);
+    const bannerPriceExclVat = getPriceExcludingVatFromIncludedVat(bannerTotalPriceInclVat);
+    const bannerVatAmount = getVatAmountFromIncludedVat(bannerTotalPriceInclVat);
+
+    const eyeletsFeeInclVat = roundToTwo(eyeletsFee);
+    const eyeletsFeeExclVat = getPriceExcludingVatFromIncludedVat(eyeletsFeeInclVat);
+    const eyeletsVatAmount = getVatAmountFromIncludedVat(eyeletsFeeInclVat);
+
+    const itemSubtotalInclVat = bannerTotalPriceInclVat + eyeletsFeeInclVat;
+    const itemExclVat = bannerPriceExclVat + eyeletsFeeExclVat;
+    const itemVat = bannerVatAmount + eyeletsVatAmount;
+
+    const designNumber = i === 0 ? baseDesignNumber : `${baseDesignNumber}-${i + 1}`;
+    const finalBannerImageUrl = await applyDesignNumberToBanner({
+      imageUrl: banner.imageUrl,
+      designNumber,
+      widthCm: banner.width,
+      heightCm: banner.height,
+    });
+
+    const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
+
+    orderItemsData.push({
+      bannerId: itemBannerId,
+      quantity: itemQuantity,
+      hasEyelets: itemHasEyelets,
+      eyeletsFee: roundToTwo(eyeletsFeeInclVat),
+      price: bannerPrice,
+      subtotal: roundToTwo(itemSubtotalInclVat),
+      priceExcludingVat: roundToTwo(itemExclVat),
+      vatAmount: roundToTwo(itemVat),
+    });
+
+    bannerUpdates.push({
+      id: itemBannerId,
+      data: {
+        ...(userId ? { userId } : {}),
+        designNumber,
+        imageUrl: finalBannerImageUrl,
+        ...(markDesignAsOrdered
+          ? {
+              isOrdered: true,
+              isSavedDesign: true,
+              savedFromEditor: true,
+              source: payload.source || banner.source || "saved_design_order",
+              designStatus: payload.designStatus || "ordered",
+              lifecycleStatus: payload.lifecycleStatus || "ordered",
+              orderedAt,
+            }
+          : {}),
+      },
+    });
+
+    totalBannerPriceExclVat += bannerPriceExclVat;
+    totalBannerVatAmount += bannerVatAmount;
+    totalBannerPriceInclVat += bannerTotalPriceInclVat;
+
+    totalEyeletsFeeExclVat += eyeletsFeeExclVat;
+    totalEyeletsVatAmount += eyeletsVatAmount;
+    totalEyeletsFeeInclVat += eyeletsFeeInclVat;
+  }
+
+  const deliveryFeeIncludingVat = roundToTwo(selectedDeliveryOption.fee);
+  const deliveryFeeExcludingVat = getPriceExcludingVatFromIncludedVat(deliveryFeeIncludingVat);
+  const deliveryVatAmount = getVatAmountFromIncludedVat(deliveryFeeIncludingVat);
+
+  const subtotal = roundToTwo(totalBannerPriceInclVat);
+  const priceExcludingVat = roundToTwo(
+    totalBannerPriceExclVat + totalEyeletsFeeExclVat + deliveryFeeExcludingVat
+  );
+  const vatAmount = roundToTwo(
+    totalBannerVatAmount + totalEyeletsVatAmount + deliveryVatAmount
+  );
+  const total = roundToTwo(
+    totalBannerPriceInclVat + totalEyeletsFeeInclVat + deliveryFeeIncludingVat
+  );
 
   const order = await prisma.$transaction(
     async (tx) => {
       const createdOrder = await tx.order.create({
         data: {
-          quantity,
-
+          quantity: items[0].quantity,
           deliveryType: selectedDeliveryOption.prismaDeliveryType,
           deliveryMethod: selectedDeliveryOption.method,
           deliveryLabel: selectedDeliveryOption.label,
-          deliveryFee: priceCalculation.deliveryFee,
+          deliveryFee: deliveryFeeIncludingVat,
           deliveryTime: selectedDeliveryOption.time,
 
-          hasEyelets,
-          eyeletsFee: priceCalculation.eyeletsFee,
+          hasEyelets: items[0].hasEyelets !== undefined ? items[0].hasEyelets : true,
+          eyeletsFee: orderItemsData[0].eyeletsFee,
 
-          // Banner price including VAT
-          subtotal: priceCalculation.subtotal,
-
-          /**
-           * Now this is full order price excluding VAT:
-           * banner + delivery + eyelets
-           */
-          priceExcludingVat: priceCalculation.priceExcludingVat,
-
-          vatRate: priceCalculation.vatRate,
-
-          /**
-           * Now this is full VAT amount:
-           * banner VAT + delivery VAT + eyelets VAT
-           */
-          vatAmount: priceCalculation.vatAmount,
-
-          // Final total stays same because all prices are already incl. VAT
-          total: priceCalculation.total,
+          subtotal,
+          priceExcludingVat,
+          vatRate: VAT_RATE,
+          vatAmount,
+          total,
 
           userId: userId || null,
           isGuest: isGuestOrder,
           guestOrderToken: isGuestOrder ? generateGuestOrderToken() : null,
           guestTokenExpiresAt: isGuestOrder ? getGuestOrderTokenExpiry() : null,
-          bannerId,
+          bannerId: items[0].bannerId,
           trackingNumber,
         },
       });
 
-      await tx.banner.update({
-        where: {
-          id: bannerId,
-        },
-        data: {
-          ...(userId ? { userId } : {}),
-          designNumber,
-          imageUrl: finalBannerImageUrl,
-          ...(markDesignAsOrdered
-            ? {
-                isOrdered: true,
-                isSavedDesign: true,
-                savedFromEditor: true,
-                source: payload.source || banner.source || "saved_design_order",
-                designStatus: payload.designStatus || "ordered",
-                lifecycleStatus: payload.lifecycleStatus || "ordered",
-                orderedAt,
-                orderId: createdOrder.id,
-              }
-            : {}),
-        },
-      });
+      for (const itemData of orderItemsData) {
+        await tx.orderItem.create({
+          data: {
+            ...itemData,
+            orderId: createdOrder.id,
+          },
+        });
+      }
+
+      for (const update of bannerUpdates) {
+        await tx.banner.update({
+          where: {
+            id: update.id,
+          },
+          data: {
+            ...update.data,
+            orderId: createdOrder.id,
+          },
+        });
+      }
+
+      if (userId) {
+        await tx.cartItem.deleteMany({
+          where: {
+            userId,
+          },
+        });
+      }
 
       return createdOrder;
     },
@@ -513,7 +599,7 @@ const checkOut = async (
 
   const banner = await prisma.banner.findUnique({
     where: {
-      id: order.bannerId,
+      id: order.bannerId || undefined,
     },
   });
 
@@ -628,6 +714,11 @@ const getMyOrders = async (
       banner: true,
       payment: true,
       templateReview: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
     orderBy: {
       updatedAt: "desc",
@@ -735,6 +826,11 @@ const getSingleOrder = async (orderId: string, userId: string) => {
       addresses: true,
       payment: true,
       templateReview: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 
@@ -751,10 +847,16 @@ const getGuestOrder = async (orderId: string, token?: string) => {
       id: orderId,
     },
     include: {
+      user: true,
       banner: true,
       addresses: true,
       payment: true,
       templateReview: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 
@@ -781,6 +883,11 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
       user: true,
       banner: true,
       addresses: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 

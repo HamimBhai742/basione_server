@@ -49,6 +49,18 @@ type InvoicePdfPayload = {
     size?: string | null;
   };
 
+  items?: Array<{
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    imageUrl?: string | null;
+    designType?: string | null;
+    designFileName?: string | null;
+    designNumber?: string | null;
+    designReference?: string | null;
+    size?: string | null;
+  }>;
+
   pricing: {
     subtotal: number;
     deliveryFee: number;
@@ -267,26 +279,14 @@ export const generateInvoicePdf = async (
         payload.order?.orderId ||
         payload.orderId;
 
-      const designNumber =
-        payload.banner.designNumber ||
-        getDesignNumberFromReference(
-          payload.order?.trackingNumber ||
-            payload.order?.orderNumber ||
-            payload.orderId,
-        );
-
-      const designFileName = payload.banner.designFileName || "Niet toegevoegd";
-      const designType = payload.banner.designType || "Ontwerp referentie";
-      const bannerSize = payload.banner.size || "Maatwerk formaat";
-
       // ── Background ─────────────────────────────────────────────────────────
       doc.rect(0, 0, PAGE_W, PAGE_H).fill(COLOR.white);
 
-      // ── Header: NO LOGO, NO WHITE BOX ──────────────────────────────────────
+      // ── Header ─────────────────────────────────────────────────────────────
       doc.rect(0, 0, PAGE_W, HEADER_H).fill(COLOR.brand);
       doc.rect(0, HEADER_H - 5, PAGE_W, 5).fill(COLOR.accent);
 
-      // Company info only
+      // Company info
       doc
         .font("Helvetica-Bold")
         .fontSize(17)
@@ -394,7 +394,6 @@ export const generateInvoicePdf = async (
       ].filter(Boolean) as string[];
 
       const addr = payload.shippingAddress;
-
       const addrLines = [
         addr.companyName,
         `${addr.street ?? ""} ${addr.houseNumber ?? ""}`.trim(),
@@ -428,9 +427,16 @@ export const generateInvoicePdf = async (
       sectionTitle(doc, "Bestelling", y);
       y += 24;
 
-      doc.roundedRect(40, y, 515, 112, 10).fill(COLOR.light);
+      const invoiceItems = payload.items && payload.items.length > 0
+        ? payload.items
+        : [payload.banner];
+
+      const itemHeight = 45;
+      const boxHeight = 25 + invoiceItems.length * itemHeight;
+
+      doc.roundedRect(40, y, 515, boxHeight, 10).fill(COLOR.light);
       doc
-        .roundedRect(40, y, 515, 112, 10)
+        .roundedRect(40, y, 515, boxHeight, 10)
         .strokeColor(COLOR.divider)
         .lineWidth(0.7)
         .stroke();
@@ -448,119 +454,63 @@ export const generateInvoicePdf = async (
           width: 120,
         });
 
-      hRule(doc, tableTop + 14, COLOR.divider, 56, 539);
+      hRule(doc, tableTop + 12, COLOR.divider, 56, 539);
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(10)
-        .fillColor(COLOR.dark)
-        .text(safeText(payload.banner.name), 56, tableTop + 27, {
-          width: 280,
-          ellipsis: true,
-        });
+      let currentItemTop = tableTop + 18;
 
-      doc
-        .font("Helvetica")
-        .fontSize(7.8)
-        .fillColor(COLOR.grey)
-        .text("Spandoek op maat", 56, tableTop + 40, {
-          width: 280,
-          ellipsis: true,
-        });
+      invoiceItems.forEach((item, index) => {
+        if (index > 0) {
+          hRule(doc, currentItemTop - 4, COLOR.divider, 56, 539);
+        }
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(10)
-        .fillColor(COLOR.body)
-        .text(String(payload.banner.quantity || 1), 365, tableTop + 30);
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(9)
+          .fillColor(COLOR.dark)
+          .text(safeText(item.name), 56, currentItemTop, {
+            width: 280,
+            ellipsis: true,
+          });
 
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(10)
-        .fillColor(COLOR.dark)
-        .text(formatCurrency(payload.banner.unitPrice), 416, tableTop + 30, {
-          align: "right",
-          width: 120,
-        });
+        const designRef = item.designNumber || item.designReference || "Niet toegevoegd";
+        const detailsText = `Spandoek op maat • Formaat: ${safeText(item.size || "Maatwerk")} • Design ref: ${safeText(designRef)}`;
 
-      // Design / Order reference area
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(7.3)
-        .fillColor(COLOR.brand)
-        .text("Order / Design referentie", 56, tableTop + 58, {
-          width: 180,
-          ellipsis: true,
-        });
+        doc
+          .font("Helvetica")
+          .fontSize(7)
+          .fillColor(COLOR.grey)
+          .text(detailsText, 56, currentItemTop + 12, {
+            width: 280,
+            ellipsis: true,
+          });
 
-      doc
-        .font("Helvetica")
-        .fontSize(7.1)
-        .fillColor(COLOR.grey)
-        .text(`Design nummer: ${safeText(designNumber)}`, 56, tableTop + 72, {
-          width: 230,
-          ellipsis: true,
-        });
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(9)
+          .fillColor(COLOR.body)
+          .text(String(item.quantity || 1), 365, currentItemTop + 4);
 
-      doc
-        .font("Helvetica")
-        .fontSize(7.1)
-        .fillColor(COLOR.grey)
-        .text(`Order referentie: ${safeText(displayOrderNumber)}`, 56, tableTop + 84, {
-          width: 230,
-          ellipsis: true,
-        });
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(9)
+          .fillColor(COLOR.dark)
+          .text(formatCurrency(item.unitPrice), 416, currentItemTop + 4, {
+            align: "right",
+            width: 120,
+          });
 
-      doc
-        .font("Helvetica")
-        .fontSize(7.1)
-        .fillColor(COLOR.grey)
-        .text(`Type: ${safeText(designType)}`, 300, tableTop + 60, {
-          width: 230,
-          ellipsis: true,
-        });
+        currentItemTop += itemHeight;
+      });
 
-      doc
-        .font("Helvetica")
-        .fontSize(7.1)
-        .fillColor(COLOR.grey)
-        .text(`Formaat: ${safeText(bannerSize)}`, 300, tableTop + 72, {
-          width: 230,
-          ellipsis: true,
-        });
-
-      doc
-        .font("Helvetica")
-        .fontSize(7.1)
-        .fillColor(COLOR.grey)
-        .text(`Design bestand: ${safeText(designFileName)}`, 300, tableTop + 84, {
-          width: 230,
-          ellipsis: true,
-        });
-
-      doc
-        .font("Helvetica")
-        .fontSize(6.5)
-        .fillColor(COLOR.muted)
-        .text(
-          "Het volledige ontwerpbestand is niet toegevoegd aan deze factuur om de factuur snel en betrouwbaar te genereren.",
-          56,
-          tableTop + 99,
-          {
-            width: 470,
-            lineGap: 1,
-          },
-        );
-
-      y += 132;
+      y = tableTop + boxHeight + 20;
 
       // ── Pricing Section ────────────────────────────────────────────────────
       sectionTitle(doc, "Prijsberekening", y);
       y += 24;
 
-      doc.roundedRect(40, y, 515, 156, 10).fill(COLOR.white);
+      doc.roundedRect(40, y, 515, 120, 10).fill(COLOR.white);
       doc
-        .roundedRect(40, y, 515, 156, 10)
+        .roundedRect(40, y, 515, 120, 10)
         .strokeColor(COLOR.divider)
         .lineWidth(0.7)
         .stroke();
@@ -569,7 +519,7 @@ export const generateInvoicePdf = async (
       const vatRate = formatVatRate(payload.pricing.vatRate);
 
       const priceRows: [string, number][] = [
-        ["Spandoek incl. BTW", payload.pricing.subtotal],
+        ["Subtotaal spandoeken incl. BTW", payload.pricing.subtotal],
         ["Levering / Afhalen incl. BTW", payload.pricing.deliveryFee],
         ["Ringen / Eyelets incl. BTW", payload.pricing.eyeletsFee],
         [`Totaal excl. ${vatRate}% BTW`, payload.pricing.priceExcludingVat],
@@ -589,26 +539,26 @@ export const generateInvoicePdf = async (
 
       hRule(doc, priceY + 2, COLOR.divider, 56, 539);
 
-      doc.roundedRect(56, priceY + 12, 483, 36, 8).fill(COLOR.brand);
+      doc.roundedRect(56, priceY + 10, 483, 26, 6).fill(COLOR.brand);
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(11)
+        .fontSize(10)
         .fillColor(COLOR.white)
-        .text("Totaal incl. BTW", 72, priceY + 24);
+        .text("Totaal incl. BTW", 72, priceY + 18);
 
       doc
         .font("Helvetica-Bold")
-        .fontSize(11)
+        .fontSize(10)
         .fillColor(COLOR.white)
-        .text(formatCurrency(payload.pricing.total), 392, priceY + 24, {
+        .text(formatCurrency(payload.pricing.total), 392, priceY + 18, {
           align: "right",
           width: 130,
         });
 
-      y += 176;
+      y = priceY + 45;
 
-      // ── Payment Section ────────────────────────────────────────────────────
+      // ── Betaling Section ───────────────────────────────────────────────────
       sectionTitle(doc, "Betaling", y);
       y += 24;
 
