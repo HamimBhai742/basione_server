@@ -203,6 +203,7 @@ model Order {
   deliveryMethod DeliveryMethod
   deliveryLabel  String?
   deliveryTime   String
+  estimatedDeliveryDate String?
   deliveryFee    Float          @default(0)
 
   hasEyelets Boolean @default(false)

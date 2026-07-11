@@ -16,6 +16,7 @@ import {
   generateGuestOrderToken,
   getGuestOrderTokenExpiry,
 } from "../../utils/guestOrderToken";
+import { calculateDeliveryDate } from "../../utils/deliveryCalculator";
 
 
 type FrontendDeliveryType =
@@ -406,6 +407,8 @@ const createOrder = async (
     totalBannerPriceInclVat + totalEyeletsFeeInclVat + deliveryFeeIncludingVat
   );
 
+  const { formattedRange } = calculateDeliveryDate(deliveryType);
+
   const order = await prisma.$transaction(
     async (tx) => {
       const createdOrder = await tx.order.create({
@@ -414,8 +417,9 @@ const createOrder = async (
           deliveryType: selectedDeliveryOption.prismaDeliveryType,
           deliveryMethod: selectedDeliveryOption.method,
           deliveryLabel: selectedDeliveryOption.label,
-          deliveryFee: deliveryFeeIncludingVat,
           deliveryTime: selectedDeliveryOption.time,
+          estimatedDeliveryDate: formattedRange,
+          deliveryFee: deliveryFeeIncludingVat,
 
           hasEyelets: items[0].hasEyelets !== undefined ? items[0].hasEyelets : true,
           eyeletsFee: orderItemsData[0].eyeletsFee,

@@ -660,7 +660,7 @@ const paymentPaid = async (
     orderId: updatedOrder.trackingNumber || orderId,
     dbOrderId: updatedOrder.id,
     orderDate: updatedOrder.createdAt.toLocaleString(),
-    estimatedDelivery: updatedOrder.deliveryTime,
+    estimatedDelivery: updatedOrder.estimatedDeliveryDate || updatedOrder.deliveryTime,
 
     items: (updatedOrder as any).items && (updatedOrder as any).items.length > 0
       ? (updatedOrder as any).items.map((item: any) => ({
