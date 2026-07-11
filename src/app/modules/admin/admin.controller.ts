@@ -96,7 +96,8 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 const dashboardStats = catchAsync(async (req: Request, res: Response) => {
-  const stats = await adminService.dashboardStats();
+  const range = req.query.range as string;
+  const stats = await adminService.dashboardStats(range);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

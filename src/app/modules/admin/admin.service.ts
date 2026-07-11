@@ -624,29 +624,78 @@ const updateUserStatus = async (
   return user;
 };
 
-const dashboardStats = async () => {
-  const totalUsers = await prisma.user.count();
+const dashboardStats = async (range?: string) => {
+  const now = new Date();
+  const dateFilter: any = {};
+  if (range === "today") {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    dateFilter.gte = startOfToday;
+  } else if (range === "7d") {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    dateFilter.gte = sevenDaysAgo;
+  } else if (range === "30d") {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+    dateFilter.gte = thirtyDaysAgo;
+  }
+
+  const totalUsers = await prisma.user.count({
+    where: dateFilter.gte ? { createdAt: dateFilter } : {},
+  });
   const totalActiveUsers = await prisma.user.count({
     where: {
       status: "active",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
 
-  const totalOrders = await prisma.order.count();
+  const totalOrders = await prisma.order.count({
+    where: dateFilter.gte ? { createdAt: dateFilter } : {},
+  });
   const totalDeliveredOrders = await prisma.order.count({
     where: {
       status: "delivered",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
   const totalProcessingOrders = await prisma.order.count({
     where: {
       status: "processing",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
-
   const totalcancelledOrders = await prisma.order.count({
     where: {
       status: "cancelled",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalPendingOrders = await prisma.order.count({
+    where: {
+      status: "pending",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalReadyOrders = await prisma.order.count({
+    where: {
+      status: "ready",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalShippedOrders = await prisma.order.count({
+    where: {
+      status: "shipped",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalRefundedOrders = await prisma.order.count({
+    where: {
+      status: "refunded",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
 
@@ -656,16 +705,281 @@ const dashboardStats = async () => {
     },
     where: {
       status: "delivered",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
 
-  const totalDeliveredRevenue = totalRevenueData._sum.total || 0;
+  const totalDeliveredRevenue = Math.round((totalRevenueData._sum.total || 0) * 100) / 100;
   const totalCancelledRevenueData = await prisma.order.aggregate({
     _sum: {
       total: true,
     },
     where: {
       status: "cancelled",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalCancelledRevenue = Math.round((totalCancelledRevenueData._sum.total || 0) * 100) / 100;
+
+  const totalRefundedRevenueData = await prisma.order.aggregate({
+    _sum: {
+      total: true,
+    },
+    where: {
+      status: "refunded",
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalRefundedRevenue = Math.round((totalRefundedRevenueData._sum.total || 0) * 100) / 100;
+
+  // Sales trend logic depending on range
+  let salesTrend: { month: string; revenue: number }[] = [];
+
+  if (range === "today") {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const todayOrders = await prisma.order.findMany({
+      where: {
+        status: "delivered",
+        createdAt: { gte: startOfToday },
+      },
+      select: {
+        total: true,
+        createdAt: true,
+      },
+    });
+
+    const salesTrendMap: Record<string, number> = {};
+    for (let i = 0; i < 24; i++) {
+      const hourStr = `${String(i).padStart(2, "0")}:00`;
+      salesTrendMap[hourStr] = 0;
+    }
+
+    todayOrders.forEach((order) => {
+      const hour = new Date(order.createdAt).getHours();
+      const hourStr = `${String(hour).padStart(2, "0")}:00`;
+      if (salesTrendMap[hourStr] !== undefined) {
+        salesTrendMap[hourStr] += order.total || 0;
+      }
+    });
+
+    salesTrend = Object.entries(salesTrendMap).map(([label, revenue]) => ({
+      month: label,
+      revenue: Math.round(revenue * 100) / 100,
+    }));
+  } else if (range === "7d") {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const last7DaysOrders = await prisma.order.findMany({
+      where: {
+        status: "delivered",
+        createdAt: { gte: sevenDaysAgo },
+      },
+      select: {
+        total: true,
+        createdAt: true,
+      },
+    });
+
+    const weekdays = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
+    const salesTrendMap: Record<string, number> = {};
+    const orderedLabels: string[] = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const label = `${d.getDate()} ${weekdays[d.getDay()]}`;
+      salesTrendMap[label] = 0;
+      orderedLabels.push(label);
+    }
+
+    last7DaysOrders.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const label = `${d.getDate()} ${weekdays[d.getDay()]}`;
+      if (salesTrendMap[label] !== undefined) {
+        salesTrendMap[label] += order.total || 0;
+      }
+    });
+
+    salesTrend = orderedLabels.map((label) => ({
+      month: label,
+      revenue: Math.round(salesTrendMap[label] * 100) / 100,
+    }));
+  } else if (range === "30d") {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const last30DaysOrders = await prisma.order.findMany({
+      where: {
+        status: "delivered",
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      select: {
+        total: true,
+        createdAt: true,
+      },
+    });
+
+    const salesTrendMap: Record<string, number> = {};
+    const orderedLabels: string[] = [];
+
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const label = `${d.getDate()}-${d.getMonth() + 1}`;
+      salesTrendMap[label] = 0;
+      orderedLabels.push(label);
+    }
+
+    last30DaysOrders.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const label = `${d.getDate()}-${d.getMonth() + 1}`;
+      if (salesTrendMap[label] !== undefined) {
+        salesTrendMap[label] += order.total || 0;
+      }
+    });
+
+    salesTrend = orderedLabels.map((label) => ({
+      month: label,
+      revenue: Math.round(salesTrendMap[label] * 100) / 100,
+    }));
+  } else {
+    // Monthly Sales trend for last 6 months (All-time or default)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const monthlyOrders = await prisma.order.findMany({
+      where: {
+        status: "delivered",
+        createdAt: {
+          gte: sixMonthsAgo,
+        },
+      },
+      select: {
+        total: true,
+        createdAt: true,
+      },
+    });
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+    const salesTrendMap: Record<string, number> = {};
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthName = months[d.getMonth()];
+      salesTrendMap[monthName] = 0;
+    }
+
+    monthlyOrders.forEach((order) => {
+      const monthName = months[new Date(order.createdAt).getMonth()];
+      if (salesTrendMap[monthName] !== undefined) {
+        salesTrendMap[monthName] += order.total || 0;
+      }
+    });
+
+    salesTrend = Object.entries(salesTrendMap).map(([month, revenue]) => ({
+      month,
+      revenue: Math.round(revenue * 100) / 100,
+    }));
+  }
+
+  // Trends calculation (Month-over-Month)
+  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+  // Revenue MoM
+  const currentMonthRevenueData = await prisma.order.aggregate({
+    _sum: { total: true },
+    where: {
+      status: "delivered",
+      createdAt: { gte: startOfCurrentMonth },
+    },
+  });
+  const currentMonthRevenue = currentMonthRevenueData._sum.total || 0;
+
+  const lastMonthRevenueData = await prisma.order.aggregate({
+    _sum: { total: true },
+    where: {
+      status: "delivered",
+      createdAt: {
+        gte: startOfLastMonth,
+        lte: endOfLastMonth,
+      },
+    },
+  });
+  const lastMonthRevenue = lastMonthRevenueData._sum.total || 0;
+
+  // Orders MoM
+  const currentMonthOrders = await prisma.order.count({
+    where: { createdAt: { gte: startOfCurrentMonth } },
+  });
+  const lastMonthOrders = await prisma.order.count({
+    where: {
+      createdAt: {
+        gte: startOfLastMonth,
+        lte: endOfLastMonth,
+      },
+    },
+  });
+
+  // Users MoM
+  const currentMonthUsers = await prisma.user.count({
+    where: { createdAt: { gte: startOfCurrentMonth } },
+  });
+  const lastMonthUsers = await prisma.user.count({
+    where: {
+      createdAt: {
+        gte: startOfLastMonth,
+        lte: endOfLastMonth,
+      },
+    },
+  });
+
+  const getPercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  const revenueTrendVal = getPercentageChange(currentMonthRevenue, lastMonthRevenue);
+  const ordersTrendVal = getPercentageChange(currentMonthOrders, lastMonthOrders);
+  const usersTrendVal = getPercentageChange(currentMonthUsers, lastMonthUsers);
+
+  // Recent 5 Orders
+  const recentOrders = await prisma.order.findMany({
+    take: 5,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  // Recent 5 Users
+  const recentUsers = await prisma.user.findMany({
+    take: 5,
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+      createdAt: true,
     },
   });
 
@@ -676,8 +990,21 @@ const dashboardStats = async () => {
     totalDeliveredOrders,
     totalProcessingOrders,
     totalcancelledOrders,
+    totalPendingOrders,
+    totalReadyOrders,
+    totalShippedOrders,
+    totalRefundedOrders,
     totalDeliveredRevenue,
-    totalCancelledRevenue: totalCancelledRevenueData._sum.total || 0,
+    totalCancelledRevenue,
+    totalRefundedRevenue,
+    salesTrend,
+    recentOrders,
+    recentUsers,
+    trends: {
+      revenue: { value: Math.abs(revenueTrendVal), isUp: revenueTrendVal >= 0 },
+      orders: { value: Math.abs(ordersTrendVal), isUp: ordersTrendVal >= 0 },
+      users: { value: Math.abs(usersTrendVal), isUp: usersTrendVal >= 0 },
+    },
   };
 };
 
