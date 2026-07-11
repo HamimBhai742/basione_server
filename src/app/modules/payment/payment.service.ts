@@ -15,6 +15,7 @@ import {
   markInvoiceAsSent,
 } from "../invoice/invoice.service";
 import { OrderConfirmedEmailData } from "../../../type/interface";
+import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 type TransactionClient = Prisma.TransactionClient;
 type PaymentRequestUser = {
@@ -659,8 +660,8 @@ const paymentPaid = async (
 
     orderId: updatedOrder.trackingNumber || orderId,
     dbOrderId: updatedOrder.id,
-    orderDate: updatedOrder.createdAt.toLocaleString(),
-    estimatedDelivery: updatedOrder.estimatedDeliveryDate || updatedOrder.deliveryTime,
+    orderDate: formatAmsterdamDateTime(updatedOrder.createdAt),
+    estimatedDelivery: (updatedOrder as any).estimatedDeliveryDate || updatedOrder.deliveryTime,
 
     items: (updatedOrder as any).items && (updatedOrder as any).items.length > 0
       ? (updatedOrder as any).items.map((item: any) => ({

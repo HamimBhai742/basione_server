@@ -444,7 +444,7 @@ const createOrder = async (
                 guestTokenExpiresAt: getGuestOrderTokenExpiry(),
               }
             : {}),
-        },
+        } as any,
       });
 
       for (const itemData of orderItemsData) {

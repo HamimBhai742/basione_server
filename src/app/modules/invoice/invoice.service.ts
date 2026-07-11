@@ -4,6 +4,7 @@ import { generateInvoicePdf } from "./invoice.pdf";
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../error/AppError";
 import { uploadInvoicePdfToS3 } from "../../utils/savePdfInvoice";
+import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 type GenerateInvoicePayload = {
   user: any;
@@ -105,7 +106,7 @@ export const generateAndSaveInvoice = async ({
         country: "Nederland",
       },
 
-      orderDate: order.createdAt.toLocaleString(),
+      orderDate: formatAmsterdamDateTime(order.createdAt),
 
       customer: {
         name: order.addresses?.name || user?.name || order.guestName || "Customer",

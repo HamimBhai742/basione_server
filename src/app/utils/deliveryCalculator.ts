@@ -189,3 +189,19 @@ export const calculateDeliveryDate = (
     formattedRange,
   };
 };
+
+/**
+ * Formats a date to string using Europe/Amsterdam timezone and nl-NL locale
+ */
+export const formatAmsterdamDateTime = (date: Date): string => {
+  return new Intl.DateTimeFormat("nl-NL", {
+    timeZone: "Europe/Amsterdam",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+};
