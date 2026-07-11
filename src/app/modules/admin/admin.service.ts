@@ -983,10 +983,27 @@ const dashboardStats = async (range?: string) => {
     },
   });
 
+  const totalUndeliveredOrders = totalPendingOrders + totalProcessingOrders + totalReadyOrders + totalShippedOrders;
+
+  const totalUndeliveredRevenueData = await prisma.order.aggregate({
+    _sum: {
+      total: true,
+    },
+    where: {
+      status: {
+        in: ["pending", "processing", "ready", "shipped"],
+      },
+      ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
+    },
+  });
+  const totalUndeliveredRevenue = Math.round((totalUndeliveredRevenueData._sum.total || 0) * 100) / 100;
+
   return {
     totalUsers,
     totalActiveUsers,
     totalOrders,
+    totalUndeliveredOrders,
+    totalUndeliveredRevenue,
     totalDeliveredOrders,
     totalProcessingOrders,
     totalcancelledOrders,
