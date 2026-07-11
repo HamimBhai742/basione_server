@@ -10,36 +10,41 @@ import {
 import { validateRequest } from "../../middleware/validateRequest";
 import { checkAuth } from "../../middleware/checkAuth";
 import { upload } from "../../middleware/upload";
+import { authRateLimiter, otpRateLimiter } from "../../middleware/rateLimiter";
 
 const router = Router();
 
 router.post(
   "/register",
+  authRateLimiter,
   validateRequest(userZodSchema),
   userController.registerUser,
 );
 
 router.post(
   "/verify-otp",
+  otpRateLimiter,
   validateRequest(otpVerifyZodSchema),
   userController.verifyOtp,
 );
 
 router.post(
   "/resend-otp",
+  otpRateLimiter,
   validateRequest(otpResendZodSchema),
   userController.resendOtp,
 );
 
 router.post(
   "/forgot-password",
+  authRateLimiter,
   validateRequest(forgotPasswordZodSchema),
   userController.forgotPassword,
 );
 
-router.post("/verify-forgot-otp", userController.verifyForgotOtp);
+router.post("/verify-forgot-otp", otpRateLimiter, userController.verifyForgotOtp);
 
-router.post("/resend-forgot-password-otp", userController.resendForgotPassOtp);
+router.post("/resend-forgot-password-otp", otpRateLimiter, userController.resendForgotPassOtp);
 
 router.get("/me", checkAuth("user", "admin"), userController.getMyProfile);
 

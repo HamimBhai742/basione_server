@@ -668,7 +668,7 @@ const dashboardStats = async (range?: string) => {
       ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
     },
   });
-  const totalcancelledOrders = await prisma.order.count({
+  const totalCancelledOrders = await prisma.order.count({
     where: {
       status: "cancelled",
       ...(dateFilter.gte ? { createdAt: dateFilter } : {}),
@@ -1006,7 +1006,7 @@ const dashboardStats = async (range?: string) => {
     totalUndeliveredRevenue,
     totalDeliveredOrders,
     totalProcessingOrders,
-    totalcancelledOrders,
+    totalCancelledOrders,
     totalPendingOrders,
     totalReadyOrders,
     totalShippedOrders,

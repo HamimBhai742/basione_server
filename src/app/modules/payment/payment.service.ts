@@ -419,7 +419,6 @@ const paymentPaid = async (
   userId: string | undefined,
   molliePayment: any,
 ) => {
-  console.log(orderId, paymentId, molliePayment, "fsdfgdsgdfghdfg");
   const cleanPayment = JSON.parse(JSON.stringify(molliePayment));
 
   /**
@@ -789,13 +788,15 @@ const paymentFailed = async (
   paymentId: string,
   reason?: string,
 ) => {
+  // Keep order as "pending" so the customer can retry payment.
+  // Only the payment record is marked as "failed".
   await prisma.order.update({
     where: {
       id: orderId,
     },
     data: {
       paymentStatus: "failed",
-      status: "cancelled",
+      status: "pending",
     },
   });
 
@@ -807,8 +808,6 @@ const paymentFailed = async (
       status: "failed",
     },
   });
-
-  await cancledOrder(orderId, reason);
 };
 
 const paymentCanceled = async (

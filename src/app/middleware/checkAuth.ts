@@ -6,6 +6,13 @@ import { verifyToken } from "../utils/verifyToken";
 import config from "../../config";
 import { prisma } from "../lib/prisma";
 
+const extractToken = (authHeader?: string, cookieToken?: string): string | null => {
+  if (authHeader) {
+    return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  }
+  return cookieToken || null;
+};
+
 export const checkAuth = (...role: string[]) => {
   return async (
     req: Request & { user?: any },
@@ -13,7 +20,11 @@ export const checkAuth = (...role: string[]) => {
     next: NextFunction,
   ) => {
     try {
-      const token = req.headers.authorization || req.cookies.accessToken;
+      const token = extractToken(
+        req.headers.authorization,
+        req.cookies.accessToken,
+      );
+
       if (!token) {
         throw new AppError(
           "User is not authenticated to access this route",
@@ -47,6 +58,7 @@ export const checkAuth = (...role: string[]) => {
           httpStatus.FORBIDDEN,
         );
       }
+
       req.user = user;
       next();
     } catch (error) {
@@ -62,7 +74,10 @@ export const optionalAuth = (...role: string[]) => {
     next: NextFunction,
   ) => {
     try {
-      const token = req.headers.authorization || req.cookies.accessToken;
+      const token = extractToken(
+        req.headers.authorization,
+        req.cookies.accessToken,
+      );
 
       if (!token) {
         return next();
