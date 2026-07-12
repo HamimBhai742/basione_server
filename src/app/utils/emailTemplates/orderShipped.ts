@@ -29,412 +29,173 @@ export const orderShippedTemplate = async (
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Bestelling verzonden</title>
-
-<style>
-body {
- margin: 0;
- padding: 0;
- background-color: #f5f5f5;
- font-family: Arial, sans-serif;
-}
-
-.container {
- max-width: 650px;
- margin: 20px auto;
- background: #ffffff;
- border-radius: 6px;
- overflow: hidden;
-}
-
-.header {
- background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
- color: #ffffff;
- padding: 28px 20px;
- text-align: center;
-}
-
-.header-title {
- font-size: 22px;
- font-weight: bold;
- margin-bottom: 4px;
-}
-
-.header-sub {
- font-size: 13px;
- opacity: 0.88;
- margin-top: 4px;
-}
-
-.content {
- padding: 25px 30px;
- color: #333;
-}
-
-.banner {
- background-color: #e8f0fe;
- border-left: 4px solid #1a73e8;
- padding: 15px 20px;
- margin-bottom: 20px;
- font-size: 14px;
- color: #1558b0;
- font-weight: bold;
-}
-
-.order-box {
- background: #fafafa;
- padding: 15px;
- border-radius: 5px;
- margin-bottom: 20px;
- font-size: 14px;
- line-height: 1.9;
-}
-
-/* Tracking Card */
-.tracking-card {
- border: 1px solid #c5d8fc;
- border-radius: 6px;
- overflow: hidden;
- margin-bottom: 22px;
-}
-
-.tracking-card-header {
- background-color: #1a73e8;
- color: #fff;
- padding: 10px 18px;
- font-size: 13px;
- font-weight: bold;
- letter-spacing: 0.5px;
- text-transform: uppercase;
-}
-
-.tracking-card-body {
- padding: 16px 18px;
- font-size: 14px;
- background: #f0f6ff;
-}
-
-.tracking-number {
- font-size: 24px;
- font-weight: bold;
- color: #1a73e8;
- letter-spacing: 3px;
- margin: 6px 0 10px;
-}
-
-.tracking-meta {
- font-size: 13px;
- color: #555;
- line-height: 1.8;
-}
-
-.track-btn {
- display: inline-block;
- margin-top: 14px;
- padding: 11px 26px;
- background-color: #1a73e8;
- color: #ffffff;
- text-decoration: none;
- border-radius: 5px;
- font-size: 14px;
- font-weight: bold;
-}
-
-/* Progress Bar */
-.progress-wrapper {
- margin: 22px 0;
-}
-
-.progress-label {
- font-size: 13px;
- font-weight: bold;
- color: #444;
- margin-bottom: 10px;
-}
-
-.progress-steps {
- display: flex;
- align-items: center;
- justify-content: space-between;
- position: relative;
-}
-
-.progress-line {
- position: absolute;
- top: 13px;
- left: 0;
- right: 0;
- height: 3px;
- background: #ddd;
- z-index: 0;
-}
-
-.progress-line-fill {
- height: 3px;
- background: #1a73e8;
- width: 50%;
-}
-
-.progress-step {
- display: flex;
- flex-direction: column;
- align-items: center;
- z-index: 1;
- flex: 1;
-}
-
-.step-circle {
- width: 26px;
- height: 26px;
- border-radius: 50%;
- background: #ddd;
- display: flex;
- align-items: center;
- justify-content: center;
- font-size: 12px;
- color: #fff;
- font-weight: bold;
- margin-bottom: 6px;
-}
-
-.step-circle.done {
- background: #1a73e8;
-}
-
-.step-circle.active {
- background: #1a73e8;
- box-shadow: 0 0 0 3px #c5d8fc;
-}
-
-.step-text {
- font-size: 11px;
- color: #777;
- text-align: center;
- max-width: 60px;
-}
-
-.step-text.active {
- color: #1a73e8;
- font-weight: bold;
-}
-
-/* Items */
-.product {
- display: flex;
- margin-bottom: 15px;
- align-items: center;
-}
-
-.product img {
- width: 70px;
- height: 70px;
- object-fit: cover;
- margin-right: 15px;
- border-radius: 4px;
- border: 1px solid #eee;
-}
-
-.product-info {
- flex: 1;
-}
-
-.product-name {
- font-weight: bold;
- margin-bottom: 4px;
-}
-
-.product-meta {
- font-size: 13px;
- color: #666;
-}
-
-.summary {
- border-top: 1px solid #ddd;
- padding-top: 12px;
- margin-top: 10px;
- font-size: 14px;
-}
-
-.total {
- font-size: 17px;
- font-weight: bold;
- color: #333;
- margin-top: 8px;
-}
-
-.divider {
- border: none;
- border-top: 1px solid #eee;
- margin: 22px 0;
-}
-
-.delivery-box {
- background: #fafafa;
- border-left: 3px solid #ccc;
- padding: 12px 16px;
- border-radius: 4px;
- font-size: 14px;
- color: #444;
- margin-bottom: 20px;
-}
-
-.notice {
- background: #fffde7;
- border: 1px solid #fff176;
- border-radius: 5px;
- padding: 12px 16px;
- font-size: 13px;
- color: #7d6608;
- margin-top: 10px;
-}
-
-.support-link {
- color: #1a73e8;
- font-weight: bold;
- text-decoration: none;
-}
-
-.footer {
- background: #fafafa;
- text-align: center;
- padding: 15px;
- font-size: 12px;
- color: #777;
-}
-</style>
 </head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
 
-<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f4f8;padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-<div class="container">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);padding:40px 40px 32px;text-align:center;">
+            <div style="display:inline-block;background:rgba(255,255,255,0.15);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:16px;">🚚</div>
+            <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Uw bestelling is onderweg!</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Uw pakket is overgedragen aan de koerier</p>
+          </td>
+        </tr>
 
- <div class="header">
- <div class="header-title">Uw bestelling is onderweg! </div>
- <div class="header-sub">Even geduld: uw pakket is onderweg naar u</div>
- </div>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
 
- <div class="content">
+            <p style="margin:0 0 24px;font-size:15px;color:#374151;">Hallo <strong style="color:#111827;">${userName}</strong>,</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.7;">
+              Goed nieuws! Uw bestelling is overgedragen aan <strong>${data.courierName}</strong> en is nu onderweg. Gebruik de trackinggegevens hieronder om uw pakket te volgen.
+            </p>
 
- <div class="banner">
- Bestelling #${data.orderNumber} is succesvol verzonden.
- </div>
+            <!-- Order Details Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Besteloverzicht</p>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;width:50%;">Bestelnummer</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;">#${data.orderNumber}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">Verzenddatum</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.shippedDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">Koerier</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.courierName}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">Verwachte levering</td>
+                      <td style="padding:6px 0;font-size:14px;color:#1a73e8;font-weight:700;text-align:right;border-top:1px solid #f1f5f9;">${data.estimatedDelivery}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
 
- <p>Hallo <strong>${userName}</strong>,</p>
- <p>
- Goed nieuws! Uw bestelling is overgedragen aan <strong>${data.courierName}</strong>
- en is nu onderweg naar uw adres. Gebruik de trackinggegevens hieronder om
- uw pakket realtime te volgen.
- </p>
+            <!-- Tracking Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:12px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#1d4ed8;letter-spacing:1px;text-transform:uppercase;">Trackingnummer</p>
+                  <p style="margin:0 0 12px;font-size:28px;font-weight:800;color:#1a73e8;letter-spacing:4px;">${data.trackingNumber || "—"}</p>
+                  <p style="margin:0 0 16px;font-size:13px;color:#3b82f6;">Koerier: <strong>${data.courierName}</strong> &nbsp;|&nbsp; Verwacht: <strong>${data.estimatedDelivery}</strong></p>
+                  ${data.trackingLink ? `<a href="${data.trackingLink}" style="display:inline-block;background:#1a73e8;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px;">Volg mijn pakket →</a>` : ""}
+                </td>
+              </tr>
+            </table>
 
- <div class="order-box">
- <strong>Bestelnummer:</strong> ${data.orderNumber} <br/>
- <strong>Verzenddatum:</strong> ${data.shippedDate} <br/>
- <strong>Koerier:</strong> ${data.courierName} <br/>
- <strong>Geschatte levering:</strong> ${data.estimatedDelivery}
- </div>
+            <!-- Progress Steps -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="padding:4px 0 12px;font-size:12px;font-weight:700;color:#374151;letter-spacing:0.5px;">BEZORGVOORTGANG</td>
+              </tr>
+              <tr>
+                <td>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td width="25%" align="center" style="vertical-align:top;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:#1a73e8;margin:0 auto 6px;line-height:32px;text-align:center;font-size:14px;color:#fff;">✓</div>
+                        <p style="margin:0;font-size:11px;color:#6b7280;text-align:center;">Bestelling<br/>geplaatst</p>
+                      </td>
+                      <td width="25%" align="center" style="vertical-align:top;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:#1a73e8;margin:0 auto 6px;line-height:32px;text-align:center;font-size:14px;color:#fff;">✓</div>
+                        <p style="margin:0;font-size:11px;color:#6b7280;text-align:center;">Ingepakt</p>
+                      </td>
+                      <td width="25%" align="center" style="vertical-align:top;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:#1a73e8;box-shadow:0 0 0 4px #bfdbfe;margin:0 auto 6px;line-height:32px;text-align:center;font-size:14px;color:#fff;">🚚</div>
+                        <p style="margin:0;font-size:11px;color:#1a73e8;font-weight:700;text-align:center;">Onderweg</p>
+                      </td>
+                      <td width="25%" align="center" style="vertical-align:top;">
+                        <div style="width:32px;height:32px;border-radius:50%;background:#e5e7eb;margin:0 auto 6px;line-height:32px;text-align:center;font-size:14px;color:#9ca3af;">📦</div>
+                        <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">Geleverd</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
 
- <!-- Tracking Card -->
- <div class="tracking-card">
- <div class="tracking-card-header"> Trackinginformatie</div>
- <div class="tracking-card-body">
- <div style="font-size:13px; color:#555;">Trackingnummer</div>
- <div class="tracking-number">${data.trackingNumber}</div>
- <div class="tracking-meta">
- <strong>Koerier:</strong> ${data.courierName}<br/>
- <strong>Verwacht op:</strong> ${data.estimatedDelivery}
- </div>
- ${
- data.trackingLink
- ? `<a href="${data.trackingLink}" class="track-btn">Volg mijn pakket </a>`
- : ""
- }
- </div>
- </div>
+            <!-- Divider -->
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 24px;"/>
 
- <!-- Progress Bar -->
- <div class="progress-wrapper">
- <div class="progress-label">Bezorgvoortgang</div>
- <div class="progress-steps">
- <div class="progress-line">
- <div class="progress-line-fill"></div>
- </div>
- <div class="progress-step">
- <div class="step-circle done"></div>
- <div class="step-text">Bestelling geplaatst</div>
- </div>
- <div class="progress-step">
- <div class="step-circle done"></div>
- <div class="step-text">Ingepakt</div>
- </div>
- <div class="progress-step">
- <div class="step-circle active"></div>
- <div class="step-text active">Verzonden</div>
- </div>
- <div class="progress-step">
- <div class="step-circle"></div>
- <div class="step-text">Geleverd</div>
- </div>
- </div>
- </div>
+            <!-- Items -->
+            <p style="margin:0 0 16px;font-size:14px;font-weight:700;color:#111827;">Verzonden items</p>
 
- <hr class="divider" />
+            ${data.items.map((item) => `
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
+              <tr>
+                <td width="72" style="vertical-align:top;padding-right:16px;">
+                  <img src="${item.image || ''}" alt="${item.name || 'Product'}" width="72" height="72" style="border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;" />
+                </td>
+                <td style="vertical-align:top;">
+                  <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#111827;">${item.name || 'Product'}</p>
+                  <p style="margin:0 0 2px;font-size:13px;color:#6b7280;">Aantal: ${item.quantity}</p>
+                  <p style="margin:0;font-size:13px;color:#6b7280;">Prijs: €${item.price}</p>
+                </td>
+              </tr>
+            </table>
+            `).join("")}
 
- <h3>Items Verzonden</h3>
+            <!-- Total -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-top:8px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:14px 20px;font-size:15px;color:#374151;font-weight:600;">Besteltotaal</td>
+                <td style="padding:14px 20px;font-size:15px;color:#111827;font-weight:800;text-align:right;">€${data.totalAmount}</td>
+              </tr>
+            </table>
 
- ${data.items
- .map(
- (item) => `
- <div class="product">
- <img src="${item.image}" alt="${item.name || 'Product'}" />
- <div class="product-info">
- <div class="product-name">${item.name || 'Product'}</div>
- <div class="product-meta">Aantal: ${item.quantity}</div>
- <div class="product-meta">Prijs: EUR ${item.price}</div>
- </div>
- </div>
- `,
- )
- .join("")}
+            <!-- Delivery Address -->
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 24px;"/>
+            <p style="margin:0 0 10px;font-size:14px;font-weight:700;color:#111827;">Bezorgadres</p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:14px 20px;font-size:14px;color:#374151;line-height:1.6;">${data.deliveryAddress}</td>
+              </tr>
+            </table>
 
- <div class="summary">
- <div class="total">Besteltotaal: EUR ${data.totalAmount}</div>
- </div>
+            <!-- Notice -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:14px 18px;font-size:13px;color:#92400e;line-height:1.6;">
+                  <strong>Let op:</strong> Bezorgtijden kunnen variëren door weekenden, feestdagen of drukte bij de koerier. Neem contact op als uw pakket niet aankomt op <strong>${data.estimatedDelivery}</strong>.
+                </td>
+              </tr>
+            </table>
 
- <hr class="divider" />
+            ${data.supportLink ? `
+            <p style="margin:0 0 6px;font-size:14px;color:#6b7280;">Vragen over uw zending?</p>
+            <a href="${data.supportLink}" style="color:#1a73e8;font-weight:600;font-size:14px;text-decoration:none;">Neem contact op met onze klantenservice →</a>
+            ` : ""}
 
- <h3>Bezorgadres</h3>
- <div class="delivery-box">
- ${data.deliveryAddress}
- </div>
+            <p style="margin:28px 0 0;font-size:14px;color:#374151;line-height:1.7;">
+              Bedankt voor uw aankoop bij <strong>Spandoek Print</strong>. We hopen dat u blij bent met uw bestelling!
+            </p>
 
- <div class="notice">
- <strong>Let op:</strong> Bezorgtijden kunnen varieren door weekenden, feestdagen,
- of onverwachte vertragingen bij de koerier. Als uw pakket niet aankomt op
- <strong>${data.estimatedDelivery}</strong>, neem dan contact op met onze klantenservice.
- </div>
+          </td>
+        </tr>
 
- ${
- data.supportLink
- ? `
- <p style="margin-top: 22px; font-size: 13px; color: #666;">
- Hebt u vragen over uw zending?
- <a href="${data.supportLink}" class="support-link">Neem contact op met support</a>
- </p>
- `
- : ""
- }
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#374151;">Spandoek Print</p>
+            <p style="margin:0;font-size:12px;color:#9ca3af;">Hulp nodig? Neem contact op met onze klantenservice.<br/>© ${new Date().getFullYear()} Spandoek Print. Alle rechten voorbehouden.</p>
+          </td>
+        </tr>
 
- <p style="margin-top: 20px;">
- Bedankt voor uw aankoop bij ons. We hopen dat u blij bent met uw bestelling!
- </p>
-
- </div>
-
- <div class="footer">
- Hulp nodig? Neem op elk moment contact op met onze klantenservice.<br/>
- ${new Date().getFullYear()} Spandeok Print. Alle rechten voorbehouden.
- </div>
-
-</div>
+      </table>
+    </td>
+  </tr>
+</table>
 
 </body>
 </html>

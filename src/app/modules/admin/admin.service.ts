@@ -298,8 +298,10 @@ const manageOrder = async (
     throw new AppError("E-mailadres niet gevonden", httpStatus.BAD_REQUEST);
   }
 
+  const displayOrderNumber = (order.trackingNumber || orderId) as string;
+
   const data = {
-    orderNumber: orderId as string,
+    orderNumber: displayOrderNumber,
 
     deliveredDate: order?.createdAt
       ? new Date(order.createdAt).toLocaleString()
@@ -310,7 +312,7 @@ const manageOrder = async (
         name: (order?.banner?.name || (order?.banner?.occasion ? `${formatLabel(order.banner.occasion)} Banner` : "Banner")) as string,
         quantity: order?.quantity as number,
         price: order?.banner?.price as number,
-        image: order?.banner?.imageUrl as string, // ⚠️ imageUrl → image
+        image: order?.banner?.imageUrl as string,
       },
     ],
 
@@ -324,7 +326,7 @@ const manageOrder = async (
   };
 
   const refundedData = {
-    orderNumber: orderId as string,
+    orderNumber: displayOrderNumber,
 
     refundDate: new Date().toLocaleString(), // বা backend থেকে refund date
 
@@ -349,7 +351,7 @@ const manageOrder = async (
   };
 
   const orderReadyData = {
-    orderNumber: orderId as string,
+    orderNumber: displayOrderNumber,
     readyDate: order?.updatedAt
       ? new Date(order.updatedAt).toLocaleString()
       : "",
@@ -397,12 +399,17 @@ const manageOrder = async (
       },
     });
 
-    await orderReadyTemplate(
-      customerName,
-      customerEmail,
-      "Bestelling klaar voor levering",
-      orderReadyData,
-    );
+    // For delivery orders: notify customer the order is being prepared for shipment.
+    // For pickup orders: skip this email — the "klaar voor afhalen" notification is sent
+    // when the admin sets status to "shipped" (handled in the shipped branch below).
+    if (order.deliveryMethod !== "pickup") {
+      await orderReadyTemplate(
+        customerName,
+        customerEmail,
+        "Bestelling klaar voor levering",
+        orderReadyData,
+      );
+    }
   } else if (status === "delivered") {
     if (payemt?.status !== "paid") {
       throw new AppError(
@@ -483,7 +490,7 @@ const manageOrder = async (
       },
     });
     const shippedData = {
-      orderNumber: orderId as string,
+      orderNumber: displayOrderNumber,
       shippedDate: new Date().toLocaleString(),
       estimatedDelivery: order?.deliveryTime as string,
       courierName: shipment

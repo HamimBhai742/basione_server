@@ -22,338 +22,205 @@ export const orderReadyTemplate = async (
  supportLink?: string;
  },
 ) => {
+ const isPickup = !data.trackingLink || data.trackingLink === "";
+
  const html = `
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Bestelling klaar</title>
-
-<style>
-body {
- margin: 0;
- padding: 0;
- background-color: #f5f5f5;
- font-family: Arial, sans-serif;
-}
-
-.container {
- max-width: 650px;
- margin: 20px auto;
- background: #ffffff;
- border-radius: 6px;
- overflow: hidden;
-}
-
-.header {
- background: linear-gradient(135deg, #f57224 0%, #e65c00 100%);
- color: #ffffff;
- padding: 28px 20px;
- text-align: center;
-}
-
-.header-title {
- font-size: 22px;
- font-weight: bold;
- margin-bottom: 4px;
-}
-
-.header-sub {
- font-size: 13px;
- opacity: 0.9;
-}
-
-.banner {
- background-color: #fff8f3;
- border-left: 4px solid #f57224;
- padding: 15px 20px;
- margin-bottom: 20px;
- font-size: 14px;
- color: #e65c00;
- font-weight: bold;
-}
-
-.content {
- padding: 25px 30px;
- color: #333;
-}
-
-.order-box {
- background: #fafafa;
- padding: 15px;
- border-radius: 5px;
- margin-bottom: 20px;
- font-size: 14px;
- line-height: 1.8;
-}
-
-.pickup-box {
- background: #fff3e0;
- border: 1px solid #f5c28a;
- border-radius: 5px;
- padding: 18px;
- margin-bottom: 20px;
- text-align: center;
-}
-
-.pickup-box h3 {
- margin: 0 0 10px;
- font-size: 14px;
- color: #888;
- text-transform: uppercase;
- letter-spacing: 1px;
-}
-
-.pickup-code {
- font-size: 32px;
- font-weight: bold;
- color: #e65c00;
- letter-spacing: 6px;
- margin: 8px 0;
-}
-
-.pickup-hint {
- font-size: 12px;
- color: #777;
- margin-top: 6px;
-}
-
-.product {
- display: flex;
- margin-bottom: 15px;
- align-items: center;
-}
-
-.product img {
- width: 70px;
- height: 70px;
- object-fit: cover;
- margin-right: 15px;
- border-radius: 4px;
- border: 1px solid #eee;
-}
-
-.product-info {
- flex: 1;
-}
-
-.product-name {
- font-weight: bold;
- margin-bottom: 4px;
-}
-
-.product-meta {
- font-size: 13px;
- color: #666;
-}
-
-.summary {
- border-top: 1px solid #ddd;
- padding-top: 12px;
- margin-top: 10px;
- font-size: 14px;
-}
-
-.total {
- font-size: 17px;
- font-weight: bold;
- color: #333;
- margin-top: 8px;
-}
-
-.steps {
- margin: 20px 0;
- padding: 0;
- list-style: none;
-}
-
-.step {
- display: flex;
- align-items: flex-start;
- gap: 14px;
- margin-bottom: 14px;
- font-size: 14px;
- color: #444;
-}
-
-.step-number {
- min-width: 26px;
- height: 26px;
- width: 26px;
- border-radius: 50%;
- background-color: #f57224;
- color: #fff;
- font-weight: bold;
- font-size: 13px;
- display: flex;
- align-items: center;
- justify-content: center;
- margin-top: 1px;
-}
-
-.deadline-box {
- background: #fef9e7;
- border: 1px solid #f9e79f;
- border-radius: 5px;
- padding: 12px 15px;
- font-size: 13px;
- color: #7d6608;
- margin-bottom: 20px;
-}
-
-.cta-btn {
- display: inline-block;
- margin-top: 8px;
- padding: 12px 28px;
- background-color: #f57224;
- color: #ffffff;
- text-decoration: none;
- border-radius: 5px;
- font-size: 14px;
- font-weight: bold;
-}
-
-.divider {
- border: none;
- border-top: 1px solid #eee;
- margin: 22px 0;
-}
-
-.footer {
- background: #fafafa;
- text-align: center;
- padding: 15px;
- font-size: 12px;
- color: #777;
-}
-</style>
+<title>${isPickup ? "Bestelling klaar voor afhalen" : "Bestelling klaar voor levering"}</title>
 </head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
 
-<body>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f4f8;padding:32px 16px;">
+  <tr>
+    <td align="center">
+      <table width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 
-<div class="container">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#f57224 0%,#e65c00 100%);padding:40px 40px 32px;text-align:center;">
+            <div style="display:inline-block;background:rgba(255,255,255,0.18);border-radius:50%;width:64px;height:64px;line-height:64px;font-size:32px;margin-bottom:16px;">${isPickup ? "🏪" : "📦"}</div>
+            <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">${isPickup ? "Uw bestelling is klaar!" : "Klaar voor verzending!"}</h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.88);font-size:14px;">${isPickup ? "U kunt uw bestelling komen ophalen" : "Uw bestelling wordt snel verzonden"}</p>
+          </td>
+        </tr>
 
- <div class="header">
- <div class="header-title">Uw bestelling is klaar! </div>
- <div class="header-sub">Ingepakt en klaar voor u</div>
- </div>
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
 
- <div class="content">
+            <p style="margin:0 0 24px;font-size:15px;color:#374151;">Hallo <strong style="color:#111827;">${userName}</strong>,</p>
+            <p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.7;">
+              ${isPickup
+                ? "Geweldig nieuws! Uw bestelling is zorgvuldig ingepakt en staat klaar om af te halen. Bekijk de gegevens hieronder voor uw afhaalafspraak."
+                : "Uw bestelling is ingepakt en staat klaar voor verzending. U ontvangt binnenkort een trackinglink zodra uw pakket is overgedragen aan de koerier."
+              }
+            </p>
 
- <div class="banner">
- Uw bestelling #${data.orderNumber} is klaar om af te halen / te verzenden.
- </div>
+            <!-- Order Details Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:20px 24px;">
+                  <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:1px;text-transform:uppercase;">Besteloverzicht</p>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;width:50%;">Bestelnummer</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;">#${data.orderNumber}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">Klaar op</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.readyDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">Betaalmethode</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.paymentMethod}</td>
+                    </tr>
+                    ${data.pickupAddress ? `
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;">${isPickup ? "Afhaaladres" : "Adres"}</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.pickupAddress}</td>
+                    </tr>
+                    ` : ""}
+                  </table>
+                </td>
+              </tr>
+            </table>
 
- <p>Hallo <strong>${userName}</strong>,</p>
+            ${isPickup && data.pickupCode ? `
+            <!-- Pickup Code Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7ed;border:2px solid #fed7aa;border-radius:12px;margin-bottom:24px;text-align:center;">
+              <tr>
+                <td style="padding:24px;">
+                  <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#c2410c;letter-spacing:1.5px;text-transform:uppercase;">Uw afhaalcode</p>
+                  <p style="margin:0 0 8px;font-size:36px;font-weight:800;color:#ea580c;letter-spacing:8px;">${data.pickupCode}</p>
+                  <p style="margin:0;font-size:13px;color:#9a3412;">Toon deze code aan de balie wanneer u uw bestelling ophaalt.</p>
+                </td>
+              </tr>
+            </table>
+            ` : ""}
 
- <p>
- Goed nieuws: uw bestelling is zorgvuldig ingepakt en is nu klaar!
- Bekijk de gegevens hieronder.
- </p>
+            ${data.pickupDeadline ? `
+            <!-- Deadline Notice -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;margin-bottom:24px;">
+              <tr>
+                <td style="padding:14px 18px;font-size:13px;color:#92400e;line-height:1.6;">
+                  ⚠️ <strong>Belangrijk:</strong> Haal uw bestelling op uiterlijk <strong>${data.pickupDeadline}</strong>. Bestellingen die na deze datum niet zijn opgehaald, kunnen automatisch worden geannuleerd.
+                </td>
+              </tr>
+            </table>
+            ` : ""}
 
- <div class="order-box">
- <strong>Bestelnummer:</strong> ${data.orderNumber} <br/>
- <strong>Klaar op:</strong> ${data.readyDate} <br/>
- <strong>Betaalmethode:</strong> ${data.paymentMethod}
- ${data.pickupAddress ? `<br/><strong>Afhaaladres:</strong> ${data.pickupAddress}` : ""}
- </div>
+            <!-- Steps -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td style="padding:0 0 14px;font-size:14px;font-weight:700;color:#111827;">${isPickup ? "Wat u nu kunt doen" : "Volgende stappen"}</td>
+              </tr>
+              <tr>
+                <td>
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="vertical-align:top;padding-bottom:12px;">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="vertical-align:top;padding-right:14px;">
+                              <div style="width:28px;height:28px;border-radius:50%;background:#f57224;text-align:center;line-height:28px;font-size:13px;font-weight:700;color:#fff;">1</div>
+                            </td>
+                            <td style="vertical-align:middle;font-size:14px;color:#374151;line-height:1.6;">
+                              ${isPickup ? "Ga naar ons winkeladres op het afgesproken tijdstip." : "Wacht op uw verzendbevestiging met trackingnummer."}
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="vertical-align:top;padding-bottom:12px;">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="vertical-align:top;padding-right:14px;">
+                              <div style="width:28px;height:28px;border-radius:50%;background:#f57224;text-align:center;line-height:28px;font-size:13px;font-weight:700;color:#fff;">2</div>
+                            </td>
+                            <td style="vertical-align:middle;font-size:14px;color:#374151;line-height:1.6;">
+                              ${data.pickupCode ? `Toon uw afhaalcode <strong>${data.pickupCode}</strong> aan de balie.` : isPickup ? "Meld u aan de balie en vermeld uw bestelnummer." : "Volg uw pakket via de trackinglink in onze volgende e-mail."}
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="vertical-align:top;">
+                        <table cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="vertical-align:top;padding-right:14px;">
+                              <div style="width:28px;height:28px;border-radius:50%;background:#f57224;text-align:center;line-height:28px;font-size:13px;font-weight:700;color:#fff;">3</div>
+                            </td>
+                            <td style="vertical-align:middle;font-size:14px;color:#374151;line-height:1.6;">
+                              Controleer uw items bij ontvangst en geniet van uw aankoop!
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
 
- ${
- data.pickupCode
- ? `
- <div class="pickup-box">
- <h3>Uw afhaalcode</h3>
- <div class="pickup-code">${data.pickupCode}</div>
- <div class="pickup-hint">Toon deze code aan de balie wanneer u uw bestelling ophaalt.</div>
- </div>
- `
- : ""
- }
+            <!-- Divider -->
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 24px;"/>
 
- ${
- data.pickupDeadline
- ? `
- <div class="deadline-box">
- <strong>Belangrijk:</strong> Haal uw bestelling op uiterlijk <strong>${data.pickupDeadline}</strong>.
- Bestellingen die niet voor deze datum zijn opgehaald, kunnen automatisch worden geannuleerd.
- </div>
- `
- : ""
- }
+            <!-- Items -->
+            <p style="margin:0 0 16px;font-size:14px;font-weight:700;color:#111827;">Items in uw bestelling</p>
 
- <h3>Items in uw bestelling</h3>
+            ${data.items.map((item) => `
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
+              <tr>
+                <td width="72" style="vertical-align:top;padding-right:16px;">
+                  <img src="${item.image || ''}" alt="${item.name || 'Banner'}" width="72" height="72" style="border-radius:8px;object-fit:cover;border:1px solid #e5e7eb;display:block;" />
+                </td>
+                <td style="vertical-align:top;">
+                  <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#111827;">${item.name || 'Banner'}</p>
+                  <p style="margin:0 0 2px;font-size:13px;color:#6b7280;">Aantal: ${item.quantity}</p>
+                  <p style="margin:0;font-size:13px;color:#6b7280;">Prijs: €${item.price}</p>
+                </td>
+              </tr>
+            </table>
+            `).join("")}
 
- ${data.items
- .map(
- (item) => `
- <div class="product">
- <img src="${item.image}" alt="${item.name || 'Banner'}" />
- <div class="product-info">
- <div class="product-name">${item.name || 'Banner'}</div>
- <div class="product-meta">Aantal: ${item.quantity}</div>
- <div class="product-meta">Prijs: EUR ${item.price}</div>
- </div>
- </div>
- `,
- )
- .join("")}
+            <!-- Total -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-top:8px;margin-bottom:28px;">
+              <tr>
+                <td style="padding:14px 20px;font-size:15px;color:#374151;font-weight:600;">Besteltotaal</td>
+                <td style="padding:14px 20px;font-size:15px;color:#111827;font-weight:800;text-align:right;">€${data.totalAmount}</td>
+              </tr>
+            </table>
 
- <div class="summary">
- <div class="total">Besteltotaal: EUR ${data.totalAmount}</div>
- </div>
+            ${data.supportLink ? `
+            <p style="margin:0 0 6px;font-size:14px;color:#6b7280;">Heeft u vragen?</p>
+            <a href="${data.supportLink}" style="color:#f57224;font-weight:600;font-size:14px;text-decoration:none;">Neem contact op met onze klantenservice →</a>
+            ` : ""}
 
- <hr class="divider" />
+            <p style="margin:28px 0 0;font-size:14px;color:#374151;line-height:1.7;">
+              Bedankt voor uw aankoop bij <strong>Spandoek Print</strong>. We hopen dat u veel plezier heeft van uw bestelling!
+            </p>
 
- <h3>Wat u nu kunt doen</h3>
- <ul class="steps">
- <li class="step">
- <div class="step-number">1</div>
- <div>Ga naar onze winkel of wacht tot ons bezorgteam uw pakket verzendt.</div>
- </li>
- <li class="step">
- <div class="step-number">2</div>
- <div>${data.pickupCode ? `Toon uw afhaalcode <strong>${data.pickupCode}</strong> aan de balie.` : "Ons team neemt voor de levering contact met u op."}</div>
- </li>
- <li class="step">
- <div class="step-number">3</div>
- <div>Controleer uw items bij ontvangst en geniet van uw aankoop!</div>
- </li>
- </ul>
+          </td>
+        </tr>
 
- ${
- data.trackingLink
- ? `
- <p style="margin-top: 15px; font-size: 14px;">
- Wilt u uw bestelling realtime volgen?
- </p>
- <a href="${data.trackingLink}" class="cta-btn">Volg mijn bestelling</a>
- `
- : ""
- }
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#374151;">Spandoek Print</p>
+            <p style="margin:0;font-size:12px;color:#9ca3af;">Hulp nodig? Neem contact op met onze klantenservice.<br/>© ${new Date().getFullYear()} Spandoek Print. Alle rechten voorbehouden.</p>
+          </td>
+        </tr>
 
- ${
- data.supportLink
- ? `
- <p style="margin-top: 20px; font-size: 13px; color: #777;">
- Heeft u vragen? <a href="${data.supportLink}" style="color: #f57224; font-weight: bold;">Neem contact op met onze klantenservice</a>.
- </p>
- `
- : ""
- }
-
- <p style="margin-top: 25px;">
- Bedankt voor uw aankoop bij ons. We hopen dat u veel plezier hebt van uw bestelling!
- </p>
-
- </div>
-
- <div class="footer">
- Hulp nodig? Neem op elk moment contact op met onze klantenservice.<br/>
- ${new Date().getFullYear()} Spandoek Print. Alle rechten voorbehouden.
- </div>
-
-</div>
+      </table>
+    </td>
+  </tr>
+</table>
 
 </body>
 </html>
