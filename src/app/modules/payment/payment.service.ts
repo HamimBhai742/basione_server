@@ -173,7 +173,7 @@ export const createPayment = async (
 
     redirectUrl: `https://spandoekprint.nl/payment/success?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 
-    webhookUrl: `https://api.spandoekprint.nl/api/v1/payment/mollie/webhook`,
+    webhookUrl: `https://fortifiable-unpopulous-sonia.ngrok-free.dev/api/v1/payment/mollie/webhook`,
 
     cancelUrl: `https://spandoekprint.nl/payment/canceled?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
 

@@ -422,7 +422,7 @@ const createOrder = async (
           deliveryFee: deliveryFeeIncludingVat,
 
           hasEyelets: items[0].hasEyelets !== undefined ? items[0].hasEyelets : true,
-          eyeletsFee: orderItemsData[0].eyeletsFee,
+          eyeletsFee: totalEyeletsFeeInclVat,
 
           subtotal,
           priceExcludingVat,

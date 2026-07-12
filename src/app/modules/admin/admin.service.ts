@@ -511,12 +511,21 @@ const manageOrder = async (
       supportLink: `${config.client_url}/contact`, // optional
     };
 
-    await orderShippedTemplate(
-      customerName,
-      customerEmail,
-      "Bestelling verzonden",
-      shippedData,
-    );
+    if (order.deliveryMethod === "pickup") {
+      await orderReadyTemplate(
+        customerName,
+        customerEmail,
+        "Bestelling klaar voor afhalen",
+        orderReadyData,
+      );
+    } else {
+      await orderShippedTemplate(
+        customerName,
+        customerEmail,
+        "Bestelling verzonden",
+        shippedData,
+      );
+    }
   }
   return order;
 };
