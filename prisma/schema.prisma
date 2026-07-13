@@ -599,3 +599,12 @@ model OrderItem {
   @@index([orderId])
   @@index([bannerId])
 }
+
+model AlertBarSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  isEnabled Boolean  @default(false)
+  message   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

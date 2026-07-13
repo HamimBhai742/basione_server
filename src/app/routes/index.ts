@@ -16,6 +16,7 @@ import { contactRoutes } from "../modules/contact/contact.routes";
 import { svgMaskRoutes } from "../modules/svgMask/svgMask.routes";
 import { webwinkelkeurRoutes } from "../modules/webwinkelkeur/webwinkelkeur.routes";
 import { cartRoutes } from "../modules/cart/cart.routes";
+import { alertBarRoutes } from "../modules/alertBar/alertBar.routes";
 
 export const router = Router();
 
@@ -87,6 +88,10 @@ const routes = [
   {
     path: "/webwinkelkeur",
     route: webwinkelkeurRoutes,
+  },
+  {
+    path: "/alert-bar",
+    route: alertBarRoutes,
   },
 ];
 
