@@ -1,28 +1,29 @@
 import sendEmail from "./nodemailerTransport";
 
 export const orderReadyTemplate = async (
- userName: string,
- email: string,
- subject: string,
- data: {
- orderNumber: string;
- readyDate: string;
- pickupDeadline?: string;
- pickupAddress?: string;
- pickupCode?: string;
- items: {
- name: string;
- quantity: number;
- price: number;
- image?: string;
- }[];
- totalAmount: number;
- paymentMethod: string;
- trackingLink?: string;
- supportLink?: string;
- },
+  userName: string,
+  email: string,
+  subject: string,
+  data: {
+    orderNumber: string;
+    readyDate: string;
+    pickupDeadline?: string;
+    pickupAddress?: string;
+    pickupCode?: string;
+    items: {
+      name: string;
+      quantity: number;
+      price: number;
+      image?: string;
+    }[];
+    totalAmount: number;
+    paymentMethod: string;
+    trackingLink?: string;
+    supportLink?: string;
+    isPickup?: boolean;
+  },
 ) => {
- const isPickup = !data.trackingLink || data.trackingLink === "";
+  const isPickup = data.isPickup !== undefined ? data.isPickup : (!data.trackingLink || data.trackingLink === "");
 
  const html = `
 <!DOCTYPE html>

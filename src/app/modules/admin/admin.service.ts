@@ -407,7 +407,10 @@ const manageOrder = async (
         customerName,
         customerEmail,
         "Bestelling klaar voor levering",
-        orderReadyData,
+        {
+          ...orderReadyData,
+          isPickup: false,
+        },
       );
     }
   } else if (status === "delivered") {
@@ -523,7 +526,10 @@ const manageOrder = async (
         customerName,
         customerEmail,
         "Bestelling klaar voor afhalen",
-        orderReadyData,
+        {
+          ...orderReadyData,
+          isPickup: true,
+        },
       );
     } else {
       await orderShippedTemplate(
