@@ -1,8 +1,11 @@
 import axios from "axios";
 import config from "../../../config";
 
-let cachedReviews: any = null;
-let cacheExpiration = 0;
+interface CachedShopReviews {
+  data: any;
+  expiration: number;
+}
+const cachedShopReviewsMap: Record<string, CachedShopReviews> = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour cache
 
 export interface WebwinkelKeurInvitePayload {
@@ -96,9 +99,11 @@ const getShopReviews = async (limit = 20, offset = 0) => {
   }
 
   const now = Date.now();
-  // Return cached reviews if valid
-  if (cachedReviews && now < cacheExpiration) {
-    return cachedReviews;
+  const cacheKey = `${limit}_${offset}`;
+  const cached = cachedShopReviewsMap[cacheKey];
+
+  if (cached && now < cached.expiration) {
+    return cached.data;
   }
 
   try {
@@ -113,18 +118,19 @@ const getShopReviews = async (limit = 20, offset = 0) => {
     });
 
     if (response.data && response.data.status === "success") {
-      cachedReviews = response.data;
-      cacheExpiration = now + CACHE_DURATION;
-      return cachedReviews;
+      cachedShopReviewsMap[cacheKey] = {
+        data: response.data,
+        expiration: now + CACHE_DURATION,
+      };
+      return response.data;
     }
 
     return response.data || { status: "error", message: "Failed to retrieve ratings", ratings: [] };
   } catch (error: any) {
     console.error("Error fetching WebwinkelKeur reviews:", error.response?.data || error.message);
-    // Fallback to stale cache if API call fails
-    if (cachedReviews) {
+    if (cached) {
       console.log("Serving stale cached WebwinkelKeur reviews as fallback");
-      return cachedReviews;
+      return cached.data;
     }
     return { status: "error", message: error.message, ratings: [] };
   }
