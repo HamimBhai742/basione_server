@@ -27,7 +27,7 @@ export const paymentSuccessTemplate = async (data: PaymentSuccessData) => {
     invoiceFilePath,
   } = data;
 
-  const subject = "Betaling bevestigd - Uw bestelling is onderweg!";
+  const subject = "Betaling ontvangen";
 
   const html = `
 <!DOCTYPE html>

@@ -1,6 +1,7 @@
 import config from "../../config";
 import { prisma } from "../lib/prisma";
 import { orderDeliveryCompleteTemplate } from "./emailTemplates/orderDeliveryTemplate";
+import { formatAmsterdamDateTime } from "./deliveryCalculator";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
@@ -63,7 +64,7 @@ export const sendDeliveredOrderReviewEmail = async (orderId: string) => {
     "Bestelling geleverd",
     {
       orderNumber: order.trackingNumber || order.id,
-      deliveredDate: new Date().toLocaleString(),
+      deliveredDate: formatAmsterdamDateTime(new Date()),
       items: [
         {
           name: order.banner?.name || order.banner?.headline || "Banner",

@@ -6,6 +6,7 @@ import { generateToken } from "../../utils/generateToken";
 import config from "../../../config";
 import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
 import { verifyToken } from "../../utils/verifyToken";
+import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 interface IUserPayload {
   email: string;
@@ -107,7 +108,7 @@ const resetPassword = async (userId: string, password: string) => {
   await resetPasswordSuccessTemplate({
     userName: user.name,
     email: user.email,
-    resetAt: new Date().toLocaleString(),
+    resetAt: formatAmsterdamDateTime(new Date()),
   });
   return null;
 };

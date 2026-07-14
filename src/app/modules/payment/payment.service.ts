@@ -439,7 +439,7 @@ const paymentPaid = async (
   } catch (error: any) {
     if (error.code === "P2025") {
       console.log(
-        `Payment ${paymentId} already processed (status is not pending). Checking if invoice was sent...`,
+        `Payment ${paymentId} already processed (status is not pending). Checking details...`,
       );
       const existingPayment = await prisma.payment.findUnique({
         where: { id: paymentId },
@@ -453,18 +453,18 @@ const paymentPaid = async (
       });
 
       if (existingPayment && existingPayment.status === "paid") {
-        const invoice = existingPayment.order?.invoice;
-        if (invoice) {
-          const timeSinceCreation = Date.now() - new Date(invoice.createdAt).getTime();
-          if (invoice.status === "sent" || timeSinceCreation < 60000) {
-            console.log(
-              `Invoice for payment ${paymentId} already exists and is sent or recently generated (${timeSinceCreation}ms ago). Skipping duplicate email flow.`,
-            );
-            return {
-              alreadyProcessed: true,
-            };
-          }
-        }
+        console.log(
+          `Payment ${paymentId} is already paid. Skipping duplicate invoice/email flow.`,
+        );
+        return {
+          alreadyProcessed: true,
+          order: existingPayment.order,
+          payment: existingPayment,
+          invoice: existingPayment.order?.invoice || null,
+          shipment: null,
+          shipmentCreated: false,
+          orderEmailSent: false,
+        };
       }
 
       if (!existingPayment || !existingPayment.order) {
@@ -629,7 +629,7 @@ const paymentPaid = async (
       transactionId: updatedPayment.transactionId,
       orderId: updatedOrder.trackingNumber || orderId,
       profileOrderId: updatedOrder.id,
-      date: updatedOrder.createdAt.toDateString(),
+      date: formatAmsterdamDateTime(updatedOrder.createdAt),
       invoiceUrl: invoice.invoiceUrl,
       invoiceNumber: invoice.invoiceNumber,
 

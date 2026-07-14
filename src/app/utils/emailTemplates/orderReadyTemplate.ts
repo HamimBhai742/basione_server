@@ -85,6 +85,16 @@ export const orderReadyTemplate = async (
                       <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">${data.pickupAddress}</td>
                     </tr>
                     ` : ""}
+                    ${isPickup ? `
+                    <tr>
+                      <td style="padding:6px 0;font-size:14px;color:#6b7280;border-top:1px solid #f1f5f9;vertical-align:top;">Openingstijden</td>
+                      <td style="padding:6px 0;font-size:14px;color:#111827;font-weight:600;text-align:right;border-top:1px solid #f1f5f9;">
+                        Maandag t/m donderdag: 08:30 – 17:00<br/>
+                        Vrijdag: 08:30 – 12:00<br/>
+                        Andere dagen op afspraak
+                      </td>
+                    </tr>
+                    ` : ""}
                   </table>
                 </td>
               </tr>
@@ -130,7 +140,7 @@ export const orderReadyTemplate = async (
                               <div style="width:28px;height:28px;border-radius:50%;background:#f57224;text-align:center;line-height:28px;font-size:13px;font-weight:700;color:#fff;">1</div>
                             </td>
                             <td style="vertical-align:middle;font-size:14px;color:#374151;line-height:1.6;">
-                              ${isPickup ? "Ga naar ons winkeladres op het afgesproken tijdstip." : "Wacht op uw verzendbevestiging met trackingnummer."}
+                              ${isPickup ? "Ga naar onze winkel op de Neonweg 200 in Almere." : "Wacht op uw verzendbevestiging met trackingnummer."}
                             </td>
                           </tr>
                         </table>

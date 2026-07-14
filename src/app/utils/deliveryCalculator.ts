@@ -193,7 +193,10 @@ export const calculateDeliveryDate = (
 /**
  * Formats a date to string using Europe/Amsterdam timezone and nl-NL locale
  */
-export const formatAmsterdamDateTime = (date: Date): string => {
+export const formatAmsterdamDateTime = (date?: Date | string | null): string => {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return String(date);
   return new Intl.DateTimeFormat("nl-NL", {
     timeZone: "Europe/Amsterdam",
     year: "numeric",
@@ -203,5 +206,6 @@ export const formatAmsterdamDateTime = (date: Date): string => {
     minute: "2-digit",
     second: "2-digit",
     hourCycle: "h23",
-  }).format(date);
+  }).format(d);
 };
+

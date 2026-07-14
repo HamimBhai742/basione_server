@@ -12,6 +12,7 @@ import { Request } from "express";
 import { uploadImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 interface IUserPayload {
   name: string;
@@ -67,7 +68,7 @@ const registerUser = async (payload: IUserPayload) => {
       userName: isExistingUser.name,
       email: isExistingUser.email,
       otp,
-      requestedAt: new Date().toLocaleString(),
+      requestedAt: formatAmsterdamDateTime(new Date()),
     });
     return isExistingUser;
   }
@@ -117,7 +118,7 @@ const registerUser = async (payload: IUserPayload) => {
     userName: user.name,
     email: user.email,
     otp,
-    requestedAt: new Date().toLocaleString(),
+    requestedAt: formatAmsterdamDateTime(new Date()),
   });
   return user;
 };
@@ -156,7 +157,7 @@ const verifyOtp = async (otp: string, email: string) => {
   await registrationSuccessTemplate({
     userName: user.name,
     email: user.email,
-    registeredAt: new Date().toLocaleString(),
+    registeredAt: formatAmsterdamDateTime(new Date()),
   });
 
   // const token = await generateToken(
@@ -217,7 +218,7 @@ const resendOtp = async (email: string) => {
     userName: user.name,
     email: user.email,
     otp,
-    requestedAt: new Date().toLocaleString(),
+    requestedAt: formatAmsterdamDateTime(new Date()),
   });
   return null;
 };
@@ -278,7 +279,7 @@ const forgotPassword = async (email: string) => {
     userName: user.name,
     email: user.email,
     otp,
-    requestedAt: new Date().toLocaleString(),
+    requestedAt: formatAmsterdamDateTime(new Date()),
   });
   return {
     accessToken: tempToken,
@@ -342,7 +343,7 @@ const resendForgotPassOtp = async (email: string) => {
     userName: user.name,
     email: user.email,
     otp,
-    requestedAt: new Date().toLocaleString(),
+    requestedAt: formatAmsterdamDateTime(new Date()),
   });
   return {
     accessToken: tempToken,

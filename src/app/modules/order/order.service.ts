@@ -16,7 +16,7 @@ import {
   generateGuestOrderToken,
   getGuestOrderTokenExpiry,
 } from "../../utils/guestOrderToken";
-import { calculateDeliveryDate } from "../../utils/deliveryCalculator";
+import { calculateDeliveryDate, formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 
 type FrontendDeliveryType =
@@ -943,8 +943,8 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     userName: customerName,
     email: customerEmail,
     orderId: (order?.trackingNumber || order?.id) as string,
-    orderDate: order?.createdAt.toLocaleString() as string,
-    cancelledDate: new Date().toLocaleString(),
+    orderDate: formatAmsterdamDateTime(order?.createdAt),
+    cancelledDate: formatAmsterdamDateTime(new Date()),
     items: [
       {
         name: `${formatLabel(order?.banner?.occasion || "custom") as string} Banner`,

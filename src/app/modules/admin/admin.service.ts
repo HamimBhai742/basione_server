@@ -19,6 +19,7 @@ import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
 import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 import { formatLabel } from "../../utils/formatLable";
 import { webwinkelkeurService } from "../webwinkelkeur/webwinkelkeur.service";
+import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 
 const bannerListSelect = {
   id: true,
@@ -303,9 +304,7 @@ const manageOrder = async (
   const data = {
     orderNumber: displayOrderNumber,
 
-    deliveredDate: order?.createdAt
-      ? new Date(order.createdAt).toLocaleString()
-      : "",
+    deliveredDate: formatAmsterdamDateTime(order?.createdAt),
 
     items: [
       {
@@ -328,7 +327,7 @@ const manageOrder = async (
   const refundedData = {
     orderNumber: displayOrderNumber,
 
-    refundDate: new Date().toLocaleString(), // বা backend থেকে refund date
+    refundDate: formatAmsterdamDateTime(new Date()), // বা backend থেকে refund date
 
     refundAmount: order?.total as number, // বা partial হলে change করবা
 
@@ -352,9 +351,7 @@ const manageOrder = async (
 
   const orderReadyData = {
     orderNumber: displayOrderNumber,
-    readyDate: order?.updatedAt
-      ? new Date(order.updatedAt).toLocaleString()
-      : "",
+    readyDate: formatAmsterdamDateTime(order?.updatedAt),
     pickupAddress: order?.addresses?.address
       ? order?.addresses?.address
       : `${order?.addresses?.houseNumber || ""} ${order?.addresses?.street || ""} ${order?.addresses?.city || ""}, ${order?.addresses?.zipCode || ""}`,
@@ -494,7 +491,7 @@ const manageOrder = async (
     });
     const shippedData = {
       orderNumber: displayOrderNumber,
-      shippedDate: new Date().toLocaleString(),
+      shippedDate: formatAmsterdamDateTime(new Date()),
       estimatedDelivery: order?.deliveryTime as string,
       courierName: shipment
         ? shippingService.getCarrierLabel(options.carrier)
