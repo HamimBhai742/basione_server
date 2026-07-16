@@ -266,6 +266,44 @@ async function main() {
     }
   }
 
+  // 5. Optimize Background Images
+  console.log("\n--- Processing Background Images ---");
+  const backgroundImages = await prisma.backgroundImage.findMany();
+  console.log(`Found ${backgroundImages.length} background images.`);
+
+  for (let i = 0; i < backgroundImages.length; i++) {
+    const bg = backgroundImages[i];
+    const imageUrl = bg.imageUrl;
+
+    if (!imageUrl || isSvg(imageUrl) || isAlreadyOptimized(imageUrl)) {
+      continue;
+    }
+
+    console.log(`[${i+1}/${backgroundImages.length}] Optimizing background image ID ${bg.id}`);
+    const buffer = await downloadImageBuffer(imageUrl);
+    if (!buffer) continue;
+
+    try {
+      const optimized = await optimizeImage(buffer, 1600, 1600, 80);
+      const cleanName = getFileNameFromUrl(imageUrl);
+      const key = `images/optimized-${Date.now()}-${cleanName}`;
+
+      const newUrl = await uploadBufferToS3({
+        buffer: optimized,
+        key,
+        contentType: "image/jpeg"
+      });
+
+      await prisma.backgroundImage.update({
+        where: { id: bg.id },
+        data: { imageUrl: newUrl }
+      });
+      console.log(`>> Successfully optimized background image ID ${bg.id}. New URL: ${newUrl}`);
+    } catch (err: any) {
+      console.error(`>> Failed to optimize background image:`, err.message);
+    }
+  }
+
   console.log("\n=== Image Optimization Migration Script Finished Successfully ===");
 }
 

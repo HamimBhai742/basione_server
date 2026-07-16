@@ -445,7 +445,6 @@ const updateUser = async (data: {
   let imgUrl = user?.image;
   if (file) {
     const result = await uploadOptimizedImageToS3(file, "images", 400, 400, 85);
-    console.log(result);
     if (result) {
       imgUrl = result;
     }
