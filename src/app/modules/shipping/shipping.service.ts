@@ -379,10 +379,7 @@ const createShipment = async (payload: CreateShipmentPayload) => {
         carrier: selectedCarrier,
       }
     : requestPayload;
-  console.log(requestPayload);
-
   const response = await qlsClient.createShipment(requestPayload);
-  console.log("QlS create Shipment", response);
 
   const shipment = await persistShipmentResponse({
     orderId: order.id,

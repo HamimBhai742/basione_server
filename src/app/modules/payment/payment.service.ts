@@ -249,9 +249,6 @@ const handleMolliePaymentUpdate = async (payment: any) => {
     invoice &&
     (invoice.status === "sent" || timeSinceCreation < 60000)
   ) {
-    console.log(
-      `Payment ${paymentId} already processed with status ${payment.status} and invoice is sent or recently generated (${timeSinceCreation}ms ago), ignoring duplicate call.`,
-    );
     return { message: "Already processed" };
   }
 
@@ -453,9 +450,6 @@ const paymentPaid = async (
       });
 
       if (existingPayment && existingPayment.status === "paid") {
-        console.log(
-          `Payment ${paymentId} is already paid. Skipping duplicate invoice/email flow.`,
-        );
         return {
           alreadyProcessed: true,
           order: existingPayment.order,
@@ -501,19 +495,6 @@ const paymentPaid = async (
     },
   });
 
-  console.log("Order updated successfully:", {
-    orderId: updatedOrder.id,
-    paymentStatus: updatedOrder.paymentStatus,
-    status: updatedOrder.status,
-    userEmail: updatedOrder.user?.email,
-  });
-
-  console.log("Payment updated successfully:", {
-    paymentId: updatedPayment.id,
-    paymentStatus: updatedPayment.status,
-    transactionId: updatedPayment.transactionId,
-  });
-
   /**
    * 3. Get user
    */
@@ -539,12 +520,6 @@ const paymentPaid = async (
     throw new AppError("Payment related data not found", httpStatus.NOT_FOUND);
   }
 
-  console.log("User found:", {
-    userId: user?.id,
-    email:
-      user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email,
-    name: user?.name || updatedOrder.guestName || updatedOrder.addresses?.name,
-  });
   const customerName =
     user?.name ||
     updatedOrder.guestName ||
@@ -576,9 +551,6 @@ const paymentPaid = async (
   }
 
   if (invoice.status === "sent") {
-    console.log(
-      `Invoice ${invoice.invoiceNumber} is already sent. Skipping duplicate email flow.`
-    );
     return {
       order: updatedOrder,
       payment: updatedPayment,
@@ -589,13 +561,6 @@ const paymentPaid = async (
     };
   }
 
-  console.log("Invoice generated successfully:", {
-    invoiceId: invoice.id,
-    invoiceNumber: invoice.invoiceNumber,
-    invoiceUrl: invoice.invoiceUrl,
-    invoiceFilePath: invoice.invoiceFilePath,
-  });
-
   /**
    * 5. Safe invoice file path
    */
@@ -604,24 +569,10 @@ const paymentPaid = async (
       ? invoice.invoiceFilePath
       : undefined;
 
-  console.log("Safe invoice file path:", {
-    originalPath: invoice.invoiceFilePath,
-    safePath: safeInvoiceFilePath,
-    exists: invoice.invoiceFilePath
-      ? fs.existsSync(invoice.invoiceFilePath)
-      : false,
-  });
-
   /**
    * 6. Send payment success email
    */
   try {
-    console.log("Calling paymentSuccessTemplate:", {
-      to: customerEmail,
-      orderId,
-      invoiceNumber: invoice.invoiceNumber,
-    });
-
     await paymentSuccessTemplate({
       userName: customerName,
       email: customerEmail,
@@ -636,8 +587,6 @@ const paymentPaid = async (
       // first test e attachment path safe kore pathacchi
       invoiceFilePath: safeInvoiceFilePath,
     });
-
-    console.log("paymentSuccessTemplate completed successfully");
   } catch (error: any) {
     console.error("paymentSuccessTemplate failed:", {
       name: error.name,
@@ -709,16 +658,6 @@ const paymentPaid = async (
     invoiceFilePath: safeInvoiceFilePath,
   };
 
-  console.log("Order confirmation email data prepared:", {
-    to: emailData.email,
-    userName: emailData.userName,
-    orderId: emailData.orderId,
-    total: emailData.total,
-    itemCount: emailData.items.length,
-    invoiceUrl: emailData.invoiceUrl,
-    invoiceFilePath: emailData.invoiceFilePath,
-  });
-
   /**
    * 8. Send order confirmation email
    */
@@ -734,8 +673,6 @@ const paymentPaid = async (
     await orderConfirmedTemplate(emailData);
 
     orderEmailSent = true;
-
-    console.log("orderConfirmedTemplate completed successfully");
   } catch (error: any) {
     orderEmailSent = false;
 
@@ -755,13 +692,7 @@ const paymentPaid = async (
    */
   if (orderEmailSent) {
     try {
-      console.log("Calling markInvoiceAsSent:", {
-        invoiceId: invoice.id,
-      });
-
       await markInvoiceAsSent(invoice.id);
-
-      console.log("Invoice marked as sent successfully");
     } catch (error: any) {
       console.error("markInvoiceAsSent failed:", {
         name: error.name,
@@ -769,8 +700,6 @@ const paymentPaid = async (
         stack: error.stack,
       });
     }
-  } else {
-    console.log("Invoice not marked as sent because order email was not sent");
   }
 
   return {
