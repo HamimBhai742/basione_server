@@ -5,7 +5,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 import { Request, Response } from "express";
 import { adminService } from "./admin.service";
 import { excludeFiled } from "../../utils/constain";
-import { uploadImageToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 
 const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -138,7 +138,7 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
 const createDecoration = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   if (file) {
-    const fileUrl = await uploadImageToS3(file);
+    const fileUrl = await uploadOptimizedImageToS3(file, "images", 1200, 1200, 80);
     req.body.image = fileUrl;
   }
 
@@ -460,7 +460,7 @@ const getAllTemplates = catchAsync(async (req: Request, res: Response) => {
 const createBackgroundImage = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   if (file) {
-    const fileUrl = await uploadImageToS3(file);
+    const fileUrl = await uploadOptimizedImageToS3(file, "images", 1600, 1600, 80);
     req.body.imageUrl = fileUrl;
   }
 

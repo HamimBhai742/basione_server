@@ -1317,8 +1317,10 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   const price = calculateBannerPriceInclVat(width, height);
 
   let imageUrl = template.imageUrl;
+  let originalImageUrl = template.originalImageUrl || template.imageUrl;
   if (req.file) {
     imageUrl = await uploadImageToS3(req.file);
+    originalImageUrl = imageUrl;
   }
 
   const sizeType = parsedData.sizeType || template.sizeType;
@@ -1348,6 +1350,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
       width,
       height,
       imageUrl,
+      originalImageUrl,
       price,
       variant: 0,
       isTemplate: false,

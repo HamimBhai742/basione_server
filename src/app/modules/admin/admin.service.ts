@@ -13,6 +13,7 @@ import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateGardenMockup } from "../../utils/generateMockup";
+import { optimizeImage } from "../../utils/optimizeImage";
 import axios from "axios";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
 import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
@@ -46,6 +47,7 @@ const bannerListSelect = {
   width: true,
   height: true,
   imageUrl: true,
+  originalImageUrl: true,
   variant: true,
   designNumber: true,
   revisedPrompt: true,
@@ -1613,11 +1615,26 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   }
 
   let imageUrl = "";
+  let originalImageUrl: string | null = null;
   let mockupUrl = null;
   const isReadymade = parsedData.isReadymade === true || parsedData.isReadymade === "true";
 
   if (file) {
-    imageUrl = await uploadImageToS3(file);
+    originalImageUrl = await uploadImageToS3(file);
+    try {
+      const optimizedBuffer = await optimizeImage(file.buffer);
+      const safeFileName = file.originalname.replace(/\s+/g, "-");
+      const optimizedKey = `images/optimized-${Date.now()}-${safeFileName}`;
+      imageUrl = await uploadBufferToS3({
+        buffer: optimizedBuffer,
+        key: optimizedKey,
+        contentType: "image/jpeg",
+      });
+    } catch (err) {
+      console.error("Image optimization failed, falling back to original:", err);
+      imageUrl = originalImageUrl;
+    }
+
     if (isReadymade) {
       try {
         const mockupBuffer = await generateGardenMockup(file.buffer);
@@ -1632,6 +1649,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
     }
   } else if (parsedData.imageUrl) {
     imageUrl = parsedData.imageUrl;
+    originalImageUrl = parsedData.originalImageUrl || null;
     mockupUrl = parsedData.mockupUrl || null;
   } else {
     throw new AppError("Template-afbeelding is verplicht.", 400);
@@ -1676,6 +1694,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       width,
       height,
       imageUrl,
+      originalImageUrl,
       price: Number(finalPrice.toFixed(2)),
       isTemplate: true,
       isReadymade,
@@ -1820,18 +1839,42 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
   updateData.isReadymade = isReadymade;
 
+  if (file) {
+    const originalUrl = await uploadImageToS3(file);
+    updateData.originalImageUrl = originalUrl;
+
+    if (isExist.originalImageUrl) {
+      const oldOriginalKey = getS3KeyFromUrl(isExist.originalImageUrl);
+      if (oldOriginalKey) {
+        await deleteImageFromS3(oldOriginalKey);
+      }
+    }
+
+    let imageUrl = originalUrl;
+    try {
+      const optimizedBuffer = await optimizeImage(file.buffer);
+      const safeFileName = file.originalname.replace(/\s+/g, "-");
+      const optimizedKey = `images/optimized-${Date.now()}-${safeFileName}`;
+      imageUrl = await uploadBufferToS3({
+        buffer: optimizedBuffer,
+        key: optimizedKey,
+        contentType: "image/jpeg",
+      });
+    } catch (err) {
+      console.error("Image optimization failed on update, falling back to original:", err);
+    }
+    updateData.imageUrl = imageUrl;
+
+    if (isExist.imageUrl) {
+      const oldKey = getS3KeyFromUrl(isExist.imageUrl);
+      if (oldKey) {
+        await deleteImageFromS3(oldKey);
+      }
+    }
+  }
+
   if (isReadymade) {
     if (file) {
-      const fileUrl = await uploadImageToS3(file);
-      updateData.imageUrl = fileUrl;
-
-      if (isExist.imageUrl) {
-        const oldKey = getS3KeyFromUrl(isExist.imageUrl);
-        if (oldKey) {
-          await deleteImageFromS3(oldKey);
-        }
-      }
-
       try {
         const mockupBuffer = await generateGardenMockup(file.buffer);
         const mockupUrl = await uploadBufferToS3({
@@ -1878,18 +1921,6 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
         await deleteImageFromS3(oldMockupKey);
       }
     }
-
-    if (file) {
-      const fileUrl = await uploadImageToS3(file);
-      updateData.imageUrl = fileUrl;
-
-      if (isExist.imageUrl) {
-        const oldKey = getS3KeyFromUrl(isExist.imageUrl);
-        if (oldKey) {
-          await deleteImageFromS3(oldKey);
-        }
-      }
-    }
   }
 
   const updatedTemplate = await prisma.banner.update({
@@ -1928,6 +1959,17 @@ const deleteTemplate = async (templateId: string) => {
         await deleteImageFromS3(key);
       } catch (s3Error) {
         console.error("Failed to delete template image from S3:", s3Error);
+      }
+    }
+  }
+
+  if (isExist.originalImageUrl) {
+    const key = getS3KeyFromUrl(isExist.originalImageUrl);
+    if (key) {
+      try {
+        await deleteImageFromS3(key);
+      } catch (s3Error) {
+        console.error("Failed to delete original template image from S3:", s3Error);
       }
     }
   }

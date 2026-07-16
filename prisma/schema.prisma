@@ -76,6 +76,7 @@ model Banner {
   height    Int
 
   imageUrl String
+  originalImageUrl String?
   variant  Int
 
   designNumber String?

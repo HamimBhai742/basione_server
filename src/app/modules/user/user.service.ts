@@ -9,7 +9,7 @@ import { registrationOtpTemplate } from "../../utils/emailTemplates/registration
 import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
 import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
 import { Request } from "express";
-import { uploadImageToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
@@ -444,7 +444,7 @@ const updateUser = async (data: {
   const oldImg = user.image;
   let imgUrl = user?.image;
   if (file) {
-    const result = await uploadImageToS3(file);
+    const result = await uploadOptimizedImageToS3(file, "images", 400, 400, 85);
     console.log(result);
     if (result) {
       imgUrl = result;

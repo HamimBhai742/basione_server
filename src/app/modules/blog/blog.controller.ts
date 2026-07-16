@@ -5,14 +5,14 @@ import { blogService } from "./blog.service";
 import httpStatus from "http-status";
 import { calculatePagination } from "../../utils/calculatePagination";
 import { excludeFiled } from "../../utils/constain";
-import { uploadImageToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 import { AppError } from "../../error/AppError";
 
 // Create blog post (Admin only)
 const createBlog = catchAsync(async (req: Request & { user?: any }, res: Response) => {
   const file = req.file;
   if (file) {
-    const coverImageUrl = await uploadImageToS3(file);
+    const coverImageUrl = await uploadOptimizedImageToS3(file, "images", 1600, 1600, 80);
     req.body.coverImage = coverImageUrl;
   }
 
@@ -31,7 +31,7 @@ const createBlog = catchAsync(async (req: Request & { user?: any }, res: Respons
 const updateBlog = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   if (file) {
-    const coverImageUrl = await uploadImageToS3(file);
+    const coverImageUrl = await uploadOptimizedImageToS3(file, "images", 1600, 1600, 80);
     req.body.coverImage = coverImageUrl;
   }
 
@@ -64,7 +64,7 @@ const uploadImage = catchAsync(async (req: Request, res: Response) => {
     throw new AppError("No file uploaded", httpStatus.BAD_REQUEST);
   }
 
-  const imageUrl = await uploadImageToS3(file);
+  const imageUrl = await uploadOptimizedImageToS3(file, "images", 1600, 1600, 80);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
