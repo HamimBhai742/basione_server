@@ -1260,6 +1260,7 @@ const getSingleOrder = async (orderId: string) => {
           banner: true,
         },
       },
+      shipments: true,
     },
   });
 

@@ -218,14 +218,33 @@ class QlsClient {
   async downloadLabel(labelUrl: string) {
     this.assertConfigured();
     const { data, headers } = await this.request(() =>
-      this.http.get<ArrayBuffer>(labelUrl, {
+      this.http.get<any>(labelUrl, {
         responseType: "arraybuffer",
       }),
     );
 
+    const contentType = headers["content-type"] || "";
+    let buffer: Buffer;
+
+    if (contentType.includes("application/json")) {
+      const jsonString = Buffer.from(data).toString("utf8");
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (parsed.data) {
+          buffer = Buffer.from(parsed.data, "base64");
+        } else {
+          buffer = Buffer.from(data);
+        }
+      } catch (err) {
+        buffer = Buffer.from(data);
+      }
+    } else {
+      buffer = Buffer.from(data);
+    }
+
     return {
-      buffer: Buffer.from(data),
-      contentType: headers["content-type"] || "application/pdf",
+      buffer,
+      contentType: "application/pdf",
     };
   }
 

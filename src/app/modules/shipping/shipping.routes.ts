@@ -66,7 +66,7 @@ router.post(
 
 router.get(
   "/shipments/:shipmentId/label",
-  // checkAuth("user", "admin"),
+  checkAuth("user", "admin"),
   shippingController.downloadLabel,
 );
 
