@@ -708,6 +708,8 @@ const createBannerByTemplate = async (req: AuthRequest) => {
       hobbies: normalizeStringArray(parsedData.hobbies),
       variant: 0,
       canvasJSON: canvasJson,
+      tuinposterCategoryId: parsedData.tuinposterCategoryId || null,
+      tuinposterCategoryIds: parsedData.tuinposterCategoryIds || (parsedData.tuinposterCategoryId ? [parsedData.tuinposterCategoryId] : []),
       ...lifecycleData,
     },
   });
@@ -852,21 +854,32 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
 
   // If this is a template banner, create a new customized user banner copy instead of modifying the template!
   if (banner.isTemplate) {
-    const bannerHeadline = parsedData?.headline || banner.headline;
+    let bannerHeadline = parsedData?.headline || banner.headline;
+    if (banner.tuinposterCategoryId && !bannerHeadline.startsWith("Tuinposter - ")) {
+      bannerHeadline = `Tuinposter - ${bannerHeadline}`;
+    }
     const slug = await generateUniqueBannerSlug(bannerHeadline);
     const lifecycleData = getSavedDesignDefaults(parsedData);
+
+    let bannerName = parsedData?.name || banner.name;
+    if (banner.tuinposterCategoryId && bannerName && !bannerName.startsWith("Tuinposter - ")) {
+      bannerName = `Tuinposter - ${bannerName}`;
+    }
+
     const newBanner = await prisma.banner.create({
       data: {
         userId: req.user?.id || null,
         templateCategoryId: banner.templateCategoryId || null,
         templateCategoryIds: banner.templateCategoryIds || [],
+        tuinposterCategoryId: banner.tuinposterCategoryId || null,
+        tuinposterCategoryIds: banner.tuinposterCategoryIds || [],
         sourceTemplateId: banner.id,
         svgMaskId: banner.svgMaskId,
         occasion: occasion,
         style: banner.style,
         headline: bannerHeadline,
         slug,
-        name: parsedData?.name || banner.name,
+        name: bannerName,
         description: parsedData?.description || banner.description,
         hobbies:
           parsedData?.hobbies !== undefined
@@ -982,6 +995,11 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     parsedData?.canvasJSON !== undefined
   ) {
     updateData.canvasJSON = getCanvasJson(parsedData);
+  }
+
+  if (parsedData?.tuinposterCategoryId !== undefined) {
+    updateData.tuinposterCategoryId = parsedData.tuinposterCategoryId;
+    updateData.tuinposterCategoryIds = parsedData.tuinposterCategoryIds || (parsedData.tuinposterCategoryId ? [parsedData.tuinposterCategoryId] : []);
   }
 
   Object.assign(updateData, getLifecycleUpdateData(parsedData));
@@ -1326,8 +1344,16 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   const sizeType = parsedData.sizeType || template.sizeType;
   const sizeLabel = formatLabel(sizeType);
 
-  const bannerHeadline = parsedData.headline || template.headline;
+  let bannerHeadline = parsedData.headline || template.headline;
+  if (template.tuinposterCategoryId && !bannerHeadline.startsWith("Tuinposter - ")) {
+    bannerHeadline = `Tuinposter - ${bannerHeadline}`;
+  }
   const slug = await generateUniqueBannerSlug(bannerHeadline);
+
+  let bannerName = parsedData.name || template.name;
+  if (template.tuinposterCategoryId && bannerName && !bannerName.startsWith("Tuinposter - ")) {
+    bannerName = `Tuinposter - ${bannerName}`;
+  }
 
   const banner = await prisma.banner.create({
     data: {
@@ -1342,7 +1368,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
       style: template.style,
       headline: bannerHeadline,
       slug,
-      name: parsedData.name || template.name,
+      name: bannerName,
       description: parsedData.description || template.description,
       hobbies: parsedData.hobbies || template.hobbies || [],
       sizeType,
