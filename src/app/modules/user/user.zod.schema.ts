@@ -35,3 +35,8 @@ export const resetPasswordZodSchema = z.object({
     .string({ message: "Wachtwoord is verplicht" })
     .min(6, { message: "Wachtwoord moet minstens 6 tekens bevatten" })
 });
+
+export const fcmTokenZodSchema = z.object({
+  fcmToken: z.string({ message: "FCM token is verplicht" }).min(1, { message: "FCM token mag niet leeg zijn" }),
+});
+

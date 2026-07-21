@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { userController } from "./user.controller";
 import {
+  fcmTokenZodSchema,
   forgotPasswordZodSchema,
   otpResendZodSchema,
   otpVerifyZodSchema,
@@ -56,6 +57,21 @@ router.patch(
   userController.updateUser,
 );
 
+router.post(
+  "/fcm-token",
+  checkAuth("user", "admin"),
+  validateRequest(fcmTokenZodSchema),
+  userController.saveFcmToken,
+);
+
+router.delete(
+  "/fcm-token",
+  checkAuth("user", "admin"),
+  validateRequest(fcmTokenZodSchema),
+  userController.removeFcmToken,
+);
+
 router.get("/total-active-users", userController.getTotalActiveUsers);
 
 export const userRoutes = router;
+

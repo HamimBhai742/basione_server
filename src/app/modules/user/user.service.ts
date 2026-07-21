@@ -504,6 +504,54 @@ const getTotalActiveUsers = async () => {
   return users;
 };
 
+const saveFcmToken = async (userId: string, fcmToken: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcmTokens: true },
+  });
+
+  if (!user) {
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const existingTokens = Array.isArray(user.fcmTokens) ? user.fcmTokens : [];
+  const updatedTokens = Array.from(new Set([...existingTokens, fcmToken]));
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      fcmToken,
+      fcmTokens: updatedTokens,
+    },
+  });
+
+  return { message: "FCM-token succesvol opgeslagen" };
+};
+
+const removeFcmToken = async (userId: string, fcmToken: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fcmTokens: true, fcmToken: true },
+  });
+
+  if (!user) {
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const existingTokens = Array.isArray(user.fcmTokens) ? user.fcmTokens : [];
+  const updatedTokens = existingTokens.filter((t) => t !== fcmToken);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      fcmToken: user.fcmToken === fcmToken ? (updatedTokens[0] || null) : user.fcmToken,
+      fcmTokens: updatedTokens,
+    },
+  });
+
+  return { message: "FCM-token succesvol verwijderd" };
+};
+
 export const userService = {
   registerUser,
   verifyOtp,
@@ -514,4 +562,7 @@ export const userService = {
   getMyProfile,
   updateUser,
   getTotalActiveUsers,
+  saveFcmToken,
+  removeFcmToken,
 };
+

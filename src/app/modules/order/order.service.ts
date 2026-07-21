@@ -17,6 +17,7 @@ import {
   getGuestOrderTokenExpiry,
 } from "../../utils/guestOrderToken";
 import { calculateDeliveryDate, formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
+import { sendAdminPushNotification } from "../../utils/notification.service";
 
 
 type FrontendDeliveryType =
@@ -934,6 +935,19 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
     order?.user?.name || order?.guestName || order?.addresses?.name || "Customer";
   const customerEmail =
     order?.user?.email || order?.guestEmail || order?.addresses?.email;
+
+  // Send Push Notification to Admin
+  sendAdminPushNotification({
+    title: "Bestelling Geannuleerd ❌",
+    body: `Bestelling #${order?.trackingNumber || orderId} is geannuleerd door ${customerName}.`,
+    data: {
+      orderId: (order?.id || orderId) as string,
+      trackingNumber: (order?.trackingNumber || orderId) as string,
+      type: "ORDER_CANCELLED",
+    },
+  }).catch((err) =>
+    console.error("[PushNotification] Error sending order cancellation push notification:", err),
+  );
 
   if (!customerEmail) {
     throw new AppError("E-mailadres niet gevonden", httpStatus.BAD_REQUEST);

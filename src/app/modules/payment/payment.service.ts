@@ -16,6 +16,7 @@ import {
 } from "../invoice/invoice.service";
 import { OrderConfirmedEmailData } from "../../../type/interface";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
+import { sendAdminPushNotification } from "../../utils/notification.service";
 
 type TransactionClient = Prisma.TransactionClient;
 type PaymentRequestUser = {
@@ -531,6 +532,21 @@ const paymentPaid = async (
   if (!customerEmail) {
     throw new AppError("Customer email not found", httpStatus.BAD_REQUEST);
   }
+
+  /**
+   * Send push notification to admins for new paid order
+   */
+  sendAdminPushNotification({
+    title: "Nieuwe Bestelling Ontvangen! 🛍️",
+    body: `Bestelling #${updatedOrder.trackingNumber || orderId} is geplaatst door ${customerName}. Totaal: €${Number(updatedOrder.total || 0).toFixed(2)}`,
+    data: {
+      orderId: updatedOrder.id,
+      trackingNumber: String(updatedOrder.trackingNumber || orderId),
+      type: "NEW_ORDER",
+    },
+  }).catch((err) =>
+    console.error("[PushNotification] Error sending new order push notification:", err),
+  );
 
   /**
    * 4. Generate invoice

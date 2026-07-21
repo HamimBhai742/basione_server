@@ -141,6 +141,32 @@ const getTotalActiveUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const saveFcmToken = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await userService.saveFcmToken(req.user.id, req.body.fcmToken);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  },
+);
+
+const removeFcmToken = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const result = await userService.removeFcmToken(req.user.id, req.body.fcmToken);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.message,
+      data: null,
+    });
+  },
+);
+
 export const userController = {
   registerUser,
   verifyOtp,
@@ -151,4 +177,6 @@ export const userController = {
   getMyProfile,
   updateUser,
   getTotalActiveUsers,
+  saveFcmToken,
+  removeFcmToken,
 };

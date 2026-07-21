@@ -22,6 +22,8 @@ model User {
   image                      String?
   phone                      String?
   location                   String?
+  fcmToken                   String?
+  fcmTokens                  String[]  @default([])
   banners                    Banner[]
   orders                     Order[]
   addresses                  Address[]
