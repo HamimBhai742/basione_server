@@ -784,6 +784,10 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     throw new AppError("Bestelde ontwerpen kunnen niet worden bewerkt", 400);
   }
 
+  if (banner.generationId) {
+    await cleanupUnselectedGenerationVariants(banner.id, banner.generationId);
+  }
+
   let parsedData: any = null;
 
   if (req?.body?.data) {
@@ -1149,6 +1153,54 @@ const getAllbanners = async (
   };
 };
 
+const cleanupUnselectedGenerationVariants = async (
+  selectedBannerId: string,
+  generationId: string,
+) => {
+  if (!generationId) return;
+
+  try {
+    const otherBanners = await prisma.banner.findMany({
+      where: {
+        generationId,
+        id: { not: selectedBannerId },
+      },
+    });
+
+    if (!otherBanners || otherBanners.length === 0) return;
+
+    for (const other of otherBanners) {
+      if (other.imageUrl) {
+        const key = getS3KeyFromUrl(other.imageUrl);
+        if (key) {
+          await deleteImageFromS3(key);
+        }
+      }
+      if (other.originalImageUrl) {
+        const key = getS3KeyFromUrl(other.originalImageUrl);
+        if (key) {
+          await deleteImageFromS3(key);
+        }
+      }
+      if (other.mockupUrl) {
+        const key = getS3KeyFromUrl(other.mockupUrl);
+        if (key) {
+          await deleteImageFromS3(key);
+        }
+      }
+    }
+
+    await prisma.banner.deleteMany({
+      where: {
+        generationId,
+        id: { not: selectedBannerId },
+      },
+    });
+  } catch (cleanError) {
+    console.error("Failed to clean up unselected variants:", cleanError);
+  }
+};
+
 const getSelectedBanner = async (id: string, user?: any) => {
   const banner = await prisma.banner.findUnique({
     where: {
@@ -1167,32 +1219,7 @@ const getSelectedBanner = async (id: string, user?: any) => {
 
   // If this banner belongs to an AI generation, delete the other 3 variants from DB and S3
   if (banner.generationId) {
-    try {
-      const otherBanners = await prisma.banner.findMany({
-        where: {
-          generationId: banner.generationId,
-          id: { not: banner.id },
-        },
-      });
-
-      for (const other of otherBanners) {
-        if (other.imageUrl) {
-          const key = getS3KeyFromUrl(other.imageUrl);
-          if (key) {
-            await deleteImageFromS3(key);
-          }
-        }
-      }
-
-      await prisma.banner.deleteMany({
-        where: {
-          generationId: banner.generationId,
-          id: { not: banner.id },
-        },
-      });
-    } catch (cleanError) {
-      console.error("Failed to clean up unselected variants:", cleanError);
-    }
+    await cleanupUnselectedGenerationVariants(banner.id, banner.generationId);
   }
 
   const selectedBanner = await prisma.banner.update({
