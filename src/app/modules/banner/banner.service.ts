@@ -12,7 +12,8 @@ export const generateUniqueBannerSlug = async (
   headline: string,
   currentId?: string,
 ): Promise<string> => {
-  const baseSlug = slugify(headline || "banner", { lower: true, strict: true });
+  const baseSlug =
+    slugify(headline || "spandoek", { lower: true, strict: true }) || "spandoek";
 
   let slug = baseSlug;
   let counter = 1;

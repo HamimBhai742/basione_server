@@ -319,7 +319,9 @@ const createOrder = async (
       throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
     }
 
-    if (banner.userId && banner.userId !== userId) {
+    const isCatalogBanner = Boolean(banner.isTemplate || banner.isReadymade);
+
+    if (!isCatalogBanner && banner.userId && banner.userId !== userId) {
       throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
     }
 
@@ -364,25 +366,27 @@ const createOrder = async (
       vatAmount: roundToTwo(itemVat),
     });
 
-    bannerUpdates.push({
-      id: itemBannerId,
-      data: {
-        ...(userId ? { userId } : {}),
-        designNumber,
-        imageUrl: finalBannerImageUrl,
-        ...(markDesignAsOrdered
-          ? {
-              isOrdered: true,
-              isSavedDesign: true,
-              savedFromEditor: true,
-              source: payload.source || banner.source || "saved_design_order",
-              designStatus: payload.designStatus || "ordered",
-              lifecycleStatus: payload.lifecycleStatus || "ordered",
-              orderedAt,
-            }
-          : {}),
-      },
-    });
+    if (!isCatalogBanner) {
+      bannerUpdates.push({
+        id: itemBannerId,
+        data: {
+          ...(userId ? { userId } : {}),
+          designNumber,
+          imageUrl: finalBannerImageUrl,
+          ...(markDesignAsOrdered
+            ? {
+                isOrdered: true,
+                isSavedDesign: true,
+                savedFromEditor: true,
+                source: payload.source || banner.source || "saved_design_order",
+                designStatus: payload.designStatus || "ordered",
+                lifecycleStatus: payload.lifecycleStatus || "ordered",
+                orderedAt,
+              }
+            : {}),
+        },
+      });
+    }
 
     totalBannerPriceExclVat += bannerPriceExclVat;
     totalBannerVatAmount += bannerVatAmount;

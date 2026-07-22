@@ -46,19 +46,19 @@ const getBgPath = (): string => {
 export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer> => {
   try {
     const bgPath = getBgPath();
-    const originalWidth = 705;
-    const originalHeight = 469;
+    const originalWidth = 1024;
+    const originalHeight = 1024;
 
     // Get input design image metadata to find aspect ratio
     const bannerMetadata = await sharp(bannerBuffer).metadata();
-    const bannerWidth = bannerMetadata.width || 413;
-    const bannerHeight = bannerMetadata.height || 192;
+    const bannerWidth = bannerMetadata.width || 738;
+    const bannerHeight = bannerMetadata.height || 503;
 
     // Frame bounding box inside tuinposter_bg.png
-    const frameLeft = 152;
-    const frameTop = 94;
-    const frameWidth = 413;
-    const frameHeight = 192;
+    const frameLeft = 151;
+    const frameTop = 249;
+    const frameWidth = 738;
+    const frameHeight = 503;
     const frameRatio = frameWidth / frameHeight;
 
     // Calculate poster dimensions maintaining aspect ratio
@@ -79,7 +79,7 @@ export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer
       .resize(newWidth, newHeight, { fit: "fill" })
       .toBuffer();
 
-    // Calculate horizontal scale factor to shrink/adjust background frame width
+    // Calculate horizontal scale factor to adjust background frame width
     const scaleX = newWidth / frameWidth;
     const finalMockupWidth = Math.round(originalWidth * scaleX);
 
@@ -88,58 +88,16 @@ export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer
       .resize(finalMockupWidth, originalHeight, { fit: "fill" })
       .toBuffer();
 
-    // Extract a tile of brick wall from the top of the scaled background image
-    // to fill any vertical cutout gaps (for panoramic banners)
-    const wallTile = await sharp(scaledBg)
-      .extract({ left: 0, top: 0, width: finalMockupWidth, height: 94 })
-      .resize(newWidth, frameHeight, { fit: "cover" })
-      .toBuffer();
+    const bannerLeft = Math.round(frameLeft * scaleX);
+    const bannerTop = Math.round(frameTop + (frameHeight - newHeight) / 2);
 
-    // Position of the banner inside the wall tile
-    const bannerLeftInCutout = 0;
-    const bannerTopInCutout = Math.round((frameHeight - newHeight) / 2);
-
-    // Composite banner onto the wall tile
-    const cutoutContent = await sharp(wallTile)
+    const mockupBuffer = await sharp(scaledBg)
       .composite([
         {
           input: resizedBanner,
-          left: bannerLeftInCutout,
-          top: bannerTopInCutout
-        }
-      ])
-      .png()
-      .toBuffer();
-
-    const newFrameLeft = Math.round(frameLeft * scaleX);
-
-    // Create base canvas and composite cutoutContent
-    const baseCanvas = await sharp({
-      create: {
-        width: finalMockupWidth,
-        height: originalHeight,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      }
-    })
-    .composite([
-      {
-        input: cutoutContent,
-        left: newFrameLeft,
-        top: frameTop
-      }
-    ])
-    .png()
-    .toBuffer();
-
-    // Composite the scaled background on top
-    const mockupBuffer = await sharp(baseCanvas)
-      .composite([
-        {
-          input: scaledBg,
-          left: 0,
-          top: 0
-        }
+          left: bannerLeft,
+          top: bannerTop,
+        },
       ])
       .png()
       .toBuffer();

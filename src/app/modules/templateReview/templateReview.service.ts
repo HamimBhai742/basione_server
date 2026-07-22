@@ -74,6 +74,11 @@ const resolveReviewableTemplateFromOrder = async (
     },
     include: {
       banner: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 
@@ -92,13 +97,31 @@ const resolveReviewableTemplateFromOrder = async (
     );
   }
 
-  const templateId = order.banner
-    ? (order.banner.sourceTemplateId
+  let templateId: string | null = null;
+
+  if (order.banner) {
+    templateId = order.banner.sourceTemplateId
       ? order.banner.sourceTemplateId
       : order.banner.isTemplate
         ? order.banner.id
-        : null)
-    : null;
+        : null;
+  }
+
+  if (!templateId && order.items && order.items.length > 0) {
+    for (const item of order.items) {
+      if (item.banner) {
+        const itemTemplateId = item.banner.sourceTemplateId
+          ? item.banner.sourceTemplateId
+          : item.banner.isTemplate
+            ? item.banner.id
+            : null;
+        if (itemTemplateId) {
+          templateId = itemTemplateId;
+          break;
+        }
+      }
+    }
+  }
 
   if (!templateId) {
     throw new AppError(
