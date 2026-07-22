@@ -6,6 +6,7 @@ import { AppError } from "../../error/AppError";
 import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
+import { processCanvasJsonImages } from "../../utils/processCanvasJson";
 import slugify from "slugify";
 
 export const generateUniqueBannerSlug = async (
@@ -215,16 +216,19 @@ const parseMultipartData = (rawData: unknown) => {
   }
 };
 
-const getCanvasJson = (data: any) => {
+const getCanvasJson = async (data: any) => {
   const canvasJson = data?.canvasJson ?? data?.canvasJSON;
 
   if (canvasJson === undefined || canvasJson === null) {
     return null;
   }
 
-  return typeof canvasJson === "string"
-    ? canvasJson
-    : JSON.stringify(canvasJson);
+  const rawJson =
+    typeof canvasJson === "string"
+      ? canvasJson
+      : JSON.stringify(canvasJson);
+
+  return processCanvasJsonImages(rawJson);
 };
 
 const getSizeType = (data: any, fallback = "custom") => {
@@ -720,7 +724,7 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   const sizeLabel = getSizeLabel(parsedData, sizeType);
 
   const slug = await generateUniqueBannerSlug(headline);
-  const canvasJson = getCanvasJson(parsedData);
+  const canvasJson = await getCanvasJson(parsedData);
   const lifecycleData = getSavedDesignDefaults(parsedData);
 
   const banner = await prisma.banner.create({
@@ -949,7 +953,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         isTemplate: false,
         isSelected: true,
         status: "SELECTED",
-        canvasJSON: getCanvasJson(parsedData) ?? banner.canvasJSON,
+        canvasJSON: (await getCanvasJson(parsedData)) ?? banner.canvasJSON,
         ...lifecycleData,
       },
     });
@@ -1041,7 +1045,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     parsedData?.canvasJson !== undefined ||
     parsedData?.canvasJSON !== undefined
   ) {
-    updateData.canvasJSON = getCanvasJson(parsedData);
+    updateData.canvasJSON = await getCanvasJson(parsedData);
   }
 
   if (parsedData?.tuinposterCategoryId !== undefined) {

@@ -16,6 +16,7 @@ import { generateGardenMockup } from "../../utils/generateMockup";
 import { optimizeImage } from "../../utils/optimizeImage";
 import axios from "axios";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
+import { processCanvasJsonImages } from "../../utils/processCanvasJson";
 import { QlsCarrierCode, shippingService } from "../shipping/shipping.service";
 import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 import { formatLabel } from "../../utils/formatLable";
@@ -1702,7 +1703,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       mockupUrl,
       variant: 0,
       status: "GENERATED",
-      canvasJSON: parsedData.canvasJSON || null,
+      canvasJSON: parsedData.canvasJSON ? await processCanvasJsonImages(parsedData.canvasJSON) : null,
       metaTitle: parsedData.metaTitle || null,
       metaDescription: parsedData.metaDescription || null,
       h1Title: parsedData.h1Title || null,
@@ -1796,7 +1797,7 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   if (parsedData.description !== undefined) updateData.description = parsedData.description;
   if (parsedData.sizeType !== undefined) updateData.sizeType = parsedData.sizeType;
   if (parsedData.sizeLabel !== undefined) updateData.sizeLabel = parsedData.sizeLabel;
-  if (parsedData.canvasJSON !== undefined) updateData.canvasJSON = parsedData.canvasJSON;
+  if (parsedData.canvasJSON !== undefined) updateData.canvasJSON = await processCanvasJsonImages(parsedData.canvasJSON);
   if (parsedData.metaTitle !== undefined) updateData.metaTitle = parsedData.metaTitle;
   if (parsedData.metaDescription !== undefined) updateData.metaDescription = parsedData.metaDescription;
   if (parsedData.h1Title !== undefined) updateData.h1Title = parsedData.h1Title;
