@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import axios from "axios";
 import FormData from "form-data";
 import { AppError } from "../../error/AppError";
-import { uploadImageToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import slugify from "slugify";
@@ -350,6 +350,40 @@ const canAccessOwnedBanner = (banner: any, user?: any) => {
   return user?.role === "admin" || banner.userId === user?.id;
 };
 
+const copyGeneratedImageToFolder = async (imageUrl: string, variant: number): Promise<string> => {
+  try {
+    const originalKey = getS3KeyFromUrl(imageUrl);
+    if (!originalKey) return imageUrl;
+
+    if (originalKey.startsWith("ai-banners/")) {
+      return imageUrl;
+    }
+
+    // Download image from the temporary URL (S3 root)
+    const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    const buffer = Buffer.from(imageResponse.data);
+
+    // Define the new S3 key under the folder "ai-banners"
+    const newKey = `ai-banners/${Date.now()}-v${variant}-${originalKey}`;
+
+    // Upload buffer to S3
+    const newUrl = await uploadBufferToS3({
+      buffer,
+      key: newKey,
+      contentType: "image/png",
+    });
+
+    // Delete the original image from the S3 root
+    await deleteImageFromS3(originalKey);
+
+    return newUrl;
+  } catch (error) {
+    console.error("Failed to copy generated image to S3 folder:", error);
+    // Fallback to original URL
+    return imageUrl;
+  }
+};
+
 const assertCanAccessOwnedBanner = (banner: any, user?: any) => {
   if (!canAccessOwnedBanner(banner, user)) {
     throw new AppError("Je bent niet geautoriseerd", 403);
@@ -480,7 +514,14 @@ const createBanner = async (req: AuthRequest) => {
       );
 
       const savedBanners: any[] = [];
+      const generationId = `gen-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+
       for (const item of sortedVariants) {
+        let imageUrl = item.url ?? "";
+        if (imageUrl && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+          imageUrl = await copyGeneratedImageToFolder(imageUrl, item.variant);
+        }
+
         const slug = await generateUniqueBannerSlug(
           `${parsedData.headline || "banner"}-v${item.variant}`,
         );
@@ -502,12 +543,13 @@ const createBanner = async (req: AuthRequest) => {
             width: parsedData.size.width,
             height: parsedData.size.height,
 
-            imageUrl: item.url ?? "",
+            imageUrl: imageUrl,
             variant: item.variant,
 
             price,
 
             revisedPrompt: item.revised_prompt || null,
+            generationId,
           },
         });
         savedBanners.push(banner);
@@ -1121,6 +1163,36 @@ const getSelectedBanner = async (id: string, user?: any) => {
   }
 
   assertCanAccessOwnedBanner(banner, user);
+
+  // If this banner belongs to an AI generation, delete the other 3 variants from DB and S3
+  if (banner.generationId) {
+    try {
+      const otherBanners = await prisma.banner.findMany({
+        where: {
+          generationId: banner.generationId,
+          id: { not: banner.id },
+        },
+      });
+
+      for (const other of otherBanners) {
+        if (other.imageUrl) {
+          const key = getS3KeyFromUrl(other.imageUrl);
+          if (key) {
+            await deleteImageFromS3(key);
+          }
+        }
+      }
+
+      await prisma.banner.deleteMany({
+        where: {
+          generationId: banner.generationId,
+          id: { not: banner.id },
+        },
+      });
+    } catch (cleanError) {
+      console.error("Failed to clean up unselected variants:", cleanError);
+    }
+  }
 
   const selectedBanner = await prisma.banner.update({
     where: {
