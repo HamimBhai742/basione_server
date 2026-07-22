@@ -46,57 +46,24 @@ const getBgPath = (): string => {
 export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer> => {
   try {
     const bgPath = getBgPath();
-    const originalWidth = 1024;
-    const originalHeight = 1024;
-
-    // Get input design image metadata to find aspect ratio
-    const bannerMetadata = await sharp(bannerBuffer).metadata();
-    const bannerWidth = bannerMetadata.width || 738;
-    const bannerHeight = bannerMetadata.height || 503;
 
     // Frame bounding box inside tuinposter_bg.png
     const frameLeft = 151;
     const frameTop = 249;
     const frameWidth = 738;
     const frameHeight = 503;
-    const frameRatio = frameWidth / frameHeight;
 
-    // Calculate poster dimensions maintaining aspect ratio
-    const designRatio = bannerWidth / bannerHeight;
-    let newWidth = frameWidth;
-    let newHeight = frameHeight;
-
-    if (designRatio > frameRatio) {
-      newWidth = frameWidth;
-      newHeight = Math.round(frameWidth / designRatio);
-    } else {
-      newHeight = frameHeight;
-      newWidth = Math.round(frameHeight * designRatio);
-    }
-
-    // Resize design banner
+    // Resize banner design to fill the entire frame area completely (removing white board)
     const resizedBanner = await sharp(bannerBuffer)
-      .resize(newWidth, newHeight, { fit: "fill" })
+      .resize(frameWidth, frameHeight, { fit: "cover" })
       .toBuffer();
 
-    // Calculate horizontal scale factor to adjust background frame width
-    const scaleX = newWidth / frameWidth;
-    const finalMockupWidth = Math.round(originalWidth * scaleX);
-
-    // Resize background image (tuinposter_bg.png) horizontally
-    const scaledBg = await sharp(bgPath)
-      .resize(finalMockupWidth, originalHeight, { fit: "fill" })
-      .toBuffer();
-
-    const bannerLeft = Math.round(frameLeft * scaleX);
-    const bannerTop = Math.round(frameTop + (frameHeight - newHeight) / 2);
-
-    const mockupBuffer = await sharp(scaledBg)
+    const mockupBuffer = await sharp(bgPath)
       .composite([
         {
           input: resizedBanner,
-          left: bannerLeft,
-          top: bannerTop,
+          left: frameLeft,
+          top: frameTop,
         },
       ])
       .png()
