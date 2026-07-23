@@ -5,7 +5,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 import { Request, Response } from "express";
 import { adminService } from "./admin.service";
 import { excludeFiled } from "../../utils/constain";
-import { uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
+import { uploadFileToS3, uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 
 const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -138,7 +138,15 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
 const createDecoration = catchAsync(async (req: Request, res: Response) => {
   const file = req.file;
   if (file) {
-    const fileUrl = await uploadOptimizedImageToS3(file, "images", 1200, 1200, 80);
+    const isTransparent =
+      file.mimetype === "image/png" ||
+      file.mimetype === "image/webp" ||
+      file.mimetype === "image/svg+xml";
+
+    const fileUrl = isTransparent
+      ? await uploadFileToS3(file, "images")
+      : await uploadOptimizedImageToS3(file, "images", 1200, 1200, 80);
+
     req.body.image = fileUrl;
   }
 
@@ -164,9 +172,11 @@ const deleteDecoration = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllDecoration = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
-    req.query,
-  );
+  const { page, limit, skip, sortBy, sortOrder } = calculatePagination({
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    ...req.query,
+  });
   const filter = { ...req.query };
 
   for (const f of excludeFiled) {

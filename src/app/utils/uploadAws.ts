@@ -73,8 +73,13 @@ export const uploadOptimizedImageToS3 = async (
   maxHeight = 1600,
   quality = 80,
 ) => {
-  // SVG and non-image files are uploaded directly without processing
-  if (file.mimetype === "image/svg+xml" || !file.mimetype.startsWith("image/")) {
+  // SVG, PNG, WebP and non-image files are uploaded directly to preserve transparency and alpha channels
+  if (
+    file.mimetype === "image/svg+xml" ||
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/webp" ||
+    !file.mimetype.startsWith("image/")
+  ) {
     return uploadFileToS3(file, folder);
   }
 

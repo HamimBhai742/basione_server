@@ -6,9 +6,11 @@ import { excludeFiled } from "../../utils/constain";
 import { calculatePagination } from "../../utils/calculatePagination";
 
 const getAllDecoration = catchAsync(async (req, res) => {
-  const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
-    req.query,
-  );
+  const { page, limit, skip, sortBy, sortOrder } = calculatePagination({
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    ...req.query,
+  });
   const filter = { ...req.query };
 
   for (const f of excludeFiled) {

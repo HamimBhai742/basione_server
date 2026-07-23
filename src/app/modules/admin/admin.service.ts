@@ -1156,24 +1156,30 @@ const getAllDecoration = async (
     }
   }
 
-  const decorations = await prisma.decoration.findMany({
-    where: Object.keys(cleanFilter).length > 0 ? cleanFilter : undefined,
-    orderBy: {
-      [sortBy]: sortOrder,
-    },
-    include: {
-      category: true,
-    },
-    take: limit,
-    skip,
-  });
+  const where = Object.keys(cleanFilter).length > 0 ? cleanFilter : undefined;
+
+  const [decorations, total] = await prisma.$transaction([
+    prisma.decoration.findMany({
+      where,
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      include: {
+        category: true,
+      },
+      take: limit,
+      skip,
+    }),
+    prisma.decoration.count({ where }),
+  ]);
+
   return {
     decorations,
     metaData: {
       page,
       limit,
-      total: decorations?.length,
-      totalPages: Math.ceil(decorations?.length / limit),
+      total,
+      totalPages: Math.ceil(total / limit),
     },
   };
 };
