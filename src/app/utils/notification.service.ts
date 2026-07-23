@@ -120,6 +120,7 @@ export const sendAdminPushNotification = async ({
       const tokensToRemove: string[] = [];
       response.responses.forEach((resp: any, idx: number) => {
         if (!resp.success) {
+          console.error(`[PushNotification] Token index ${idx} failed:`, resp.error?.code, resp.error?.message);
           const errCode = resp.error?.code;
           if (
             errCode === "messaging/invalid-registration-token" ||
