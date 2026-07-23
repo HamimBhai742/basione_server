@@ -10,6 +10,8 @@ import { chatbotRoutes } from "./app/modules/chatbot/chatbot.routes";
 
 const app: Application = express();
 
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

@@ -93,6 +93,14 @@ export const sendAdminPushNotification = async ({
           channelId: "orders_channel",
         },
       },
+      webpush: {
+        headers: {
+          Urgency: "high",
+        },
+        notification: {
+          requireInteraction: true,
+        },
+      },
       apns: {
         payload: {
           aps: {
