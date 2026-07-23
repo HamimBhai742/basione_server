@@ -64,6 +64,13 @@ router.post(
   userController.saveFcmToken,
 );
 
+router.patch(
+  "/fcm-token",
+  checkAuth("user", "admin"),
+  validateRequest(fcmTokenZodSchema),
+  userController.saveFcmToken,
+);
+
 router.delete(
   "/fcm-token",
   checkAuth("user", "admin"),
