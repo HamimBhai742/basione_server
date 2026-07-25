@@ -188,6 +188,8 @@ const totalOrder = async (
             { name: { contains: searchTerm, mode: "insensitive" } },
             { description: { contains: searchTerm, mode: "insensitive" } },
             { style: { contains: searchTerm, mode: "insensitive" } },
+            { sku: { contains: searchTerm, mode: "insensitive" } },
+            { slug: { contains: searchTerm, mode: "insensitive" } },
           ],
         },
         select: { id: true },
@@ -2084,6 +2086,8 @@ const getAllTemplates = async (
       { description: { contains: searchTerm, mode: "insensitive" } },
       { occasion: { contains: searchTerm, mode: "insensitive" } },
       { name: { contains: searchTerm, mode: "insensitive" } },
+      { sku: { contains: searchTerm, mode: "insensitive" } },
+      { slug: { contains: searchTerm, mode: "insensitive" } },
     ];
     if (where.OR) {
       where.AND = [

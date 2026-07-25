@@ -1315,6 +1315,8 @@ const getTemplates = async (
       { description: { contains: searchTerm, mode: "insensitive" } },
       { occasion: { contains: searchTerm, mode: "insensitive" } },
       { name: { contains: searchTerm, mode: "insensitive" } },
+      { sku: { contains: searchTerm, mode: "insensitive" } },
+      { slug: { contains: searchTerm, mode: "insensitive" } },
     ];
     if (where.OR) {
       where.AND = [
