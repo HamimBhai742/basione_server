@@ -1484,6 +1484,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
       price,
       variant: 0,
       isTemplate: false,
+      isReadymade: template.isReadymade || !!template.tuinposterCategoryId,
       isSelected: true,
       status: "SELECTED",
     },

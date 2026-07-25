@@ -319,7 +319,7 @@ const createOrder = async (
       throw new AppError("Banner niet gevonden.", httpStatus.NOT_FOUND);
     }
 
-    const isCatalogBanner = Boolean(banner.isTemplate || banner.isReadymade);
+    const isCatalogBanner = Boolean(banner.isTemplate);
 
     if (!isCatalogBanner && banner.userId && banner.userId !== userId) {
       throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
@@ -346,12 +346,17 @@ const createOrder = async (
     const itemVat = bannerVatAmount + eyeletsVatAmount;
 
     const designNumber = i === 0 ? baseDesignNumber : `${baseDesignNumber}-${i + 1}`;
-    const finalBannerImageUrl = await applyDesignNumberToBanner({
-      imageUrl: banner.imageUrl,
-      designNumber,
-      widthCm: banner.width,
-      heightCm: banner.height,
-    });
+    let finalBannerImageUrl = banner.imageUrl;
+    try {
+      finalBannerImageUrl = await applyDesignNumberToBanner({
+        imageUrl: banner.imageUrl,
+        designNumber,
+        widthCm: banner.width,
+        heightCm: banner.height,
+      });
+    } catch (err: any) {
+      console.error("[applyDesignNumberToBanner Error]", err?.message || err);
+    }
 
     const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
 
@@ -366,27 +371,25 @@ const createOrder = async (
       vatAmount: roundToTwo(itemVat),
     });
 
-    if (!isCatalogBanner) {
-      bannerUpdates.push({
-        id: itemBannerId,
-        data: {
-          ...(userId ? { userId } : {}),
-          designNumber,
-          imageUrl: finalBannerImageUrl,
-          ...(markDesignAsOrdered
-            ? {
-                isOrdered: true,
-                isSavedDesign: true,
-                savedFromEditor: true,
-                source: payload.source || banner.source || "saved_design_order",
-                designStatus: payload.designStatus || "ordered",
-                lifecycleStatus: payload.lifecycleStatus || "ordered",
-                orderedAt,
-              }
-            : {}),
-        },
-      });
-    }
+    bannerUpdates.push({
+      id: itemBannerId,
+      data: {
+        ...(userId ? { userId } : {}),
+        designNumber,
+        imageUrl: finalBannerImageUrl,
+        ...(markDesignAsOrdered
+          ? {
+              isOrdered: true,
+              isSavedDesign: true,
+              savedFromEditor: true,
+              source: payload.source || banner.source || "saved_design_order",
+              designStatus: payload.designStatus || "ordered",
+              lifecycleStatus: payload.lifecycleStatus || "ordered",
+              orderedAt,
+            }
+          : {}),
+      },
+    });
 
     totalBannerPriceExclVat += bannerPriceExclVat;
     totalBannerVatAmount += bannerVatAmount;

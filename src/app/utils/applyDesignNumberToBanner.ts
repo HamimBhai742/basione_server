@@ -119,7 +119,13 @@ export const applyDesignNumberToBanner = async ({
     throw new AppError("Design number is missing", 400);
   }
 
-  const response = await axios.get<ArrayBuffer>(imageUrl, {
+  let fetchUrl = imageUrl;
+  if (!fetchUrl.startsWith("http://") && !fetchUrl.startsWith("https://")) {
+    const baseUrl = process.env.SERVER_URL || process.env.CLIENT_URL || "http://localhost:5000";
+    fetchUrl = `${baseUrl.replace(/\/$/, "")}/${fetchUrl.replace(/^\//, "")}`;
+  }
+
+  const response = await axios.get<ArrayBuffer>(fetchUrl, {
     responseType: "arraybuffer",
     timeout: 30000,
   });
