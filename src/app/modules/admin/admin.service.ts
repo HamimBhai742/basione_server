@@ -293,6 +293,48 @@ const totalOrder = async (
   };
 };
 
+const getOrderStatusSummary = async () => {
+  const [
+    totalOrders,
+    pending,
+    processing,
+    ready,
+    shipped,
+    delivered,
+    cancelled,
+    refunded,
+  ] = await Promise.all([
+    prisma.order.count(),
+    prisma.order.count({ where: { status: "pending" } }),
+    prisma.order.count({ where: { status: "processing" } }),
+    prisma.order.count({ where: { status: "ready" } }),
+    prisma.order.count({ where: { status: "shipped" } }),
+    prisma.order.count({ where: { status: "delivered" } }),
+    prisma.order.count({ where: { status: "cancelled" } }),
+    prisma.order.count({ where: { status: "refunded" } }),
+  ]);
+
+  return {
+    totalOrders,
+    pending,
+    processing,
+    ready,
+    shipped,
+    delivered,
+    cancelled,
+    refunded,
+    byStatus: {
+      pending,
+      processing,
+      ready,
+      shipped,
+      delivered,
+      cancelled,
+      refunded,
+    },
+  };
+};
+
 const manageOrder = async (
   orderId: string,
   status: IOrderStatus,
@@ -2167,6 +2209,7 @@ const getAllBackgroundImages = async () => {
 
 export const adminService = {
   totalOrder,
+  getOrderStatusSummary,
   manageOrder,
   manageUsers,
   updateUserStatus,

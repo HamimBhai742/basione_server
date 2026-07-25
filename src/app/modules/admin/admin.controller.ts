@@ -35,6 +35,17 @@ const totalOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getOrderStatusSummary = catchAsync(async (req: Request, res: Response) => {
+  const summary = await adminService.getOrderStatusSummary();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Bestellingsstatistieken succesvol opgehaald",
+    data: summary,
+  });
+});
+
 const manageOrder = catchAsync(async (req: Request, res: Response) => {
   const order = await adminService.manageOrder(
     req.params.id as string,
@@ -508,6 +519,7 @@ const getAllBackgroundImages = catchAsync(async (req: Request, res: Response) =>
 
 export const adminController = {
   totalOrder,
+  getOrderStatusSummary,
   manageOrder,
   manageUsers,
   updateUserStatus,
