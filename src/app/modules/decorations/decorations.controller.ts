@@ -8,7 +8,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 const getAllDecoration = catchAsync(async (req, res) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination({
     sortBy: "createdAt",
-    sortOrder: "desc",
+    sortOrder: "asc",
     ...req.query,
   });
   const filter = { ...req.query };
