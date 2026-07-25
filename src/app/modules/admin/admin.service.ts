@@ -126,8 +126,21 @@ const totalOrder = async (
   const cleanFilter = { ...filter };
   delete cleanFilter.searchTerm;
 
+  const validOrderFields = new Set([
+    "id",
+    "status",
+    "paymentStatus",
+    "userId",
+    "bannerId",
+    "deliveryType",
+    "deliveryMethod",
+    "isGuest",
+    "trackingNumber",
+  ]);
+
   for (const key of Object.keys(cleanFilter)) {
     if (
+      !validOrderFields.has(key) ||
       cleanFilter[key] === "" ||
       cleanFilter[key] === "all" ||
       cleanFilter[key] === undefined ||
@@ -136,6 +149,16 @@ const totalOrder = async (
       delete cleanFilter[key];
     }
   }
+
+  const validSortFields = new Set([
+    "createdAt",
+    "updatedAt",
+    "total",
+    "status",
+    "paymentStatus",
+    "quantity",
+  ]);
+  const safeSortBy = validSortFields.has(sortBy) ? sortBy : "createdAt";
 
   const andConditions: any[] = [];
 
@@ -216,7 +239,7 @@ const totalOrder = async (
   const where =
     andConditions.length > 0
       ? { AND: [...andConditions] }
-      : {}
+      : {};
 
   const [orders, total] = await Promise.all([
     prisma.order.findMany({
@@ -249,7 +272,7 @@ const totalOrder = async (
         },
       },
       orderBy: {
-        [sortBy]: sortOrder,
+        [safeSortBy]: sortOrder || "desc",
       },
       take: limit,
       skip,

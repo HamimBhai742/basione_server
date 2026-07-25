@@ -7,19 +7,37 @@ export interface IOptionsResult {
 }
 
 interface IOptions {
-  page?: number;
-  limit?: number;
+  page?: number | string;
+  limit?: number | string;
   sortOrder?: string;
   sortBy?: string;
+  sort?: string;
+  order?: string;
+  dir?: string;
 }
 
-export const calculatePagination = (options: IOptions): IOptionsResult => {
-  const page: number = Number(options.page) || 1;
-  const limit: number = Number(options.limit) || 10;
-  const skip: number = (Number(page) - 1) * limit;
+export const calculatePagination = (options: IOptions = {}): IOptionsResult => {
+  const page: number = Math.max(1, Number(options?.page) || 1);
+  const limit: number = Math.max(1, Number(options?.limit) || 10);
+  const skip: number = (page - 1) * limit;
 
-  const sortBy: string = options.sortBy || "createdAt";
-  const sortOrder: string = options.sortOrder || "asc";
+  let sortBy: string = options?.sortBy || options?.sort || "createdAt";
+  if (sortBy === "asc" || sortBy === "desc") {
+    sortBy = "createdAt";
+  }
+
+  let rawOrder = options?.sortOrder || options?.order || options?.dir;
+  if (!rawOrder && typeof options?.sort === "string") {
+    const s = options.sort.toLowerCase();
+    if (s === "asc" || s === "desc") {
+      rawOrder = s;
+    }
+  }
+
+  const sortOrder: string =
+    typeof rawOrder === "string" && rawOrder.toLowerCase() === "asc"
+      ? "asc"
+      : "desc";
 
   return {
     page,

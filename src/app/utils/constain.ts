@@ -1,8 +1,17 @@
 export const excludeFiled = [
   "page",
   "limit",
+  "skip",
   "sortBy",
   "sortOrder",
+  "sort",
+  "order",
+  "dir",
   "search",
   "searchTerm",
+  "_",
+  "t",
+  "token",
+  "format",
+  "fetchFrom",
 ];
