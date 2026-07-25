@@ -36,6 +36,7 @@ model User {
   invoices  Invoice[]
   blogs     Blog[]
   chatbotConversations ChatbotConversation[] @relation("UserChatbotConversations")
+  notifications        Notification[]
 }
 
 enum Status {
@@ -610,4 +611,21 @@ model AlertBarSetting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String?  @default("info")
+  isRead    Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isRead])
+}
+
 

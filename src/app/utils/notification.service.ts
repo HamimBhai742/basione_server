@@ -16,6 +16,20 @@ export const sendAdminPushNotification = async ({
   data,
 }: PushNotificationPayload): Promise<void> => {
   try {
+    // Save in-app notification to DB
+    try {
+      await (prisma as any).notification.create({
+        data: {
+          title,
+          message: body,
+          type: data?.type || "order",
+          data: data || null,
+        },
+      });
+    } catch (dbErr) {
+      console.error("[Notification] Error saving in-app notification to DB:", dbErr);
+    }
+
     if (!messaging) {
       console.warn("[PushNotification] Firebase Messaging is not initialized. Notification skipped.");
       return;

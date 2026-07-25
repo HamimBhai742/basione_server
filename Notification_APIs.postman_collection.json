@@ -1,0 +1,192 @@
+{
+  "info": {
+    "_postman_id": "b3e94a81-9f20-4a52-b811-945781a91e10",
+    "name": "Basione - Notification APIs",
+    "description": "Collection of APIs for managing notifications (Get all, Mark as read, Delete single/multiple) in Basione Server.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notification?page=1&limit=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notification"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number for pagination"
+            },
+            {
+              "key": "limit",
+              "value": "20",
+              "description": "Number of items per page"
+            }
+          ]
+        },
+        "description": "Retrieve all notifications for the authenticated user or admin."
+      },
+      "response": []
+    },
+    {
+      "name": "Mark All Notifications as Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notification/mark-all-read",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notification",
+            "mark-all-read"
+          ]
+        },
+        "description": "Mark all notifications as read for the authenticated user/admin."
+      },
+      "response": []
+    },
+    {
+      "name": "Mark Single Notification as Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notification/:id/read",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notification",
+            ":id",
+            "read"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "NOTIFICATION_ID_HERE",
+              "description": "Notification ID"
+            }
+          ]
+        },
+        "description": "Mark a specific notification as read by ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Single Notification",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notification/:id",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notification",
+            ":id"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "NOTIFICATION_ID_HERE",
+              "description": "Notification ID to delete"
+            }
+          ]
+        },
+        "description": "Delete a single notification by ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Multiple Notifications",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{accessToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ids\": [\n    \"NOTIFICATION_ID_1\",\n    \"NOTIFICATION_ID_2\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/notification/delete-multiple",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "notification",
+            "delete-multiple"
+          ]
+        },
+        "description": "Delete multiple notifications by providing an array of IDs in request body."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "YOUR_BEARER_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}

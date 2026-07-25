@@ -17,10 +17,15 @@ import { svgMaskRoutes } from "../modules/svgMask/svgMask.routes";
 import { webwinkelkeurRoutes } from "../modules/webwinkelkeur/webwinkelkeur.routes";
 import { cartRoutes } from "../modules/cart/cart.routes";
 import { alertBarRoutes } from "../modules/alertBar/alertBar.routes";
+import { notificationRoutes } from "../modules/notification/notification.routes";
 
 export const router = Router();
 
 const routes = [
+  {
+    path: "/notification",
+    route: notificationRoutes,
+  },
   {
     path: "/cart",
     route: cartRoutes,
