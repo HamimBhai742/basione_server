@@ -1416,9 +1416,10 @@ const createTemplateCategory = async (data: {
 
 const getAllTemplateCategories = async () => {
   const categories = await prisma.templateCategory.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
   });
 
   return categories;
@@ -1546,9 +1547,10 @@ const createTuinposterCategory = async (data: {
 
 const getAllTuinposterCategories = async () => {
   const categories = await prisma.tuinposterCategory.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
   });
 
   return categories;
@@ -2207,6 +2209,28 @@ const getAllBackgroundImages = async () => {
   return backgrounds;
 };
 
+const reorderTemplateCategories = async (ids: string[]) => {
+  return prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.templateCategory.update({
+        where: { id },
+        data: { position: index },
+      })
+    )
+  );
+};
+
+const reorderTuinposterCategories = async (ids: string[]) => {
+  return prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.tuinposterCategory.update({
+        where: { id },
+        data: { position: index },
+      })
+    )
+  );
+};
+
 export const adminService = {
   totalOrder,
   getOrderStatusSummary,
@@ -2231,10 +2255,12 @@ export const adminService = {
   getAllTemplateCategories,
   updateTemplateCategory,
   deleteTemplateCategory,
+  reorderTemplateCategories,
   createTuinposterCategory,
   getAllTuinposterCategories,
   updateTuinposterCategory,
   deleteTuinposterCategory,
+  reorderTuinposterCategories,
   createTemplate,
   updateTemplate,
   deleteTemplate,

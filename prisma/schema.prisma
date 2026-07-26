@@ -157,6 +157,7 @@ model TemplateCategory {
   name     String  @unique
   slug     String  @unique
   isActive Boolean @default(true)
+  position Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,6 +171,7 @@ model TuinposterCategory {
   name     String  @unique
   slug     String  @unique
   isActive Boolean @default(true)
+  position Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

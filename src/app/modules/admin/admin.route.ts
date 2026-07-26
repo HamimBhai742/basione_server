@@ -66,6 +66,12 @@ router.get(
 );
 
 router.patch(
+  "/template-categories/reorder",
+  checkAuth("admin"),
+  adminController.reorderTemplateCategories,
+);
+
+router.patch(
   "/template-categories/:id",
   checkAuth("admin"),
   adminController.updateTemplateCategory,
@@ -88,6 +94,12 @@ router.get(
   "/tuinposter-categories",
   checkAuth("admin"),
   adminController.getAllTuinposterCategories,
+);
+
+router.patch(
+  "/tuinposter-categories/reorder",
+  checkAuth("admin"),
+  adminController.reorderTuinposterCategories,
 );
 
 router.patch(

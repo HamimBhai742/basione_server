@@ -517,6 +517,28 @@ const getAllBackgroundImages = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+const reorderTemplateCategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.reorderTemplateCategories(req.body.ids);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatecategorieen succesvol geherordend",
+    data: result,
+  });
+});
+
+const reorderTuinposterCategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.reorderTuinposterCategories(req.body.ids);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Tuinpostercategorieen succesvol geherordend",
+    data: result,
+  });
+});
+
 export const adminController = {
   totalOrder,
   getOrderStatusSummary,
@@ -541,10 +563,12 @@ export const adminController = {
   getAllTemplateCategories,
   updateTemplateCategory,
   deleteTemplateCategory,
+  reorderTemplateCategories,
   createTuinposterCategory,
   getAllTuinposterCategories,
   updateTuinposterCategory,
   deleteTuinposterCategory,
+  reorderTuinposterCategories,
   createTemplate,
   updateTemplate,
   deleteTemplate,

@@ -1358,9 +1358,10 @@ const getTemplateCategories = async () => {
     where: {
       isActive: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
   });
 
   return categories;
@@ -1371,9 +1372,10 @@ const getTuinposterCategories = async () => {
     where: {
       isActive: true,
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
   });
 
   return categories;
