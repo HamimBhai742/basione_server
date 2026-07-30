@@ -122,9 +122,13 @@ export const createPayment = async (
     where: {
       id: orderId,
     },
-    select: {
-      isGuest: true,
-      guestOrderToken: true,
+    include: {
+      addresses: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
     },
   });
 
@@ -163,12 +167,164 @@ export const createPayment = async (
       ? `&token=${order.guestOrderToken}`
       : "";
 
+  let billingAddress: any = undefined;
+  if (order.addresses) {
+    const addr = order.addresses;
+    const fullName = addr.name || customerName || "";
+    const parts = fullName.trim().split(/\s+/);
+    const givenName = parts[0] || "Customer";
+    const familyName = parts.slice(1).join(" ") || "Name";
+
+    const cleanZip = (addr.zipCode || "").trim().replace(/\s+/g, "");
+    let countryCode = "NL";
+    if (/^[1-9][0-9]{3}[a-zA-Z]{2}$/.test(cleanZip)) {
+      countryCode = "NL";
+    } else if (/^[1-9][0-9]{3}$/.test(cleanZip)) {
+      countryCode = "BE";
+    }
+
+    billingAddress = {
+      givenName,
+      familyName,
+      email: addr.email || customerEmail || "",
+      streetAndNumber: `${addr.street} ${addr.houseNumber}`.trim(),
+      postalCode: addr.zipCode,
+      city: addr.city,
+      country: countryCode,
+    };
+  }
+
+  const lines: any[] = [];
+  const vatRate = order.vatRate || 0.21;
+  const vatRatePercent = (vatRate * 100).toFixed(2);
+
+  if (order.items && order.items.length > 0) {
+    for (const item of order.items) {
+      const itemTotal = Number(item.subtotal);
+      const itemVatAmount = (itemTotal * vatRate) / (1 + vatRate);
+      const itemUnitPrice = Number(item.price);
+
+      let itemDesc = "Spandoek Print";
+      if (item.banner) {
+        itemDesc = item.banner.name || item.banner.headline || `Banner (${item.banner.occasion || "Custom"})`;
+      }
+
+      lines.push({
+        type: "physical",
+        description: itemDesc,
+        quantity: item.quantity,
+        unitPrice: {
+          currency: "EUR",
+          value: itemUnitPrice.toFixed(2),
+        },
+        totalAmount: {
+          currency: "EUR",
+          value: itemTotal.toFixed(2),
+        },
+        vatRate: vatRatePercent,
+        vatAmount: {
+          currency: "EUR",
+          value: itemVatAmount.toFixed(2),
+        },
+      });
+    }
+  }
+
+  if (order.eyeletsFee && order.eyeletsFee > 0) {
+    const eyeletsTotal = Number(order.eyeletsFee);
+    const eyeletsVatAmount = (eyeletsTotal * vatRate) / (1 + vatRate);
+
+    lines.push({
+      type: "surcharge",
+      description: "Extra optie: Ringen (Eyelets Fee)",
+      quantity: 1,
+      unitPrice: {
+        currency: "EUR",
+        value: eyeletsTotal.toFixed(2),
+      },
+      totalAmount: {
+        currency: "EUR",
+        value: eyeletsTotal.toFixed(2),
+      },
+      vatRate: vatRatePercent,
+      vatAmount: {
+        currency: "EUR",
+        value: eyeletsVatAmount.toFixed(2),
+      },
+    });
+  }
+
+  if (order.deliveryFee && order.deliveryFee > 0) {
+    const deliveryTotal = Number(order.deliveryFee);
+    const deliveryVatAmount = (deliveryTotal * vatRate) / (1 + vatRate);
+
+    lines.push({
+      type: "shipping_fee",
+      description: "Verzendkosten (Delivery Fee)",
+      quantity: 1,
+      unitPrice: {
+        currency: "EUR",
+        value: deliveryTotal.toFixed(2),
+      },
+      totalAmount: {
+        currency: "EUR",
+        value: deliveryTotal.toFixed(2),
+      },
+      vatRate: vatRatePercent,
+      vatAmount: {
+        currency: "EUR",
+        value: deliveryVatAmount.toFixed(2),
+      },
+    });
+  }
+
+  // Adjust for any small floating point rounding discrepancy
+  let linesSum = 0;
+  for (const line of lines) {
+    linesSum += Number(line.totalAmount.value);
+  }
+  const paymentAmount = Number(amount);
+  const diff = paymentAmount - linesSum;
+  if (Math.abs(diff) > 0.001 && lines.length > 0) {
+    const firstLine = lines[0];
+    const newTotal = Number(firstLine.totalAmount.value) + diff;
+    firstLine.totalAmount.value = newTotal.toFixed(2);
+    firstLine.unitPrice.value = (newTotal / firstLine.quantity).toFixed(2);
+    const newVat = (newTotal * vatRate) / (1 + vatRate);
+    firstLine.vatAmount.value = newVat.toFixed(2);
+  }
+
+  if (lines.length === 0) {
+    const totalVal = Number(amount);
+    const vatVal = (totalVal * vatRate) / (1 + vatRate);
+    lines.push({
+      type: "physical",
+      description: `Bestelling #${orderId}`,
+      quantity: 1,
+      unitPrice: {
+        currency: "EUR",
+        value: totalVal.toFixed(2),
+      },
+      totalAmount: {
+        currency: "EUR",
+        value: totalVal.toFixed(2),
+      },
+      vatRate: vatRatePercent,
+      vatAmount: {
+        currency: "EUR",
+        value: vatVal.toFixed(2),
+      },
+    });
+  }
+
   const checkout = await mollieClient.payments.create({
     amount: {
       currency: "EUR",
       value: Number(amount).toFixed(2),
     },
     ...(method ? { method: method as any } : {}),
+    ...(billingAddress ? { billingAddress } : {}),
+    lines,
 
     description: `Order #${orderId} - ${displayName}`,
 
