@@ -161,11 +161,27 @@ export const createPayment = async (
     },
   });
 
-  const displayName = companyName || customerName;
   const guestTokenQuery =
     order.isGuest && order.guestOrderToken
       ? `&token=${order.guestOrderToken}`
       : "";
+
+  if (Number(amount) === 0) {
+    const mockMolliePayment = {
+      id: "test-free-mollie-id",
+      status: "paid",
+      amount: { currency: "EUR", value: "0.00" },
+      metadata: { orderId, paymentId: payment.id, userId: userId || "" },
+    };
+    await paymentPaid(orderId, payment.id, userId, mockMolliePayment);
+    return {
+      paymentId: payment.id,
+      molliePaymentId: "test-free-mollie-id",
+      checkoutUrl: `https://spandoekprint.nl/payment/success?paymentId=${payment.id}&orderId=${orderId}${guestTokenQuery}`,
+    };
+  }
+
+  const displayName = companyName || customerName;
 
   let billingAddress: any = undefined;
   if (order.addresses) {
