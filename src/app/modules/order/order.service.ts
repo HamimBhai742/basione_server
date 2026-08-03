@@ -50,7 +50,6 @@ interface CreateOrderPayload {
   isOrdered?: boolean;
   designStatus?: string;
   lifecycleStatus?: string;
-  couponCode?: string;
 }
 
 const isTruthyFlag = (value: unknown) => {
@@ -360,16 +359,15 @@ const createOrder = async (
     }
 
     const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
-    const isFree = payload.couponCode === "TESTFREE";
     orderItemsData.push({
       bannerId: itemBannerId,
       quantity: itemQuantity,
       hasEyelets: itemHasEyelets,
-      eyeletsFee: isFree ? 0 : roundToTwo(eyeletsFeeInclVat),
-      price: isFree ? 0 : bannerPrice,
-      subtotal: isFree ? 0 : roundToTwo(itemSubtotalInclVat),
-      priceExcludingVat: isFree ? 0 : roundToTwo(itemExclVat),
-      vatAmount: isFree ? 0 : roundToTwo(itemVat),
+      eyeletsFee: roundToTwo(eyeletsFeeInclVat),
+      price: bannerPrice,
+      subtotal: roundToTwo(itemSubtotalInclVat),
+      priceExcludingVat: roundToTwo(itemExclVat),
+      vatAmount: roundToTwo(itemVat),
     });
 
     bannerUpdates.push({
@@ -401,20 +399,18 @@ const createOrder = async (
     totalEyeletsFeeInclVat += eyeletsFeeInclVat;
   }
 
-  const isFree = payload.couponCode === "TESTFREE";
+  const deliveryFeeIncludingVat = roundToTwo(selectedDeliveryOption.fee);
+  const deliveryFeeExcludingVat = getPriceExcludingVatFromIncludedVat(deliveryFeeIncludingVat);
+  const deliveryVatAmount = getVatAmountFromIncludedVat(deliveryFeeIncludingVat);
 
-  const deliveryFeeIncludingVat = isFree ? 0 : roundToTwo(selectedDeliveryOption.fee);
-  const deliveryFeeExcludingVat = isFree ? 0 : getPriceExcludingVatFromIncludedVat(deliveryFeeIncludingVat);
-  const deliveryVatAmount = isFree ? 0 : getVatAmountFromIncludedVat(deliveryFeeIncludingVat);
-
-  const subtotal = isFree ? 0 : roundToTwo(totalBannerPriceInclVat);
-  const priceExcludingVat = isFree ? 0 : roundToTwo(
+  const subtotal = roundToTwo(totalBannerPriceInclVat);
+  const priceExcludingVat = roundToTwo(
     totalBannerPriceExclVat + totalEyeletsFeeExclVat + deliveryFeeExcludingVat
   );
-  const vatAmount = isFree ? 0 : roundToTwo(
+  const vatAmount = roundToTwo(
     totalBannerVatAmount + totalEyeletsVatAmount + deliveryVatAmount
   );
-  const total = isFree ? 0 : roundToTwo(
+  const total = roundToTwo(
     totalBannerPriceInclVat + totalEyeletsFeeInclVat + deliveryFeeIncludingVat
   );
 
@@ -433,7 +429,7 @@ const createOrder = async (
           deliveryFee: deliveryFeeIncludingVat,
 
           hasEyelets: items[0].hasEyelets !== undefined ? items[0].hasEyelets : true,
-          eyeletsFee: isFree ? 0 : totalEyeletsFeeInclVat,
+          eyeletsFee: totalEyeletsFeeInclVat,
 
           subtotal,
           priceExcludingVat,
@@ -626,7 +622,7 @@ const checkOut = async (
     throw new AppError("Bestelling is al betaald", httpStatus.BAD_REQUEST);
   }
 
-  if (order.total < 0) {
+  if (order.total <= 0) {
     throw new AppError("Ongeldig bestelbedrag", httpStatus.BAD_REQUEST);
   }
 
