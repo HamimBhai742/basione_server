@@ -21,6 +21,8 @@ router.get("/all-banners", bannerController.getAllbanners);
 
 router.get("/download", bannerController.downloadImage);
 
+router.get("/google-shopping-feed", bannerController.getGoogleShoppingFeed);
+
 router.get("/templates", bannerController.getTemplates);
 
 router.get("/template-categories", bannerController.getTemplateCategories);

@@ -197,6 +197,12 @@ const getTemplateBySlug = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getGoogleShoppingFeed = catchAsync(async (req: Request, res: Response) => {
+  const feedXml = await bannerService.getGoogleShoppingFeed();
+  res.header("Content-Type", "text/xml");
+  res.status(httpStatus.OK).send(feedXml);
+});
+
 export const bannerController = {
   mybanner,
   createBanner,
@@ -210,4 +216,5 @@ export const bannerController = {
   getTemplateBySlug,
   createBannerFromTemplate,
   downloadImage,
+  getGoogleShoppingFeed,
 };
