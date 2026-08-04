@@ -1392,6 +1392,11 @@ const createTemplateCategory = async (data: {
   name: string;
   slug?: string;
   isActive?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  h1Title?: string;
+  introText?: string;
+  seoDescription?: string;
 }) => {
   const name = data.name?.trim();
 
@@ -1408,6 +1413,11 @@ const createTemplateCategory = async (data: {
       name,
       slug,
       isActive: data.isActive ?? true,
+      metaTitle: data.metaTitle || null,
+      metaDescription: data.metaDescription || null,
+      h1Title: data.h1Title || null,
+      introText: data.introText || null,
+      seoDescription: data.seoDescription || null,
     },
   });
 
@@ -1431,6 +1441,11 @@ const updateTemplateCategory = async (
     name: string;
     slug: string;
     isActive: boolean;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    h1Title: string | null;
+    introText: string | null;
+    seoDescription: string | null;
   }>,
 ) => {
   const isExist = await prisma.templateCategory.findUnique({
@@ -1458,6 +1473,12 @@ const updateTemplateCategory = async (
   }
 
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  if (data.metaTitle !== undefined) updateData.metaTitle = data.metaTitle || null;
+  if (data.metaDescription !== undefined) updateData.metaDescription = data.metaDescription || null;
+  if (data.h1Title !== undefined) updateData.h1Title = data.h1Title || null;
+  if (data.introText !== undefined) updateData.introText = data.introText || null;
+  if (data.seoDescription !== undefined) updateData.seoDescription = data.seoDescription || null;
 
   const category = await prisma.templateCategory.update({
     where: { id },
@@ -1523,6 +1544,11 @@ const createTuinposterCategory = async (data: {
   name: string;
   slug?: string;
   isActive?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  h1Title?: string;
+  introText?: string;
+  seoDescription?: string;
 }) => {
   const name = data.name?.trim();
 
@@ -1539,6 +1565,11 @@ const createTuinposterCategory = async (data: {
       name,
       slug,
       isActive: data.isActive ?? true,
+      metaTitle: data.metaTitle || null,
+      metaDescription: data.metaDescription || null,
+      h1Title: data.h1Title || null,
+      introText: data.introText || null,
+      seoDescription: data.seoDescription || null,
     },
   });
 
@@ -1562,6 +1593,11 @@ const updateTuinposterCategory = async (
     name: string;
     slug: string;
     isActive: boolean;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    h1Title: string | null;
+    introText: string | null;
+    seoDescription: string | null;
   }>,
 ) => {
   const isExist = await prisma.tuinposterCategory.findUnique({
@@ -1589,6 +1625,12 @@ const updateTuinposterCategory = async (
   }
 
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  if (data.metaTitle !== undefined) updateData.metaTitle = data.metaTitle || null;
+  if (data.metaDescription !== undefined) updateData.metaDescription = data.metaDescription || null;
+  if (data.h1Title !== undefined) updateData.h1Title = data.h1Title || null;
+  if (data.introText !== undefined) updateData.introText = data.introText || null;
+  if (data.seoDescription !== undefined) updateData.seoDescription = data.seoDescription || null;
 
   const category = await prisma.tuinposterCategory.update({
     where: { id },
