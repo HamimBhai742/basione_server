@@ -68,6 +68,8 @@ model Banner {
   areaM2 Float?
   pricePerM2 Float?
   isVatIncluded Boolean?
+  material      String?
+  eyeletType    String?
 
   hobbies String[] // PostgreSQL array
 

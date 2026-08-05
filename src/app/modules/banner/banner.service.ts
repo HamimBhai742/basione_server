@@ -55,6 +55,8 @@ const bannerListSelect = {
   occasion: true,
   style: true,
   headline: true,
+  material: true,
+  eyeletType: true,
   slug: true,
   name: true,
   price: true,
@@ -745,6 +747,8 @@ const createBannerByTemplate = async (req: AuthRequest) => {
       areaM2: Number(areaM2.toFixed(2)),
       pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
       isVatIncluded: parsedData.isVatIncluded ?? true,
+      material: parsedData.material || null,
+      eyeletType: parsedData.eyeletType || null,
 
       width,
       height,
@@ -950,6 +954,8 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         areaM2: Number(areaM2.toFixed(2)),
         pricePerM2: Number(pricePerM2InclVat.toFixed(2)),
         isVatIncluded: parsedData?.isVatIncluded ?? true,
+        material: parsedData?.material ?? banner.material,
+        eyeletType: parsedData?.eyeletType ?? banner.eyeletType,
         variant: 0,
         isTemplate: false,
         isSelected: true,
@@ -1052,6 +1058,14 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   if (parsedData?.tuinposterCategoryId !== undefined) {
     updateData.tuinposterCategoryId = parsedData.tuinposterCategoryId;
     updateData.tuinposterCategoryIds = parsedData.tuinposterCategoryIds || (parsedData.tuinposterCategoryId ? [parsedData.tuinposterCategoryId] : []);
+  }
+
+  if (parsedData?.material !== undefined) {
+    updateData.material = parsedData.material;
+  }
+
+  if (parsedData?.eyeletType !== undefined) {
+    updateData.eyeletType = parsedData.eyeletType;
   }
 
   Object.assign(updateData, getLifecycleUpdateData(parsedData));
