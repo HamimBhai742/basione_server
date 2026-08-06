@@ -413,12 +413,7 @@ const createBanner = async (req: AuthRequest) => {
     throw new AppError("Ongeldige bannerafmeting.", 400);
   }
 
-  if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
-    throw new AppError(
-      `Maximale bannerafmeting is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
-      400,
-    );
-  }
+  // Sizing validations (no upper limit enforced)
 
   /**
    * Price calculation
@@ -1448,12 +1443,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
     throw new AppError("Ongeldige bannerafmeting.", 400);
   }
 
-  if (width > MAX_WIDTH_CM || height > MAX_HEIGHT_CM) {
-    throw new AppError(
-      `Maximale bannerafmeting is ${MAX_WIDTH_CM}cm × ${MAX_HEIGHT_CM}cm.`,
-      400,
-    );
-  }
+  // Sizing validations (no upper limit enforced)
 
   const price = calculateBannerPriceInclVat(width, height);
 
