@@ -23,14 +23,14 @@ const getFontPath = (): string => {
     path.join(process.cwd(), "app", "assets", "fonts", "Roboto-Bold.ttf"),
   ];
 
-  console.log(`[Font Discovery] process.cwd(): ${process.cwd()}`);
-  console.log(`[Font Discovery] __dirname: ${__dirname}`);
+  // console.log(`[Font Discovery] process.cwd(): ${process.cwd()}`);
+  // console.log(`[Font Discovery] __dirname: ${__dirname}`);
 
   for (const p of pathsToTry) {
     const exists = fs.existsSync(p);
-    console.log(`[Font Discovery] Checking path: ${p} - Exists: ${exists}`);
+    // console.log(`[Font Discovery] Checking path: ${p} - Exists: ${exists}`);
     if (exists) {
-      console.log(`[Font Discovery] Successfully selected font path: ${p}`);
+      // console.log(`[Font Discovery] Successfully selected font path: ${p}`);
       return p.replace(/\\/g, "/");
     }
   }

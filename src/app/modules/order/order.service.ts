@@ -922,9 +922,9 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
   });
 
   if (order?.status !== "pending" && order?.status !== "processing") {
-    console.log(
-      `[cancledOrder] Order ${orderId} already in non-cancellable state: "${order?.status}". Skipping cancellation.`,
-    );
+    // console.log(
+//       `[cancledOrder] Order ${orderId} already in non-cancellable state: "${order?.status}". Skipping cancellation.`,
+//     );
     return;
   }
 

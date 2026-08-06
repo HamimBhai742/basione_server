@@ -32,7 +32,7 @@ const getBgPath = (): string => {
 
   for (const p of pathsToTry) {
     if (fs.existsSync(p)) {
-      console.log(`[Mockup BG] Using background at: ${p}`);
+      // console.log(`[Mockup BG] Using background at: ${p}`);
       return p;
     }
   }

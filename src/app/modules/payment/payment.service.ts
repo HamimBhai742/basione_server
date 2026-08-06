@@ -592,9 +592,9 @@ const paymentPaid = async (
     });
   } catch (error: any) {
     if (error.code === "P2025") {
-      console.log(
-        `Payment ${paymentId} already processed (status is not pending). Checking details...`,
-      );
+      // console.log(
+//         `Payment ${paymentId} already processed (status is not pending). Checking details...`,
+//       );
       const existingPayment = await prisma.payment.findUnique({
         where: { id: paymentId },
         include: {
@@ -836,11 +836,11 @@ const paymentPaid = async (
   let orderEmailSent = false;
 
   try {
-    console.log("Calling orderConfirmedTemplate:", {
-      to: emailData.email,
-      orderId: emailData.orderId,
-      invoiceNumber: emailData.invoiceNumber,
-    });
+    // console.log("Calling orderConfirmedTemplate:", {
+//       to: emailData.email,
+//       orderId: emailData.orderId,
+//       invoiceNumber: emailData.invoiceNumber,
+//     });
 
     await orderConfirmedTemplate(emailData);
 

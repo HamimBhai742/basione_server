@@ -15,7 +15,7 @@ if (!getApps().length) {
         }),
       });
       messaging = getMessaging(app);
-      console.log("Firebase Admin SDK initialized successfully.");
+      // console.log("Firebase Admin SDK initialized successfully.");
     } else {
       console.warn("Firebase credentials missing in configuration. Push notifications will not work.");
     }

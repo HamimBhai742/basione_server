@@ -77,7 +77,7 @@ const sendReviewInvitation = async (order: any) => {
     });
 
     if (response.data && response.data.status === "success") {
-      console.log(`WebwinkelKeur invitation successfully queued for order ${order.id}:`, response.data.message);
+      // console.log(`WebwinkelKeur invitation successfully queued for order ${order.id}:`, response.data.message);
     } else {
       console.warn(`WebwinkelKeur invitation warning for order ${order.id}:`, response.data?.message || response.data);
     }
@@ -129,7 +129,7 @@ const getShopReviews = async (limit = 20, offset = 0) => {
   } catch (error: any) {
     console.error("Error fetching WebwinkelKeur reviews:", error.response?.data || error.message);
     if (cached) {
-      console.log("Serving stale cached WebwinkelKeur reviews as fallback");
+      // console.log("Serving stale cached WebwinkelKeur reviews as fallback");
       return cached.data;
     }
     return { status: "error", message: error.message, ratings: [] };
@@ -183,7 +183,7 @@ const getProductReviews = async (productId: string, limit = 20, offset = 0) => {
   } catch (error: any) {
     console.error(`Error fetching WebwinkelKeur product reviews for ${productId}:`, error.response?.data || error.message);
     if (cached) {
-      console.log(`Serving stale cached WebwinkelKeur product reviews for ${productId} as fallback`);
+      // console.log(`Serving stale cached WebwinkelKeur product reviews for ${productId} as fallback`);
       return cached.data;
     }
     return { status: "error", message: error.message, product_reviews: [] };

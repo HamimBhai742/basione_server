@@ -2,7 +2,7 @@ import { prisma } from "../lib/prisma";
 import { processCanvasJsonImages } from "./processCanvasJson";
 
 export const migrateCanvasJsonBase64 = async () => {
-  console.log("🚀 Starting CanvasJSON Base64 to S3 Migration...");
+  // console.log("🚀 Starting CanvasJSON Base64 to S3 Migration...");
 
   try {
     const banners = await prisma.banner.findMany({
@@ -16,7 +16,7 @@ export const migrateCanvasJsonBase64 = async () => {
       },
     });
 
-    console.log(`📊 Found ${banners.length} total banner(s) with canvasJSON in MongoDB.`);
+    // console.log(`📊 Found ${banners.length} total banner(s) with canvasJSON in MongoDB.`);
 
     let totalBytesSaved = 0;
     let totalImagesUploaded = 0;
@@ -41,12 +41,12 @@ export const migrateCanvasJsonBase64 = async () => {
       const initialJson = b.canvasJSON;
       const initialBytes = Buffer.byteLength(initialJson, "utf-8");
 
-      console.log(
-        `\n[${migratedCount + 1}] Processing Banner ID: ${b.id} (${b.name || b.headline || "Untitled"})`,
-      );
-      console.log(
-        `   Initial canvasJSON size: ${(initialBytes / (1024 * 1024)).toFixed(2)} MB`,
-      );
+      // console.log(
+//         `\n[${migratedCount + 1}] Processing Banner ID: ${b.id} (${b.name || b.headline || "Untitled"})`,
+//       );
+      // console.log(
+//         `   Initial canvasJSON size: ${(initialBytes / (1024 * 1024)).toFixed(2)} MB`,
+//       );
 
       const updatedJson = await processCanvasJsonImages(initialJson);
 
@@ -67,16 +67,16 @@ export const migrateCanvasJsonBase64 = async () => {
         totalImagesUploaded += imagesCount;
         migratedCount++;
 
-        console.log(
-          `   ✅ Successfully migrated! New size: ${(finalBytes / 1024).toFixed(2)} KB (Saved ${(bytesSaved / (1024 * 1024)).toFixed(2)} MB)`,
-        );
+        // console.log(
+//           `   ✅ Successfully migrated! New size: ${(finalBytes / 1024).toFixed(2)} KB (Saved ${(bytesSaved / (1024 * 1024)).toFixed(2)} MB)`,
+//         );
       }
     }
 
-    console.log("\n🎉 Migration completed successfully!");
-    console.log(
-      `📈 Summary: Migrated ${migratedCount} banner(s), uploaded ${totalImagesUploaded} image(s) to S3, freed up ${(totalBytesSaved / (1024 * 1024)).toFixed(2)} MB of MongoDB storage!`,
-    );
+    // console.log("\n🎉 Migration completed successfully!");
+    // console.log(
+//       `📈 Summary: Migrated ${migratedCount} banner(s), uploaded ${totalImagesUploaded} image(s) to S3, freed up ${(totalBytesSaved / (1024 * 1024)).toFixed(2)} MB of MongoDB storage!`,
+//     );
   } catch (error) {
     console.error("❌ Migration failed with error:", error);
   }

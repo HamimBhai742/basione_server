@@ -8,7 +8,7 @@ const port = config.port;
 
 const main = () => {
   server = app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+    // console.log(`Server running on http://localhost:${port}`);
   });
 
   connectedDB();
@@ -17,7 +17,7 @@ const main = () => {
   const exitHandler = () => {
     if (server) {
       server.close(() => {
-        console.log("Server closed");
+        // console.log("Server closed");
         process.exit(1);
       });
     } else {

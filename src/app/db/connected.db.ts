@@ -5,9 +5,9 @@ import bcrypt from "bcrypt";
 export const connectedDB = async () => {
   try {
     await prisma.$connect();
-    console.log("Database connected successfully");
+    // console.log("Database connected successfully");
   } catch (error) {
-    console.log("❌ Database connection error:", error);
+    // console.log("❌ Database connection error:", error);
     process.exit(1);
   }
 };
@@ -38,8 +38,8 @@ export const seedAdmin = async () => {
         isVerified: true,
       },
     });
-    console.log("Admin user created successfully");
+    // console.log("Admin user created successfully");
   } else {
-    console.log("Admin user already exists");
+    // console.log("Admin user already exists");
   }
 };

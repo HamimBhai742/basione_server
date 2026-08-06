@@ -37,10 +37,10 @@ const getFileNameFromUrl = (url: string): string => {
 };
 
 async function main() {
-  console.log("=== Starting Website-wide Image Optimization Migration ===");
+  // console.log("=== Starting Website-wide Image Optimization Migration ===");
 
   // 1. Optimize Templates (Banners where isTemplate is true or isReadymade is true)
-  console.log("\n--- Processing Templates (Banners) ---");
+  // console.log("\n--- Processing Templates (Banners) ---");
   const banners = await prisma.banner.findMany({
     where: {
       OR: [
@@ -49,14 +49,14 @@ async function main() {
       ]
     }
   });
-  console.log(`Found ${banners.length} templates/readymades.`);
+  // console.log(`Found ${banners.length} templates/readymades.`);
 
   for (let i = 0; i < banners.length; i++) {
     const banner = banners[i];
     const imageUrl = banner.imageUrl;
     
     if (!imageUrl || isSvg(imageUrl)) {
-      console.log(`[${i+1}/${banners.length}] Skipping banner ID ${banner.id}: No image or SVG.`);
+      // console.log(`[${i+1}/${banners.length}] Skipping banner ID ${banner.id}: No image or SVG.`);
       continue;
     }
 
@@ -68,15 +68,15 @@ async function main() {
         where: { id: banner.id },
         data: { originalImageUrl: imageUrl }
       });
-      console.log(`[${i+1}/${banners.length}] Initialized originalImageUrl for banner ID ${banner.id}`);
+      // console.log(`[${i+1}/${banners.length}] Initialized originalImageUrl for banner ID ${banner.id}`);
     }
 
     if (isAlreadyOptimized(imageUrl)) {
-      console.log(`[${i+1}/${banners.length}] Skipping banner ID ${banner.id}: already optimized.`);
+      // console.log(`[${i+1}/${banners.length}] Skipping banner ID ${banner.id}: already optimized.`);
       continue;
     }
 
-    console.log(`[${i+1}/${banners.length}] Optimizing banner ID ${banner.id} (URL: ${sourceUrl})`);
+    // console.log(`[${i+1}/${banners.length}] Optimizing banner ID ${banner.id} (URL: ${sourceUrl})`);
     const buffer = await downloadImageBuffer(sourceUrl);
     if (!buffer) continue;
 
@@ -95,32 +95,32 @@ async function main() {
         where: { id: banner.id },
         data: { imageUrl: newUrl }
       });
-      console.log(`>> Successfully optimized banner ID ${banner.id}. New URL: ${newUrl}`);
+      // console.log(`>> Successfully optimized banner ID ${banner.id}. New URL: ${newUrl}`);
     } catch (err: any) {
       console.error(`>> Failed to optimize banner ID ${banner.id}:`, err.message);
     }
   }
 
   // 2. Optimize Decorations
-  console.log("\n--- Processing Decorations ---");
+  // console.log("\n--- Processing Decorations ---");
   const decorations = await prisma.decoration.findMany();
-  console.log(`Found ${decorations.length} decorations.`);
+  // console.log(`Found ${decorations.length} decorations.`);
 
   for (let i = 0; i < decorations.length; i++) {
     const dec = decorations[i];
     const imageUrl = dec.image;
 
     if (!imageUrl || isSvg(imageUrl)) {
-      console.log(`[${i+1}/${decorations.length}] Skipping decoration ID ${dec.id}: No image or SVG.`);
+      // console.log(`[${i+1}/${decorations.length}] Skipping decoration ID ${dec.id}: No image or SVG.`);
       continue;
     }
 
     if (isAlreadyOptimized(imageUrl)) {
-      console.log(`[${i+1}/${decorations.length}] Skipping decoration ID ${dec.id}: already optimized.`);
+      // console.log(`[${i+1}/${decorations.length}] Skipping decoration ID ${dec.id}: already optimized.`);
       continue;
     }
 
-    console.log(`[${i+1}/${decorations.length}] Optimizing decoration ID ${dec.id} (URL: ${imageUrl})`);
+    // console.log(`[${i+1}/${decorations.length}] Optimizing decoration ID ${dec.id} (URL: ${imageUrl})`);
     const buffer = await downloadImageBuffer(imageUrl);
     if (!buffer) continue;
 
@@ -139,23 +139,23 @@ async function main() {
         where: { id: dec.id },
         data: { image: newUrl }
       });
-      console.log(`>> Successfully optimized decoration ID ${dec.id}. New URL: ${newUrl}`);
+      // console.log(`>> Successfully optimized decoration ID ${dec.id}. New URL: ${newUrl}`);
     } catch (err: any) {
       console.error(`>> Failed to optimize decoration ID ${dec.id}:`, err.message);
     }
   }
 
   // 3. Optimize Blogs
-  console.log("\n--- Processing Blogs ---");
+  // console.log("\n--- Processing Blogs ---");
   const blogs = await prisma.blog.findMany();
-  console.log(`Found ${blogs.length} blog posts.`);
+  // console.log(`Found ${blogs.length} blog posts.`);
 
   for (let i = 0; i < blogs.length; i++) {
     const blog = blogs[i];
     
     // Cover Image
     if (blog.coverImage && !isSvg(blog.coverImage) && !isAlreadyOptimized(blog.coverImage)) {
-      console.log(`[Blog ${i+1}/${blogs.length}] Optimizing cover image for blog ID ${blog.id}`);
+      // console.log(`[Blog ${i+1}/${blogs.length}] Optimizing cover image for blog ID ${blog.id}`);
       const buffer = await downloadImageBuffer(blog.coverImage);
       if (buffer) {
         try {
@@ -173,7 +173,7 @@ async function main() {
             where: { id: blog.id },
             data: { coverImage: newUrl }
           });
-          console.log(`>> Successfully optimized blog cover. New URL: ${newUrl}`);
+          // console.log(`>> Successfully optimized blog cover. New URL: ${newUrl}`);
         } catch (err: any) {
           console.error(`>> Failed to optimize blog cover:`, err.message);
         }
@@ -188,7 +188,7 @@ async function main() {
       for (let j = 0; j < blog.images.length; j++) {
         const img = blog.images[j];
         if (img && !isSvg(img) && !isAlreadyOptimized(img)) {
-          console.log(`[Blog ${i+1}/${blogs.length} - Image ${j+1}/${blog.images.length}] Optimizing inline image`);
+          // console.log(`[Blog ${i+1}/${blogs.length} - Image ${j+1}/${blog.images.length}] Optimizing inline image`);
           const buffer = await downloadImageBuffer(img);
           if (buffer) {
             try {
@@ -204,7 +204,7 @@ async function main() {
 
               updatedImages[j] = newUrl;
               hasUpdates = true;
-              console.log(`>> Optimized inline image ${j+1}. New URL: ${newUrl}`);
+              // console.log(`>> Optimized inline image ${j+1}. New URL: ${newUrl}`);
             } catch (err: any) {
               console.error(`>> Failed to optimize inline image:`, err.message);
             }
@@ -217,13 +217,13 @@ async function main() {
           where: { id: blog.id },
           data: { images: updatedImages }
         });
-        console.log(`>> Successfully updated blog ID ${blog.id} inline images in DB.`);
+        // console.log(`>> Successfully updated blog ID ${blog.id} inline images in DB.`);
       }
     }
   }
 
   // 4. Optimize User Profiles
-  console.log("\n--- Processing Users ---");
+  // console.log("\n--- Processing Users ---");
   const users = await prisma.user.findMany({
     where: {
       image: {
@@ -231,7 +231,7 @@ async function main() {
       }
     }
   });
-  console.log(`Found ${users.length} users with profile pictures.`);
+  // console.log(`Found ${users.length} users with profile pictures.`);
 
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
@@ -241,7 +241,7 @@ async function main() {
       continue;
     }
 
-    console.log(`[${i+1}/${users.length}] Optimizing avatar for user ID ${user.id}`);
+    // console.log(`[${i+1}/${users.length}] Optimizing avatar for user ID ${user.id}`);
     const buffer = await downloadImageBuffer(imageUrl);
     if (!buffer) continue;
 
@@ -260,16 +260,16 @@ async function main() {
         where: { id: user.id },
         data: { image: newUrl }
       });
-      console.log(`>> Successfully optimized avatar for user ID ${user.id}. New URL: ${newUrl}`);
+      // console.log(`>> Successfully optimized avatar for user ID ${user.id}. New URL: ${newUrl}`);
     } catch (err: any) {
       console.error(`>> Failed to optimize user avatar:`, err.message);
     }
   }
 
   // 5. Optimize Background Images
-  console.log("\n--- Processing Background Images ---");
+  // console.log("\n--- Processing Background Images ---");
   const backgroundImages = await prisma.backgroundImage.findMany();
-  console.log(`Found ${backgroundImages.length} background images.`);
+  // console.log(`Found ${backgroundImages.length} background images.`);
 
   for (let i = 0; i < backgroundImages.length; i++) {
     const bg = backgroundImages[i];
@@ -279,7 +279,7 @@ async function main() {
       continue;
     }
 
-    console.log(`[${i+1}/${backgroundImages.length}] Optimizing background image ID ${bg.id}`);
+    // console.log(`[${i+1}/${backgroundImages.length}] Optimizing background image ID ${bg.id}`);
     const buffer = await downloadImageBuffer(imageUrl);
     if (!buffer) continue;
 
@@ -298,13 +298,13 @@ async function main() {
         where: { id: bg.id },
         data: { imageUrl: newUrl }
       });
-      console.log(`>> Successfully optimized background image ID ${bg.id}. New URL: ${newUrl}`);
+      // console.log(`>> Successfully optimized background image ID ${bg.id}. New URL: ${newUrl}`);
     } catch (err: any) {
       console.error(`>> Failed to optimize background image:`, err.message);
     }
   }
 
-  console.log("\n=== Image Optimization Migration Script Finished Successfully ===");
+  // console.log("\n=== Image Optimization Migration Script Finished Successfully ===");
 }
 
 main()

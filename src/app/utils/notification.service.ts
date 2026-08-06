@@ -49,7 +49,7 @@ export const sendAdminPushNotification = async ({
     });
 
     if (!admins || admins.length === 0) {
-      console.log("[PushNotification] No active admins found to send push notification.");
+      // console.log("[PushNotification] No active admins found to send push notification.");
       return;
     }
 
@@ -79,11 +79,11 @@ export const sendAdminPushNotification = async ({
     const tokens = Array.from(tokensSet);
 
     if (tokens.length === 0) {
-      console.log("[PushNotification] No registered admin FCM tokens found.");
+      // console.log("[PushNotification] No registered admin FCM tokens found.");
       return;
     }
 
-    console.log(`[PushNotification] Sending push notification to ${tokens.length} admin token(s)...`);
+    // console.log(`[PushNotification] Sending push notification to ${tokens.length} admin token(s)...`);
 
     // Ensure data object contains strings only
     const safeData: Record<string, string> = {};
@@ -125,9 +125,9 @@ export const sendAdminPushNotification = async ({
       },
     });
 
-    console.log(
-      `[PushNotification] Sent successfully. Success count: ${response.successCount}, Failure count: ${response.failureCount}`,
-    );
+    // console.log(
+//       `[PushNotification] Sent successfully. Success count: ${response.successCount}, Failure count: ${response.failureCount}`,
+//     );
 
     // Clean up stale or unregistered tokens if any failed
     if (response.failureCount > 0) {
@@ -146,7 +146,7 @@ export const sendAdminPushNotification = async ({
       });
 
       if (tokensToRemove.length > 0) {
-        console.log(`[PushNotification] Cleaning up ${tokensToRemove.length} stale token(s)...`);
+        // console.log(`[PushNotification] Cleaning up ${tokensToRemove.length} stale token(s)...`);
         for (const [userId, userTokens] of adminTokenMap.entries()) {
           const remainingTokens = userTokens.filter((t) => !tokensToRemove.includes(t));
           if (remainingTokens.length !== userTokens.length) {
