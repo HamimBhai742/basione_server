@@ -5,7 +5,7 @@ import { calculatePagination } from "../../utils/calculatePagination";
 import { Request, Response } from "express";
 import { adminService } from "./admin.service";
 import { excludeFiled } from "../../utils/constain";
-import { uploadFileToS3, uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
+import { uploadFileToS3, uploadImageToS3, uploadOptimizedImageToS3, uploadOptimizedTransparentImageToS3 } from "../../utils/uploadAws";
 
 const totalOrder = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, skip, sortBy, sortOrder } = calculatePagination(
@@ -155,7 +155,7 @@ const createDecoration = catchAsync(async (req: Request, res: Response) => {
       file.mimetype === "image/svg+xml";
 
     const fileUrl = isTransparent
-      ? await uploadFileToS3(file, "images")
+      ? await uploadOptimizedTransparentImageToS3(file, "images", 1200, 1200, 80)
       : await uploadOptimizedImageToS3(file, "images", 1200, 1200, 80);
 
     req.body.image = fileUrl;

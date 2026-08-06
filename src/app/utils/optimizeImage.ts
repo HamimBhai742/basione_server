@@ -29,3 +29,32 @@ export const optimizeImage = async (
     })
     .toBuffer();
 };
+
+/**
+ * Optimizes a transparent image buffer (PNG/WebP) to a web-optimized WebP format.
+ * Resizes the image to fit within a bounding box, preserves aspect ratio,
+ * handles EXIF rotation, and compresses while keeping the transparency alpha channel.
+ * 
+ * @param buffer The original raw file buffer
+ * @returns Optimized transparent image buffer (WebP)
+ */
+export const optimizeTransparentImage = async (
+  buffer: Buffer,
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 80,
+): Promise<Buffer> => {
+  return sharp(buffer)
+    .rotate()
+    .resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({
+      quality,
+      effort: 6,
+    })
+    .toBuffer();
+};

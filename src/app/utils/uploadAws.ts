@@ -2,7 +2,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../lib/s3client";
 import config from "../../config";
 import { AppError } from "../error/AppError";
-import { optimizeImage } from "./optimizeImage";
+import { optimizeImage, optimizeTransparentImage } from "./optimizeImage";
 
 const getPublicS3Url = (bucketName: string, region: string, key: string) => {
   return `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
@@ -73,14 +73,17 @@ export const uploadOptimizedImageToS3 = async (
   maxHeight = 1600,
   quality = 80,
 ) => {
-  // SVG, PNG, WebP and non-image files are uploaded directly to preserve transparency and alpha channels
+  // SVG and non-image files are uploaded directly
   if (
     file.mimetype === "image/svg+xml" ||
-    file.mimetype === "image/png" ||
-    file.mimetype === "image/webp" ||
     !file.mimetype.startsWith("image/")
   ) {
     return uploadFileToS3(file, folder);
+  }
+
+  // PNG and WebP files are optimized keeping transparency
+  if (file.mimetype === "image/png" || file.mimetype === "image/webp") {
+    return uploadOptimizedTransparentImageToS3(file, folder, maxWidth, maxHeight, quality);
   }
 
   try {
@@ -95,6 +98,42 @@ export const uploadOptimizedImageToS3 = async (
     });
   } catch (err) {
     console.error("Failed to optimize image, uploading original instead:", err);
+    return uploadFileToS3(file, folder);
+  }
+};
+
+export const uploadOptimizedTransparentImageToS3 = async (
+  file: Express.Multer.File,
+  folder = "images",
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 80,
+) => {
+  // If not an image or is SVG, upload directly
+  if (!file.mimetype.startsWith("image/") || file.mimetype === "image/svg+xml") {
+    return uploadFileToS3(file, folder);
+  }
+
+  try {
+    const optimizedBuffer = await optimizeTransparentImage(
+      file.buffer,
+      maxWidth,
+      maxHeight,
+      quality,
+    );
+    const originalNameWithoutExt =
+      file.originalname.substring(0, file.originalname.lastIndexOf(".")) ||
+      file.originalname;
+    const safeFileName = originalNameWithoutExt.replace(/\s+/g, "-");
+    const fileName = `${folder}/optimized-${Date.now()}-${safeFileName}.webp`;
+
+    return uploadBufferToS3({
+      buffer: optimizedBuffer,
+      key: fileName,
+      contentType: "image/webp",
+    });
+  } catch (err) {
+    console.error("Failed to optimize transparent image, uploading original:", err);
     return uploadFileToS3(file, folder);
   }
 };
