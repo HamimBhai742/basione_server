@@ -1087,6 +1087,117 @@ const dashboardStats = async (range?: string) => {
   });
   const totalUndeliveredRevenue = Math.round((totalUndeliveredRevenueData._sum.total || 0) * 100) / 100;
 
+  // Fetch order items to aggregate top selling designs and material breakdown
+  const orderItems = await prisma.orderItem.findMany({
+    where: dateFilter.gte ? { createdAt: dateFilter } : {},
+    select: {
+      quantity: true,
+      price: true,
+      hasEyelets: true,
+      banner: {
+        select: {
+          id: true,
+          headline: true,
+          imageUrl: true,
+          isTemplate: true,
+          isReadymade: true,
+          sourceTemplateId: true,
+          price: true,
+          material: true,
+          width: true,
+          height: true,
+        },
+      },
+    },
+  });
+
+  const salesMap: Record<
+    string,
+    {
+      id: string;
+      headline: string;
+      imageUrl: string;
+      price: number;
+      salesCount: number;
+      revenue: number;
+    }
+  > = {};
+
+  const materialBreakdown = { pvc: 0, mesh: 0 };
+  const sizeMap: Record<string, number> = {};
+  let eyeletsCount = 0;
+  let noEyeletsCount = 0;
+
+  orderItems.forEach((item) => {
+    if (!item.banner) return;
+
+    // Material breakdown
+    if (item.banner.material) {
+      const mat = item.banner.material.toLowerCase();
+      if (mat.includes("pvc")) {
+        materialBreakdown.pvc += item.quantity || 0;
+      } else if (mat.includes("mesh")) {
+        materialBreakdown.mesh += item.quantity || 0;
+      }
+    }
+
+    // Eyelets breakdown
+    if (item.hasEyelets) {
+      eyeletsCount += item.quantity || 0;
+    } else {
+      noEyeletsCount += item.quantity || 0;
+    }
+
+    // Size breakdown
+    if (item.banner.width && item.banner.height) {
+      const sizeKey = `${item.banner.width}x${item.banner.height} cm`;
+      sizeMap[sizeKey] = (sizeMap[sizeKey] || 0) + (item.quantity || 0);
+    }
+
+    // Top selling designs aggregation
+    const designId = item.banner.sourceTemplateId || item.banner.id;
+    const headline = item.banner.headline || "Custom Ontwerp";
+
+    if (!salesMap[designId]) {
+      salesMap[designId] = {
+        id: designId,
+        headline,
+        imageUrl: item.banner.imageUrl || "",
+        price: item.banner.price || 0,
+        salesCount: 0,
+        revenue: 0,
+      };
+    }
+
+    salesMap[designId].salesCount += item.quantity || 0;
+    salesMap[designId].revenue += (item.price || 0) * (item.quantity || 0);
+  });
+
+  const topSellingDesigns = Object.values(salesMap)
+    .sort((a, b) => b.salesCount - a.salesCount)
+    .slice(0, 5)
+    .map(d => ({
+      ...d,
+      revenue: Math.round(d.revenue * 100) / 100,
+    }));
+
+  const popularSizes = Object.entries(sizeMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([size, count]) => ({ size, count }));
+
+  const averageOrderValue = totalDeliveredOrders > 0
+    ? Math.round((totalDeliveredRevenue / totalDeliveredOrders) * 100) / 100
+    : 0;
+
+  const eyeletsBreakdown = {
+    withEyelets: eyeletsCount,
+    withoutEyelets: noEyeletsCount,
+    percentage: eyeletsCount + noEyeletsCount > 0
+      ? Math.round((eyeletsCount / (eyeletsCount + noEyeletsCount)) * 100)
+      : 0
+  };
+
   return {
     totalUsers,
     totalActiveUsers,
@@ -1106,6 +1217,11 @@ const dashboardStats = async (range?: string) => {
     salesTrend,
     recentOrders,
     recentUsers,
+    topSellingDesigns,
+    materialBreakdown,
+    popularSizes,
+    averageOrderValue,
+    eyeletsBreakdown,
     trends: {
       revenue: { value: Math.abs(revenueTrendVal), isUp: revenueTrendVal >= 0 },
       orders: { value: Math.abs(ordersTrendVal), isUp: ordersTrendVal >= 0 },
