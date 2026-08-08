@@ -979,6 +979,57 @@ export const cancledOrder = async (orderId: string, reason?: string) => {
   await orderCancelledTemplate(data as OrderCancelledData);
 };
 
+const trackOrder = async (contactInfo: string) => {
+  if (!contactInfo) {
+    throw new AppError("E-mailadres of telefoonnummer is verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  const searchLower = contactInfo.trim().toLowerCase();
+  const cleanPhone = contactInfo.replace(/\D/g, "");
+
+  const conditions: any[] = [
+    { guestEmail: { equals: searchLower, mode: "insensitive" } },
+    { user: { email: { equals: searchLower, mode: "insensitive" } } },
+    { addresses: { email: { equals: searchLower, mode: "insensitive" } } },
+  ];
+
+  if (cleanPhone.length >= 6) {
+    conditions.push(
+      { guestPhone: { contains: cleanPhone } },
+      { user: { phone: { contains: cleanPhone } } },
+      { addresses: { phone: { contains: cleanPhone } } }
+    );
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: conditions,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: true,
+      banner: true,
+      addresses: true,
+      payment: true,
+      templateReview: true,
+      items: {
+        include: {
+          banner: true,
+        },
+      },
+      shipments: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Bestelling niet gevonden met deze gegevens", httpStatus.NOT_FOUND);
+  }
+
+  return attachReviewInfo(order);
+};
+
 export const orderService = {
   createOrder,
   checkOut,
@@ -987,4 +1038,5 @@ export const orderService = {
   getGuestOrder,
   cancledOrder,
   getMyDesigns,
+  trackOrder,
 };

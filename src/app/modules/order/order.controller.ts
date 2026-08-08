@@ -129,7 +129,20 @@ const cancledOrder = async (req: Request, res: Response) => {
   });
 };
 
+const trackOrder = async (req: Request, res: Response) => {
+  const { email, phone, contact } = req.query;
+  const contactInfo = (contact || email || phone) as string;
+  const order = await orderService.trackOrder(
+    contactInfo,
+  );
 
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Bestelling status succesvol opgehaald",
+    data: order,
+  });
+};
 
 export const orderController = {
   createOrder,
@@ -138,5 +151,6 @@ export const orderController = {
   getSingleOrder,
   getGuestOrder,
   cancledOrder,
-  getMyDesigns
+  getMyDesigns,
+  trackOrder,
 };
