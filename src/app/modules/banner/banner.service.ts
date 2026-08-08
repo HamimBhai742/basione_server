@@ -1566,7 +1566,71 @@ const getGoogleShoppingFeed = async () => {
   return xml;
 };
 
+const duplicateBanner = async (bannerId: string, req: AuthRequest) => {
+  const originalBanner = await prisma.banner.findUnique({
+    where: { id: bannerId },
+  });
+
+  if (!originalBanner) {
+    throw new AppError("Origineel ontwerp niet gevonden", 404);
+  }
+
+  const baseName = originalBanner.name || originalBanner.headline || "Naamloos ontwerp";
+  const slug = await generateUniqueBannerSlug(baseName);
+
+  const duplicatedBanner = await prisma.banner.create({
+    data: {
+      userId: req.user?.id || null,
+      templateCategoryId: originalBanner.templateCategoryId,
+      templateCategoryIds: originalBanner.templateCategoryIds || [],
+      tuinposterCategoryId: originalBanner.tuinposterCategoryId,
+      tuinposterCategoryIds: originalBanner.tuinposterCategoryIds || [],
+      occasion: originalBanner.occasion,
+      style: originalBanner.style,
+      headline: originalBanner.headline,
+      slug,
+      name: originalBanner.name ? `${originalBanner.name} (kopie)` : "Naamloos ontwerp (kopie)",
+      price: originalBanner.price,
+      priceInclVat: originalBanner.priceInclVat,
+      priceExclVat: originalBanner.priceExclVat,
+      vatAmount: originalBanner.vatAmount,
+      vatRate: originalBanner.vatRate,
+      areaM2: originalBanner.areaM2,
+      pricePerM2: originalBanner.pricePerM2,
+      isVatIncluded: originalBanner.isVatIncluded,
+      material: originalBanner.material,
+      eyeletType: originalBanner.eyeletType,
+      hobbies: originalBanner.hobbies || [],
+      description: originalBanner.description,
+      sizeType: originalBanner.sizeType,
+      sizeLabel: originalBanner.sizeLabel,
+      width: originalBanner.width,
+      height: originalBanner.height,
+      imageUrl: originalBanner.imageUrl,
+      originalImageUrl: originalBanner.originalImageUrl,
+      canvasJSON: originalBanner.canvasJSON,
+      variant: originalBanner.variant,
+      source: originalBanner.source,
+      savedFromEditor: originalBanner.savedFromEditor,
+      isSavedDesign: originalBanner.isSavedDesign,
+      designStatus: originalBanner.designStatus,
+      lifecycleStatus: originalBanner.lifecycleStatus,
+      isSelected: originalBanner.isSelected,
+      isTemplate: false,
+      isReadymade: originalBanner.isReadymade,
+      mockupUrl: originalBanner.mockupUrl,
+      status: originalBanner.status,
+      generationId: originalBanner.generationId,
+      sku: originalBanner.sku,
+      sourceTemplateId: originalBanner.sourceTemplateId || originalBanner.id,
+    },
+  });
+
+  return duplicatedBanner;
+};
+
 export const bannerService = {
+  duplicateBanner,
   mybanner,
   createBanner,
   getAllbanners,

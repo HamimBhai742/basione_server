@@ -54,4 +54,10 @@ router.patch(
   bannerController.updateBanner,
 );
 
+router.post(
+  "/duplicate/:id",
+  optionalAuth("user"),
+  bannerController.duplicateBanner,
+);
+
 export const bannerRoutes = router;

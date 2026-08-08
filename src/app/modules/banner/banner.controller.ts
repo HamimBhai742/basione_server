@@ -203,7 +203,21 @@ const getGoogleShoppingFeed = catchAsync(async (req: Request, res: Response) => 
   res.status(httpStatus.OK).send(feedXml);
 });
 
+const duplicateBanner = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    const banner = await bannerService.duplicateBanner(req.params.id as string, req);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Ontwerp succesvol gedupliceerd",
+      data: banner,
+    });
+  },
+);
+
 export const bannerController = {
+  duplicateBanner,
   mybanner,
   createBanner,
   getAllbanners,
