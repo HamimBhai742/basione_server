@@ -1894,9 +1894,8 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const pricePerM2 = areaM2 < 1 ? 25 : 20;
   const calculatedPrice = areaM2 * pricePerM2;
   const fallbackPrice = Math.max(calculatedPrice, 12);
-  const finalPrice = parsedData.price !== undefined && parsedData.price !== "" && parsedData.price !== null && !isNaN(Number(parsedData.price))
-    ? Number(parsedData.price)
-    : fallbackPrice;
+  // For global templates/readymades, the base starting price is always 12.00 EUR (60x40 cm price)
+  const finalPrice = 12.00;
 
   const headline = parsedData.headline || "Template Headline";
   const slug = await generateUniqueBannerSlug(parsedData.slug || headline);
@@ -2051,26 +2050,12 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     updateData.height = height;
   }
 
-  if (parsedData.price !== undefined) {
-    if (parsedData.price === "" || parsedData.price === null) {
-      const areaM2 = (width / 100) * (height / 100);
-      const pricePerM2 = areaM2 < 1 ? 25 : 20;
-      const calculatedPrice = areaM2 * pricePerM2;
-      const finalPrice = Math.max(calculatedPrice, 12);
-      updateData.price = Number(finalPrice.toFixed(2));
-    } else {
-      updateData.price = Number(parsedData.price);
-    }
-  } else if (parsedData.width !== undefined || parsedData.height !== undefined) {
-    if (Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
-      throw new AppError("Ongeldige template-afmetingen.", 400);
-    }
-    const areaM2 = (width / 100) * (height / 100);
-    const pricePerM2 = areaM2 < 1 ? 25 : 20;
-    const calculatedPrice = areaM2 * pricePerM2;
-    const finalPrice = Math.max(calculatedPrice, 12);
-    updateData.price = Number(finalPrice.toFixed(2));
-  }
+  // For global templates/readymades, the base starting price is always 12.00 EUR (60x40 cm price)
+  updateData.price = 12.00;
+  updateData.priceInclVat = 12.00;
+  updateData.priceExclVat = 9.92;
+  updateData.vatAmount = 2.08;
+  updateData.vatRate = 0.21;
 
   updateData.isReadymade = isReadymade;
 

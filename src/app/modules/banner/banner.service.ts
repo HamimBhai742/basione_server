@@ -1546,7 +1546,10 @@ const getGoogleShoppingFeed = async () => {
     const description = template.description || title;
     const link = `${clientUrl}/templates/${template.slug || template.id}`;
     const imageLink = template.imageUrl || "";
-    const priceStr = `${template.price.toFixed(2)} EUR`;
+    // Google Merchant Center requires feed price to match website's initial page load price.
+    // Since the website details page always defaults to the 60x40 cm size (which costs 12.00 EUR),
+    // we enforce the feed price to be 12.00 EUR to prevent price mismatch suspensions.
+    const priceStr = "12.00 EUR";
 
     xml += `    <item>
       <g:id>${escapeXml(id)}</g:id>
