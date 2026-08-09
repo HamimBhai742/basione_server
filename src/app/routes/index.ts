@@ -18,6 +18,7 @@ import { webwinkelkeurRoutes } from "../modules/webwinkelkeur/webwinkelkeur.rout
 import { cartRoutes } from "../modules/cart/cart.routes";
 import { alertBarRoutes } from "../modules/alertBar/alertBar.routes";
 import { notificationRoutes } from "../modules/notification/notification.routes";
+import { wishlistRoutes } from "../modules/wishlist/wishlist.routes";
 
 export const router = Router();
 
@@ -29,6 +30,10 @@ const routes = [
   {
     path: "/cart",
     route: cartRoutes,
+  },
+  {
+    path: "/wishlist",
+    route: wishlistRoutes,
   },
   {
     path: "/user",

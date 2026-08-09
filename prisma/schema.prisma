@@ -30,6 +30,7 @@ model User {
   payments                   Payment[]
   templateReviews            TemplateReview[]
   cartItems                  CartItem[]
+  wishlistItems              WishlistItem[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -129,6 +130,7 @@ model Banner {
   templateCopies    Banner[] @relation("TemplateCopies")
   templateReviews   TemplateReview[] @relation("TemplateReviews")
   cartItems         CartItem[]
+  wishlistItems     WishlistItem[]
   orderItems        OrderItem[]
 
   svgMaskId   String?  @db.ObjectId
@@ -642,6 +644,20 @@ model Notification {
 
   @@index([userId])
   @@index([isRead])
+}
+
+model WishlistItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bannerId  String   @db.ObjectId
+  banner    Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, bannerId])
+  @@index([userId])
+  @@index([bannerId])
 }
 
 
