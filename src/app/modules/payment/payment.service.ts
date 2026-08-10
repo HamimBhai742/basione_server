@@ -200,18 +200,21 @@ export const createPayment = async (
 
   if (order.items && order.items.length > 0) {
     for (const item of order.items) {
+      const unitEyeletsFee = Number(item.eyeletsFee || 0) / item.quantity;
+      const itemUnitPrice = Number(item.price) + unitEyeletsFee;
       const itemTotal = Number(item.subtotal);
       const itemVatAmount = (itemTotal * vatRate) / (1 + vatRate);
-      const itemUnitPrice = Number(item.price);
 
       let itemDesc = "Spandoek Print";
       if (item.banner) {
         itemDesc = item.banner.name || item.banner.headline || `Banner (${item.banner.occasion || "Custom"})`;
       }
 
+      const desc = item.hasEyelets ? `${itemDesc} (incl. Ringen)` : itemDesc;
+
       lines.push({
         type: "physical",
-        description: itemDesc,
+        description: desc,
         quantity: item.quantity,
         unitPrice: {
           currency: "EUR",
@@ -228,30 +231,6 @@ export const createPayment = async (
         },
       });
     }
-  }
-
-  if (order.eyeletsFee && order.eyeletsFee > 0) {
-    const eyeletsTotal = Number(order.eyeletsFee);
-    const eyeletsVatAmount = (eyeletsTotal * vatRate) / (1 + vatRate);
-
-    lines.push({
-      type: "surcharge",
-      description: "Extra optie: Ringen (Eyelets Fee)",
-      quantity: 1,
-      unitPrice: {
-        currency: "EUR",
-        value: eyeletsTotal.toFixed(2),
-      },
-      totalAmount: {
-        currency: "EUR",
-        value: eyeletsTotal.toFixed(2),
-      },
-      vatRate: vatRatePercent,
-      vatAmount: {
-        currency: "EUR",
-        value: eyeletsVatAmount.toFixed(2),
-      },
-    });
   }
 
   if (order.deliveryFee && order.deliveryFee > 0) {
