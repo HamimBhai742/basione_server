@@ -13,6 +13,7 @@ import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateGardenMockup } from "../../utils/generateMockup";
+import { generateAllMockups } from "../../utils/generateAllMockups";
 import { optimizeImage } from "../../utils/optimizeImage";
 import axios from "axios";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
@@ -1851,7 +1852,14 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
 
   let imageUrl = "";
   let originalImageUrl: string | null = null;
-  let mockupUrl = null;
+  let mockupUrl: string | null = null;
+  let mockupFirstUrl: string | null = null;
+  let mockupHedgeUrl: string | null = null;
+  let mockupPartyUrl: string | null = null;
+  let mockupRailingUrl: string | null = null;
+  let mockupLawnNewUrl: string | null = null;
+  let mockupGardenUrl: string | null = null;
+
   const isReadymade = parsedData.isReadymade === true || parsedData.isReadymade === "true";
 
   if (file) {
@@ -1870,22 +1878,45 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       imageUrl = originalImageUrl;
     }
 
-    if (isReadymade) {
-      try {
-        const mockupBuffer = await generateGardenMockup(file.buffer);
-        mockupUrl = await uploadBufferToS3({
-          buffer: mockupBuffer,
-          key: `mockups/${Date.now()}-mockup.png`,
+    try {
+      const mockups = await generateAllMockups(file.buffer);
+      const uploadMockup = async (buffer: Buffer, name: string) => {
+        return uploadBufferToS3({
+          buffer,
+          key: `mockups/${Date.now()}-${name}.png`,
           contentType: "image/png",
         });
-      } catch (err) {
-        console.error("Mockup generation failed:", err);
-      }
+      };
+
+      const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
+        uploadMockup(mockups.first, "first"),
+        uploadMockup(mockups.hedge, "hedge"),
+        uploadMockup(mockups.party, "party"),
+        uploadMockup(mockups.railing, "railing"),
+        uploadMockup(mockups.lawnNew, "lawn-new"),
+        uploadMockup(mockups.garden, "garden"),
+      ]);
+
+      mockupFirstUrl = first;
+      mockupHedgeUrl = hedge;
+      mockupPartyUrl = party;
+      mockupRailingUrl = railing;
+      mockupLawnNewUrl = lawnNew;
+      mockupGardenUrl = garden;
+      mockupUrl = garden; // fallback for backwards compatibility
+    } catch (err) {
+      console.error("Mockup generation failed:", err);
     }
   } else if (parsedData.imageUrl) {
     imageUrl = parsedData.imageUrl;
     originalImageUrl = parsedData.originalImageUrl || null;
     mockupUrl = parsedData.mockupUrl || null;
+    mockupFirstUrl = parsedData.mockupFirstUrl || null;
+    mockupHedgeUrl = parsedData.mockupHedgeUrl || null;
+    mockupPartyUrl = parsedData.mockupPartyUrl || null;
+    mockupRailingUrl = parsedData.mockupRailingUrl || null;
+    mockupLawnNewUrl = parsedData.mockupLawnNewUrl || null;
+    mockupGardenUrl = parsedData.mockupGardenUrl || null;
   } else {
     throw new AppError("Template-afbeelding is verplicht.", 400);
   }
@@ -1928,13 +1959,19 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
       width,
       height,
       imageUrl,
-      originalImageUrl,
       price: Number(finalPrice.toFixed(2)),
       isTemplate: true,
       isReadymade,
       mockupUrl,
+      mockupFirstUrl,
+      mockupHedgeUrl,
+      mockupPartyUrl,
+      mockupRailingUrl,
+      mockupLawnNewUrl,
+      mockupGardenUrl,
       variant: 0,
       status: "GENERATED",
+
       canvasJSON: parsedData.canvasJSON ? await processCanvasJsonImages(parsedData.canvasJSON) : null,
       metaTitle: parsedData.metaTitle || null,
       metaDescription: parsedData.metaDescription || null,
@@ -2093,53 +2130,53 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     }
   }
 
-  if (isReadymade) {
-    if (file) {
-      try {
-        const mockupBuffer = await generateGardenMockup(file.buffer);
-        const mockupUrl = await uploadBufferToS3({
-          buffer: mockupBuffer,
-          key: `mockups/${Date.now()}-mockup.png`,
+  if (file) {
+    try {
+      const mockups = await generateAllMockups(file.buffer);
+      const uploadMockup = async (buffer: Buffer, name: string) => {
+        return uploadBufferToS3({
+          buffer,
+          key: `mockups/${Date.now()}-${name}.png`,
           contentType: "image/png",
         });
-        updateData.mockupUrl = mockupUrl;
+      };
 
-        if (isExist.mockupUrl) {
-          const oldMockupKey = getS3KeyFromUrl(isExist.mockupUrl);
-          if (oldMockupKey) {
-            await deleteImageFromS3(oldMockupKey);
-          }
+      const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
+        uploadMockup(mockups.first, "first"),
+        uploadMockup(mockups.hedge, "hedge"),
+        uploadMockup(mockups.party, "party"),
+        uploadMockup(mockups.railing, "railing"),
+        uploadMockup(mockups.lawnNew, "lawn-new"),
+        uploadMockup(mockups.garden, "garden"),
+      ]);
+
+      updateData.mockupFirstUrl = first;
+      updateData.mockupHedgeUrl = hedge;
+      updateData.mockupPartyUrl = party;
+      updateData.mockupRailingUrl = railing;
+      updateData.mockupLawnNewUrl = lawnNew;
+      updateData.mockupGardenUrl = garden;
+      updateData.mockupUrl = garden; // fallback
+
+      // Clean up old mockups
+      const oldMockups = [
+        isExist.mockupFirstUrl,
+        isExist.mockupHedgeUrl,
+        isExist.mockupPartyUrl,
+        isExist.mockupRailingUrl,
+        isExist.mockupLawnNewUrl,
+        isExist.mockupGardenUrl,
+        isExist.mockupUrl,
+      ].filter(Boolean);
+
+      for (const oldUrl of oldMockups) {
+        const oldKey = getS3KeyFromUrl(oldUrl as string);
+        if (oldKey) {
+          await deleteImageFromS3(oldKey);
         }
-      } catch (err) {
-        console.error("Mockup generation failed on update:", err);
       }
-    } else if (!isExist.isReadymade) {
-      // Transitioning from standard to readymade without a new file upload.
-      // Generate mockup from the existing image.
-      if (isExist.imageUrl) {
-        try {
-          const response = await axios.get(isExist.imageUrl, { responseType: "arraybuffer" });
-          const bannerBuffer = Buffer.from(response.data);
-          const mockupBuffer = await generateGardenMockup(bannerBuffer);
-          const mockupUrl = await uploadBufferToS3({
-            buffer: mockupBuffer,
-            key: `mockups/${Date.now()}-mockup.png`,
-            contentType: "image/png",
-          });
-          updateData.mockupUrl = mockupUrl;
-        } catch (err) {
-          console.error("Failed to generate mockup from existing image:", err);
-        }
-      }
-    }
-  } else {
-    // If it's set to NOT readymade, clean up the mockup
-    updateData.mockupUrl = null;
-    if (isExist.mockupUrl) {
-      const oldMockupKey = getS3KeyFromUrl(isExist.mockupUrl);
-      if (oldMockupKey) {
-        await deleteImageFromS3(oldMockupKey);
-      }
+    } catch (err) {
+      console.error("Mockups generation failed on update:", err);
     }
   }
 

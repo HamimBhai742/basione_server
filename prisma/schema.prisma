@@ -109,6 +109,12 @@ model Banner {
   isTemplate Boolean      @default(false)
   isReadymade Boolean     @default(false)
   mockupUrl   String?
+  mockupFirstUrl   String?
+  mockupHedgeUrl   String?
+  mockupPartyUrl   String?
+  mockupRailingUrl String?
+  mockupLawnNewUrl String?
+  mockupGardenUrl  String?
   status     BannerStatus @default(GENERATED)
 
   generationId String? // group 4 variants
