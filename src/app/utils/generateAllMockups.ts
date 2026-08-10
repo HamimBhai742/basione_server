@@ -38,7 +38,7 @@ const mockupsConfig: Record<string, MockupConfig> = {
   },
   garden: {
     filename: "garden_bg.png",
-    inset: { top: 7.47, right: 6.92, bottom: 35.30, left: 10.42 },
+    inset: { top: 6.27, right: 8.22, bottom: 36.50, left: 8.92 },
   },
 };
 
@@ -97,9 +97,9 @@ const generateSingleMockup = async (
   const bannerWidth = width - leftPx - rightPx;
   const bannerHeight = height - topPx - bottomPx;
 
-  // Resize banner to cover target frame
+  // Resize banner using fill to stretch it exactly like the frontend
   const resizedBanner = await sharp(bannerBuffer)
-    .resize(bannerWidth, bannerHeight, { fit: "cover" })
+    .resize(bannerWidth, bannerHeight, { fit: "fill" })
     .toBuffer();
 
   // Composite the banner onto the background

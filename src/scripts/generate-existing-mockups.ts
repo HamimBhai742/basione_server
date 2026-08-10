@@ -7,7 +7,7 @@ async function main() {
   console.log("Starting mockup migration for existing templates...");
   
   // Find all templates or readymades
-  const templates = await prisma.banner.findMany({
+  const allTemplates = await prisma.banner.findMany({
     where: {
       OR: [
         { isTemplate: true },
@@ -16,7 +16,13 @@ async function main() {
     }
   });
 
-  console.log(`Found ${templates.length} templates/readymades to process.`);
+  // Filter to only include banner templates/readymades (exclude tuinposters/garden posters)
+  const templates = allTemplates.filter(t => 
+    t.templateCategoryId !== null || 
+    (t.templateCategoryIds && t.templateCategoryIds.length > 0)
+  );
+
+  console.log(`Found ${templates.length} banner templates to process.`);
 
   for (let i = 0; i < templates.length; i++) {
     const template = templates[i];

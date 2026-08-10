@@ -1879,31 +1879,43 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
     }
 
     try {
-      const mockups = await generateAllMockups(file.buffer);
-      const uploadMockup = async (buffer: Buffer, name: string) => {
-        return uploadBufferToS3({
-          buffer,
-          key: `mockups/${Date.now()}-${name}.png`,
+      if (isReadymade) {
+        // Tuinposters (Garden posters) generate single wooden fence mockup
+        const gardenBuffer = await generateGardenMockup(file.buffer);
+        const uploadedGarden = await uploadBufferToS3({
+          buffer: gardenBuffer,
+          key: `mockups/${Date.now()}-mockup.png`,
           contentType: "image/png",
         });
-      };
+        mockupUrl = uploadedGarden;
+      } else {
+        // Banners generate all 6 mockups
+        const mockups = await generateAllMockups(file.buffer);
+        const uploadMockup = async (buffer: Buffer, name: string) => {
+          return uploadBufferToS3({
+            buffer,
+            key: `mockups/${Date.now()}-${name}.png`,
+            contentType: "image/png",
+          });
+        };
 
-      const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
-        uploadMockup(mockups.first, "first"),
-        uploadMockup(mockups.hedge, "hedge"),
-        uploadMockup(mockups.party, "party"),
-        uploadMockup(mockups.railing, "railing"),
-        uploadMockup(mockups.lawnNew, "lawn-new"),
-        uploadMockup(mockups.garden, "garden"),
-      ]);
+        const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
+          uploadMockup(mockups.first, "first"),
+          uploadMockup(mockups.hedge, "hedge"),
+          uploadMockup(mockups.party, "party"),
+          uploadMockup(mockups.railing, "railing"),
+          uploadMockup(mockups.lawnNew, "lawn-new"),
+          uploadMockup(mockups.garden, "garden"),
+        ]);
 
-      mockupFirstUrl = first;
-      mockupHedgeUrl = hedge;
-      mockupPartyUrl = party;
-      mockupRailingUrl = railing;
-      mockupLawnNewUrl = lawnNew;
-      mockupGardenUrl = garden;
-      mockupUrl = garden; // fallback for backwards compatibility
+        mockupFirstUrl = first;
+        mockupHedgeUrl = hedge;
+        mockupPartyUrl = party;
+        mockupRailingUrl = railing;
+        mockupLawnNewUrl = lawnNew;
+        mockupGardenUrl = garden;
+        mockupUrl = garden; // fallback for backwards compatibility
+      }
     } catch (err) {
       console.error("Mockup generation failed:", err);
     }
@@ -2132,31 +2144,43 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
   if (file) {
     try {
-      const mockups = await generateAllMockups(file.buffer);
-      const uploadMockup = async (buffer: Buffer, name: string) => {
-        return uploadBufferToS3({
-          buffer,
-          key: `mockups/${Date.now()}-${name}.png`,
+      if (isReadymade) {
+        // Tuinposters (Garden posters) generate single wooden fence mockup
+        const gardenBuffer = await generateGardenMockup(file.buffer);
+        const uploadedGarden = await uploadBufferToS3({
+          buffer: gardenBuffer,
+          key: `mockups/${Date.now()}-mockup.png`,
           contentType: "image/png",
         });
-      };
+        updateData.mockupUrl = uploadedGarden;
+      } else {
+        // Banners generate all 6 mockups
+        const mockups = await generateAllMockups(file.buffer);
+        const uploadMockup = async (buffer: Buffer, name: string) => {
+          return uploadBufferToS3({
+            buffer,
+            key: `mockups/${Date.now()}-${name}.png`,
+            contentType: "image/png",
+          });
+        };
 
-      const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
-        uploadMockup(mockups.first, "first"),
-        uploadMockup(mockups.hedge, "hedge"),
-        uploadMockup(mockups.party, "party"),
-        uploadMockup(mockups.railing, "railing"),
-        uploadMockup(mockups.lawnNew, "lawn-new"),
-        uploadMockup(mockups.garden, "garden"),
-      ]);
+        const [first, hedge, party, railing, lawnNew, garden] = await Promise.all([
+          uploadMockup(mockups.first, "first"),
+          uploadMockup(mockups.hedge, "hedge"),
+          uploadMockup(mockups.party, "party"),
+          uploadMockup(mockups.railing, "railing"),
+          uploadMockup(mockups.lawnNew, "lawn-new"),
+          uploadMockup(mockups.garden, "garden"),
+        ]);
 
-      updateData.mockupFirstUrl = first;
-      updateData.mockupHedgeUrl = hedge;
-      updateData.mockupPartyUrl = party;
-      updateData.mockupRailingUrl = railing;
-      updateData.mockupLawnNewUrl = lawnNew;
-      updateData.mockupGardenUrl = garden;
-      updateData.mockupUrl = garden; // fallback
+        updateData.mockupFirstUrl = first;
+        updateData.mockupHedgeUrl = hedge;
+        updateData.mockupPartyUrl = party;
+        updateData.mockupRailingUrl = railing;
+        updateData.mockupLawnNewUrl = lawnNew;
+        updateData.mockupGardenUrl = garden;
+        updateData.mockupUrl = garden; // fallback
+      }
 
       // Clean up old mockups
       const oldMockups = [
