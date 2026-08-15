@@ -39,6 +39,7 @@ interface CreateOrderPayload {
   bannerId?: string;
   items?: CreateOrderPayloadItem[];
   termsAccepted: boolean;
+  couponCode?: string;
 
   // Client requested default should be Yes.
   // Frontend should send true by default, but backend also defaults true for safety.
@@ -403,15 +404,75 @@ const createOrder = async (
   const deliveryFeeExcludingVat = getPriceExcludingVatFromIncludedVat(deliveryFeeIncludingVat);
   const deliveryVatAmount = getVatAmountFromIncludedVat(deliveryFeeIncludingVat);
 
+  // Validate and calculate product-only coupon discount
+  let appliedCouponId: string | null = null;
+  let appliedCouponCode: string | null = null;
+  let discountAmount = 0;
+
+  if (payload.couponCode && payload.couponCode.trim()) {
+    const normCode = payload.couponCode.trim().toUpperCase();
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: normCode },
+    });
+
+    if (coupon && coupon.isActive) {
+      const now = new Date();
+      const isDateValid =
+        (!coupon.startDate || now >= coupon.startDate) &&
+        (!coupon.endDate || now <= coupon.endDate);
+      const isUsageValid =
+        !coupon.usageLimit || coupon.usedCount < coupon.usageLimit;
+      const isMinValid =
+        !coupon.minOrderAmount || totalBannerPriceInclVat >= coupon.minOrderAmount;
+
+      if (isDateValid && isUsageValid && isMinValid) {
+        appliedCouponId = coupon.id;
+        appliedCouponCode = coupon.code;
+
+        if (coupon.discountType === "percentage") {
+          discountAmount = roundToTwo(
+            (totalBannerPriceInclVat * coupon.discountValue) / 100
+          );
+          if (
+            coupon.maxDiscountAmount &&
+            discountAmount > coupon.maxDiscountAmount
+          ) {
+            discountAmount = roundToTwo(coupon.maxDiscountAmount);
+          }
+        } else if (coupon.discountType === "fixed") {
+          discountAmount = roundToTwo(coupon.discountValue);
+        }
+
+        // Product-only discount: never exceed product subtotal
+        discountAmount = Math.min(totalBannerPriceInclVat, discountAmount);
+      }
+    }
+  }
+
+  const discountedBannerPriceInclVat = roundToTwo(
+    Math.max(0, totalBannerPriceInclVat - discountAmount)
+  );
+  const discountedBannerPriceExclVat = getPriceExcludingVatFromIncludedVat(
+    discountedBannerPriceInclVat
+  );
+  const discountedBannerVatAmount = getVatAmountFromIncludedVat(
+    discountedBannerPriceInclVat
+  );
+
   const subtotal = roundToTwo(totalBannerPriceInclVat);
   const priceExcludingVat = roundToTwo(
-    totalBannerPriceExclVat + totalEyeletsFeeExclVat + deliveryFeeExcludingVat
+    discountedBannerPriceExclVat +
+      totalEyeletsFeeExclVat +
+      deliveryFeeExcludingVat
   );
   const vatAmount = roundToTwo(
-    totalBannerVatAmount + totalEyeletsVatAmount + deliveryVatAmount
+    discountedBannerVatAmount + totalEyeletsVatAmount + deliveryVatAmount
   );
+  // Total payable: (Products - Discount) + Eyelets + Delivery
   const total = roundToTwo(
-    totalBannerPriceInclVat + totalEyeletsFeeInclVat + deliveryFeeIncludingVat
+    discountedBannerPriceInclVat +
+      totalEyeletsFeeInclVat +
+      deliveryFeeIncludingVat
   );
 
   const { formattedRange } = calculateDeliveryDate(deliveryType);
@@ -437,6 +498,10 @@ const createOrder = async (
           vatAmount,
           total,
 
+          couponId: appliedCouponId,
+          couponCode: appliedCouponCode,
+          discountAmount: discountAmount,
+
           userId: userId || null,
           isGuest: isGuestOrder,
           bannerId: items[0].bannerId,
@@ -453,6 +518,15 @@ const createOrder = async (
             : {}),
         } as any,
       });
+
+      if (appliedCouponId) {
+        await tx.coupon.update({
+          where: { id: appliedCouponId },
+          data: {
+            usedCount: { increment: 1 },
+          },
+        });
+      }
 
       for (const itemData of orderItemsData) {
         await tx.orderItem.create({

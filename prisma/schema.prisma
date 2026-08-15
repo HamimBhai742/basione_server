@@ -265,6 +265,11 @@ model Order {
   payment   Payment?
   addresses Address?
 
+  couponId       String?   @db.ObjectId
+  coupon         Coupon?   @relation(fields: [couponId], references: [id])
+  couponCode     String?
+  discountAmount Float     @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   invoice   Invoice?
@@ -664,6 +669,33 @@ model WishlistItem {
   @@unique([userId, bannerId])
   @@index([userId])
   @@index([bannerId])
+}
+
+model Coupon {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  code              String        @unique
+  discountType      DiscountType  @default(percentage)
+  discountValue     Float
+  minOrderAmount    Float?        @default(0)
+  maxDiscountAmount Float?
+  startDate         DateTime?
+  endDate           DateTime?
+  usageLimit        Int?
+  usedCount         Int           @default(0)
+  isActive          Boolean       @default(true)
+  description       String?
+
+  orders            Order[]
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([isActive])
+}
+
+enum DiscountType {
+  percentage
+  fixed
 }
 
 

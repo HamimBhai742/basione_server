@@ -19,10 +19,15 @@ import { cartRoutes } from "../modules/cart/cart.routes";
 import { alertBarRoutes } from "../modules/alertBar/alertBar.routes";
 import { notificationRoutes } from "../modules/notification/notification.routes";
 import { wishlistRoutes } from "../modules/wishlist/wishlist.routes";
+import { couponRoutes } from "../modules/coupon/coupon.routes";
 
 export const router = Router();
 
 const routes = [
+  {
+    path: "/coupon",
+    route: couponRoutes,
+  },
   {
     path: "/notification",
     route: notificationRoutes,
