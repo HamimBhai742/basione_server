@@ -78,6 +78,13 @@ const getAllCoupons = async (query: {
   const [coupons, total] = await Promise.all([
     prisma.coupon.findMany({
       where: whereCondition,
+      include: {
+        orders: {
+          select: {
+            discountAmount: true
+          }
+        }
+      },
       skip,
       take: limit,
       orderBy: { createdAt: "desc" },
