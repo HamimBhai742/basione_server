@@ -14,6 +14,8 @@ export const generateUniqueBannerSlug = async (
   headline: string,
   currentId?: string,
 ): Promise<string> => {
+
+  
   const baseSlug =
     slugify(headline || "spandoek", { lower: true, strict: true }) || "spandoek";
 
@@ -1505,10 +1507,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
 const getGoogleShoppingFeed = async () => {
   const templates = await prisma.banner.findMany({
     where: {
-      OR: [
-        { isTemplate: true },
-        { isReadymade: true },
-      ],
+      isTemplate: true,
     },
     select: {
       id: true,
@@ -1519,6 +1518,7 @@ const getGoogleShoppingFeed = async () => {
       imageUrl: true,
       mockupUrl: true,
       slug: true,
+      isReadymade: true,
     },
   });
 
@@ -1545,7 +1545,8 @@ const getGoogleShoppingFeed = async () => {
     const id = template.id;
     const title = template.name || template.headline || "Ontwerp";
     const description = template.description || title;
-    const link = `${clientUrl}/templates/${template.slug || template.id}`;
+    const route = template.isReadymade ? "tuinposter" : "templates";
+    const link = `${clientUrl}/${route}/${template.slug || template.id}`;
     const imageLink = template.mockupUrl || template.imageUrl || "";
     // Google Merchant Center requires feed price to match website's initial page load price.
     // Since the website details page always defaults to the 60x40 cm size (which costs 12.00 EUR),
