@@ -40,12 +40,6 @@ export const generateAndSaveInvoice = async ({
   payment,
 }: GenerateInvoicePayload) => {
   try {
-    // console.log("generateAndSaveInvoice started:", {
-//       orderId: inputOrder?.id,
-//       userId: user?.id,
-//       paymentId: payment?.id,
-//     });
-
     const existingInvoice = await prisma.invoice.findUnique({
       where: {
         orderId: inputOrder.id,
@@ -53,11 +47,6 @@ export const generateAndSaveInvoice = async ({
     });
 
     if (existingInvoice) {
-      // console.log("Existing invoice found:", {
-//         invoiceId: existingInvoice.id,
-//         invoiceNumber: existingInvoice.invoiceNumber,
-//       });
-
       return existingInvoice;
     }
 
@@ -81,8 +70,6 @@ export const generateAndSaveInvoice = async ({
     }
 
     const invoiceNumber = await generateInvoiceNumber();
-
-    // console.log("Invoice number generated:", invoiceNumber);
 
     const designNumber =
       order.banner?.designNumber ||
@@ -164,6 +151,8 @@ export const generateAndSaveInvoice = async ({
 
       pricing: {
         subtotal: Number(order.subtotal || 0),
+        discountAmount: Number(order.discountAmount || 0),
+        couponCode: order.couponCode || null,
         deliveryFee: Number(order.deliveryFee || 0),
         eyeletsFee: Number(order.eyeletsFee || 0),
         priceExcludingVat: Number(order.priceExcludingVat || 0),
@@ -178,19 +167,10 @@ export const generateAndSaveInvoice = async ({
       },
     });
 
-    // console.log("Invoice PDF generated:", {
-//       bufferSize: pdfBuffer?.length,
-//     });
-
     const savedPdf = await uploadInvoicePdfToS3({
       pdfBuffer,
       invoiceNumber,
     });
-
-    // console.log("Invoice PDF saved:", {
-//       fileUrl: savedPdf.fileUrl,
-//       filePath: savedPdf.fileName,
-//     });
 
     const invoice = await prisma.invoice.create({
       data: {
@@ -201,7 +181,6 @@ export const generateAndSaveInvoice = async ({
         orderId: order.id,
         userId: user?.id || null,
 
-        // Uncomment only if your Invoice model has paymentId field
         paymentId: payment?.id || "",
 
         amount: Number(order.total || 0),
@@ -209,11 +188,6 @@ export const generateAndSaveInvoice = async ({
         status: "generated",
       },
     });
-
-    // console.log("Invoice created in database:", {
-//       invoiceId: invoice.id,
-//       invoiceNumber: invoice.invoiceNumber,
-//     });
 
     return invoice;
   } catch (error: any) {

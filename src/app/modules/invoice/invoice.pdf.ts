@@ -63,6 +63,8 @@ type InvoicePdfPayload = {
 
   pricing: {
     subtotal: number;
+    discountAmount?: number;
+    couponCode?: string | null;
     deliveryFee: number;
     eyeletsFee: number;
     priceExcludingVat: number;
@@ -508,23 +510,35 @@ export const generateInvoicePdf = async (
       sectionTitle(doc, "Prijsberekening", y);
       y += 24;
 
-      doc.roundedRect(40, y, 515, 120, 10).fill(COLOR.white);
-      doc
-        .roundedRect(40, y, 515, 120, 10)
-        .strokeColor(COLOR.divider)
-        .lineWidth(0.7)
-        .stroke();
-
       let priceY = y + 16;
       const vatRate = formatVatRate(payload.pricing.vatRate);
 
       const priceRows: [string, number][] = [
         ["Subtotaal spandoeken incl. BTW", payload.pricing.subtotal],
+      ];
+
+      if (payload.pricing.discountAmount && payload.pricing.discountAmount > 0) {
+        const couponLabel = payload.pricing.couponCode
+          ? `Korting (Kortingscode: ${payload.pricing.couponCode})`
+          : "Korting";
+        priceRows.push([couponLabel, -payload.pricing.discountAmount]);
+      }
+
+      priceRows.push(
         ["Levering / Afhalen incl. BTW", payload.pricing.deliveryFee],
         ["Ringen / Eyelets incl. BTW", payload.pricing.eyeletsFee],
         [`Totaal excl. ${vatRate}% BTW`, payload.pricing.priceExcludingVat],
         [`BTW ${vatRate}% inbegrepen`, payload.pricing.vatAmount],
-      ];
+      );
+
+      const pricingBoxHeight = 16 * priceRows.length + 40;
+
+      doc.roundedRect(40, y, 515, pricingBoxHeight, 10).fill(COLOR.white);
+      doc
+        .roundedRect(40, y, 515, pricingBoxHeight, 10)
+        .strokeColor(COLOR.divider)
+        .lineWidth(0.7)
+        .stroke();
 
       priceRows.forEach(([label, amount]) => {
         pricingRow({
