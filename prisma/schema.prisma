@@ -698,4 +698,19 @@ enum DiscountType {
   fixed
 }
 
+model DesignRequest {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String
+  phone        String?
+  dimensions   String
+  eyelets      String
+  requirements String
+  fileUrls     String[] @default([])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+
 

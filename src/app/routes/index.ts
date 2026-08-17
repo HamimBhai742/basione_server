@@ -20,8 +20,10 @@ import { alertBarRoutes } from "../modules/alertBar/alertBar.routes";
 import { notificationRoutes } from "../modules/notification/notification.routes";
 import { wishlistRoutes } from "../modules/wishlist/wishlist.routes";
 import { couponRoutes } from "../modules/coupon/coupon.routes";
+import { designRequestRoutes } from "../modules/designRequest/designRequest.routes";
 
 export const router = Router();
+
 
 const routes = [
   {
@@ -107,6 +109,10 @@ const routes = [
   {
     path: "/alert-bar",
     route: alertBarRoutes,
+  },
+  {
+    path: "/design-request",
+    route: designRequestRoutes,
   },
 ];
 
