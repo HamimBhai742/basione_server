@@ -1519,6 +1519,27 @@ const getGoogleShoppingFeed = async () => {
       mockupUrl: true,
       slug: true,
       isReadymade: true,
+      occasion: true,
+      templateCategory: {
+        select: {
+          name: true,
+        },
+      },
+      templateCategories: {
+        select: {
+          name: true,
+        },
+      },
+      tuinposterCategory: {
+        select: {
+          name: true,
+        },
+      },
+      tuinposterCategories: {
+        select: {
+          name: true,
+        },
+      },
     },
   });
 
@@ -1553,6 +1574,17 @@ const getGoogleShoppingFeed = async () => {
     // we enforce the feed price to be 12.00 EUR to prevent price mismatch suspensions.
     const priceStr = "12.00 EUR";
 
+    const categoryName =
+      template.templateCategory?.name ||
+      (template.templateCategories && template.templateCategories.length > 0
+        ? template.templateCategories.map((c) => c.name).filter(Boolean).join(" > ")
+        : "") ||
+      template.tuinposterCategory?.name ||
+      (template.tuinposterCategories && template.tuinposterCategories.length > 0
+        ? template.tuinposterCategories.map((c) => c.name).filter(Boolean).join(" > ")
+        : "") ||
+      (template.occasion && template.occasion !== "custom" ? template.occasion : "");
+
     xml += `    <item>
       <g:id>${escapeXml(id)}</g:id>
       <g:title>${escapeXml(title)}</g:title>
@@ -1561,8 +1593,13 @@ const getGoogleShoppingFeed = async () => {
       <g:image_link>${escapeXml(imageLink)}</g:image_link>
       <g:condition>new</g:condition>
       <g:availability>in_stock</g:availability>
-      <g:price>${priceStr}</g:price>
-    </item>\n`;
+      <g:price>${priceStr}</g:price>`;
+
+    if (categoryName) {
+      xml += `\n      <g:product_type>${escapeXml(categoryName)}</g:product_type>`;
+    }
+
+    xml += `\n    </item>\n`;
   }
 
   xml += `  </channel>
