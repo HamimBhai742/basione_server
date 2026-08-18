@@ -14,6 +14,8 @@ export interface WebwinkelKeurInvitePayload {
   delay: number;
   customer_name: string;
   order_total?: number;
+  with_product_reviews?: number;
+  with_shop_reviews?: number;
   order_data?: {
     products: Array<{
       id: string;
@@ -61,6 +63,8 @@ const sendReviewInvitation = async (order: any) => {
     delay: 5, // Send 5 days after delivery
     customer_name: customerName,
     order_total: order.total,
+    with_product_reviews: 1,
+    with_shop_reviews: 1,
     client: "Basione",
   };
 
