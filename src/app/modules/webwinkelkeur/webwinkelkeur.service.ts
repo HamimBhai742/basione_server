@@ -49,10 +49,11 @@ const sendReviewInvitation = async (order: any) => {
   // Construct optional products data
   const products: any[] = [];
   if (order.banner) {
+    const targetProductId = order.banner.sourceTemplateId || order.banner.id;
     products.push({
-      id: order.banner.id,
+      id: targetProductId,
       name: order.banner.name || (order.banner.occasion ? `${order.banner.occasion} Banner` : "Banner"),
-      url: `${config.client_url}/templates/${order.banner.slug || order.banner.id}`,
+      url: `${config.client_url}/templates/${order.banner.slug || targetProductId}`,
       image_url: order.banner.imageUrl || "",
     });
   }
