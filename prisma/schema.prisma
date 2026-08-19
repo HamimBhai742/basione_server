@@ -19,6 +19,8 @@ model User {
   otpExpiry                  DateTime?
   forgetPasswordToken        String?
   forgetPasswordTokenExpires DateTime?
+  refreshToken               String?
+  refreshTokenExpiresAt      DateTime?
   image                      String?
   phone                      String?
   location                   String?

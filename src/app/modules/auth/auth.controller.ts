@@ -27,6 +27,12 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     path: "/",
   });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+  });
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -51,8 +57,22 @@ const resetPassword = catchAsync(
   },
 );
 
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+  const token = req.cookies.refreshToken;
+  const result = await authService.refreshAccessToken(token);
+
+  setCookies(res, result);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Toegangstoken succesvol vernieuwd",
+    data: result,
+  });
+});
+
 export const authController = {
   loginUser,
   logoutUser,
   resetPassword,
+  refreshToken,
 };

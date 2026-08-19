@@ -10,6 +10,8 @@ export default {
   jwt: {
     secret: process.env.JWT_SECRET,
     expire_in: process.env.JWT_EXPIRES_IN,
+    refresh_secret: process.env.JWT_REFRESH_SECRET,
+    refresh_expire_in: process.env.JWT_REFRESH_EXPIRES_IN,
   },
   stripe: {
     secret: process.env.STRIPE_SECRET_KEY as string,
@@ -67,5 +69,11 @@ export default {
     projectId: process.env.FIREBASE_PROJECT_ID as string,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
     privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
+  },
+  redis: {
+    useRedis: process.env.USE_REDIS === "true",
+    host: process.env.REDIS_HOST || "localhost",
+    port: Number(process.env.REDIS_PORT || 6379),
+    password: process.env.REDIS_PASSWORD || undefined,
   },
 };

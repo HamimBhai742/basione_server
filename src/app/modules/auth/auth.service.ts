@@ -1,12 +1,13 @@
-﻿import { AppError } from "../../error/AppError";
+import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/generateToken";
 import config from "../../../config";
-import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
+import { addEmailJob } from "../../lib/emailQueue";
 import { verifyToken } from "../../utils/verifyToken";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
+import { generateRefreshToken, getRefreshTokenExpiry } from "../../utils/generateRefreshToken";
 
 interface IUserPayload {
   email: string;
@@ -40,12 +41,25 @@ const loginUser = async (payload: IUserPayload) => {
 
   const token = await generateToken(
     user,
-    config.jwt.secret as string,
-    config.jwt.expire_in as string,
+    config.jwt.secret!,
+    config.jwt.expire_in!,
   );
+
+  const refreshToken = generateRefreshToken();
+  const refreshTokenExpiresAt = getRefreshTokenExpiry(config.jwt.refresh_expire_in!);
+
+  const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken: hashedRefreshToken,
+      refreshTokenExpiresAt,
+    },
+  });
 
   return {
     accessToken: token,
+    refreshToken,
     user: {
       id: user.id,
       name: user.name,
@@ -91,7 +105,7 @@ const resetPassword = async (userId: string, password: string) => {
     },
   });
 
-  await resetPasswordSuccessTemplate({
+  await addEmailJob("resetPasswordSuccess", {
     userName: user.name,
     email: user.email,
     resetAt: formatAmsterdamDateTime(new Date()),
@@ -99,8 +113,44 @@ const resetPassword = async (userId: string, password: string) => {
   return null;
 };
 
+const refreshAccessToken = async (refreshToken: string) => {
+  if (!refreshToken) {
+    throw new AppError("Refresh token ontbreekt", httpStatus.UNAUTHORIZED);
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      refreshTokenExpiresAt: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  let matchedUser = null;
+  for (const user of users) {
+    if (user.refreshToken && await bcrypt.compare(refreshToken, user.refreshToken)) {
+      matchedUser = user;
+      break;
+    }
+  }
+
+  if (!matchedUser) {
+    throw new AppError("Ongeldige refresh token", httpStatus.UNAUTHORIZED);
+  }
+
+  const newAccessToken = await generateToken(
+    matchedUser,
+    config.jwt.secret!,
+    config.jwt.expire_in!,
+  );
+
+  return {
+    accessToken: newAccessToken,
+  };
+};
 
 export const authService = {
   loginUser,
   resetPassword,
+  refreshAccessToken,
 };
