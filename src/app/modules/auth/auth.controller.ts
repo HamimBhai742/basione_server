@@ -4,6 +4,7 @@ import { authService } from "./auth.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import { setCookies } from "../../utils/setCookies";
+import { AppError } from "../../error/AppError";
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const user = await authService.loginUser(req.body);
@@ -21,18 +22,8 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const logoutUser = catchAsync(async (req: Request, res: Response) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-  });
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-  });
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -43,9 +34,21 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 
 const resetPassword = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
+    if (!req.user || req.user.id !== req.body.userId) {
+      throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
+    }
+
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+
+    if (!token) {
+      throw new AppError("Token is verplicht", httpStatus.BAD_REQUEST);
+    }
+
     const user = await authService.resetPassword(
       req.body.userId,
       req.body.password,
+      token,
     );
 
     sendResponse(res, {

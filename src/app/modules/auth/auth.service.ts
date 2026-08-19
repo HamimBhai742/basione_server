@@ -70,7 +70,7 @@ const loginUser = async (payload: IUserPayload) => {
 };
 
 //reset password after verify
-const resetPassword = async (userId: string, password: string) => {
+const resetPassword = async (userId: string, password: string, token: string) => {
   if (!userId) {
     throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
@@ -83,6 +83,10 @@ const resetPassword = async (userId: string, password: string) => {
 
   if (!user) {
     throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  if (!user.forgetPasswordToken || user.forgetPasswordToken !== token) {
+    throw new AppError("Ongeldig token", httpStatus.BAD_REQUEST);
   }
 
   if (
