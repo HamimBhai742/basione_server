@@ -102,7 +102,7 @@ const updateFont = async (
   });
 
   if (!font) {
-    throw new AppError("Font not found", httpStatus.NOT_FOUND);
+    throw new AppError("Lettertype niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const data: {
@@ -149,7 +149,7 @@ const deleteFont = async (id: string) => {
   });
 
   if (!font) {
-    throw new AppError("Font not found", httpStatus.NOT_FOUND);
+    throw new AppError("Lettertype niet gevonden", httpStatus.NOT_FOUND);
   }
 
   await prisma.font.delete({

@@ -4,10 +4,10 @@ import httpStatus from "http-status";
 export const notFound = (req: Request, res: Response, next: NextFunction) => {
   res.status(httpStatus.NOT_FOUND).json({
     success: false,
-    message: "API NOT FOUND!",
+    message: "API NIET GEVONDEN!",
     error: {
       path: req.originalUrl,
-      message: "Your requested path is not found!",
+      message: "Het door u opgevraagde pad is niet gevonden!",
     },
   });
 };

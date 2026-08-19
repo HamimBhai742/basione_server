@@ -64,7 +64,7 @@ const deleteSvgMask = async (id: string) => {
   });
 
   if (!mask) {
-    throw new AppError("SVG Mask not found", 404);
+    throw new AppError("SVG-masker niet gevonden", 404);
   }
 
   // Check if it's bound to any template first
@@ -73,7 +73,7 @@ const deleteSvgMask = async (id: string) => {
   });
 
   if (boundCount > 0) {
-    throw new AppError("This SVG Mask is currently bound to templates and cannot be deleted", 400);
+    throw new AppError("Dit SVG-masker is momenteel gekoppeld aan sjablonen en kan niet worden verwijderd", 400);
   }
 
   // Delete from S3
@@ -96,7 +96,7 @@ const deleteSvgMask = async (id: string) => {
 
 const bindMaskToTemplate = async (templateId: string, svgMaskId: string | null) => {
   if (!templateId) {
-    throw new AppError("Template ID is required", 400);
+    throw new AppError("Template-ID is verplicht", 400);
   }
 
   // Verify template exists
@@ -105,7 +105,7 @@ const bindMaskToTemplate = async (templateId: string, svgMaskId: string | null) 
   });
 
   if (!template) {
-    throw new AppError("Template not found", 404);
+    throw new AppError("Template niet gevonden", 404);
   }
 
   // Verify mask exists if binding
@@ -114,7 +114,7 @@ const bindMaskToTemplate = async (templateId: string, svgMaskId: string | null) 
       where: { id: svgMaskId },
     });
     if (!mask) {
-      throw new AppError("SVG Mask not found", 404);
+      throw new AppError("SVG-masker niet gevonden", 404);
     }
   }
 

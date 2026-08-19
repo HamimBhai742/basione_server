@@ -223,7 +223,7 @@ export const getInvoiceByOrderId = async (orderId: string) => {
   });
 
   if (!invoice) {
-    throw new AppError("Invoice not found", httpStatus.NOT_FOUND);
+    throw new AppError("Factuur niet gevonden", httpStatus.NOT_FOUND);
   }
 
   return invoice;

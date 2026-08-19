@@ -76,7 +76,7 @@ const generateSingleMockup = async (
 ): Promise<Buffer> => {
   const bgPath = getBgPath(config.filename);
   if (!fs.existsSync(bgPath)) {
-    throw new AppError(`Mockup background image not found: ${bgPath}`, 404);
+    throw new AppError(`Achtergrondafbeelding voor mockup niet gevonden: ${bgPath}`, 404);
   }
 
   const background = sharp(bgPath);
@@ -85,7 +85,7 @@ const generateSingleMockup = async (
   const height = metadata.height || 0;
 
   if (!width || !height) {
-    throw new AppError(`Failed to read metadata for ${config.filename}`, 500);
+    throw new AppError(`Lezen van metadata mislukt voor ${config.filename}`, 500);
   }
 
   // Calculate overlay dimensions in pixels based on percentages

@@ -5,7 +5,7 @@ import streamifier from "streamifier";
 export const uploadToCloudinary = (file: Express.Multer.File) => {
   return new Promise((resolve, reject) => {
     if (!file) {
-      return reject(new AppError("File missing"));
+      return reject(new AppError("Bestand ontbreekt"));
     }
 
     const uploadStream = cloudinary.uploader.upload_stream(

@@ -155,7 +155,7 @@ const registerWebhook = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "QLS webhook registered successfully",
+    message: "QLS webhook succesvol geregistreerd",
     data: webhook,
   });
 });
@@ -168,7 +168,7 @@ const handleWebhook = catchAsync(async (req: Request, res: Response) => {
       req.headers["x-qls-webhook-secret"] || req.query.secret;
 
     if (incomingSecret !== expectedSecret) {
-      return res.status(httpStatus.UNAUTHORIZED).send("Unauthorized");
+      return res.status(httpStatus.UNAUTHORIZED).send("Niet geautoriseerd");
     }
   }
 

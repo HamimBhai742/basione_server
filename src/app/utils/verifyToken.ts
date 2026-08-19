@@ -8,8 +8,8 @@ export const verifyToken = (token: string, secret: string) => {
     return decoded;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new AppError("Token has expired!", httpStatus.UNAUTHORIZED);
+      throw new AppError("Token is verlopen!", httpStatus.UNAUTHORIZED);
     }
-    throw new AppError("Invalid token!", httpStatus.BAD_REQUEST);
+    throw new AppError("Ongeldig token!", httpStatus.BAD_REQUEST);
   }
 };

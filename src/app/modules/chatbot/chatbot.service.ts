@@ -213,7 +213,7 @@ export const chatbotService = {
     const conversation = await chatbotPersistence.getConversation(conversationId);
 
     if (!conversation) {
-      throw new AppError("Chatbot conversation not found", 404);
+      throw new AppError("Chatbot-gesprek niet gevonden", 404);
     }
 
     return conversation;
@@ -223,7 +223,7 @@ export const chatbotService = {
     const deleted = await chatbotPersistence.deleteConversation(conversationId);
 
     if (!deleted) {
-      throw new AppError("Chatbot conversation not found", 404);
+      throw new AppError("Chatbot-gesprek niet gevonden", 404);
     }
 
     return true;

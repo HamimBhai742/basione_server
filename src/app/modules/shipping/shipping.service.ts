@@ -66,14 +66,14 @@ const resolveProductCombinationId = (
   }
 
   if (!isQlsCarrierCode(carrier)) {
-    throw new AppError("Unsupported QLS carrier selected", httpStatus.BAD_REQUEST);
+    throw new AppError("Niet-ondersteunde QLS-vervoerder geselecteerd", httpStatus.BAD_REQUEST);
   }
 
   const carrierProductCombinationId = config.qls.carriers[carrier];
 
   if (!carrierProductCombinationId) {
     throw new AppError(
-      `QLS product combination ID is not configured for ${supportedCarriers[carrier].label}`,
+      `QLS-productcombinatie-ID is niet geconfigureerd voor ${supportedCarriers[carrier].label}`,
       httpStatus.BAD_REQUEST,
     );
   }
@@ -121,7 +121,7 @@ const buildReceiverContact = (order: any) => {
 
   if (!address) {
     throw new AppError(
-      "Shipping address is required before creating a QLS shipment",
+      "Verzendadres is vereist voor het maken van een QLS-verzending",
       httpStatus.BAD_REQUEST,
     );
   }
@@ -303,7 +303,7 @@ const getSetupProductCombinations = async (companyId: string) => {
 
 const createShipment = async (payload: CreateShipmentPayload) => {
   if (payload.carrier && !isQlsCarrierCode(payload.carrier)) {
-    throw new AppError("Unsupported QLS carrier selected", httpStatus.BAD_REQUEST);
+    throw new AppError("Niet-ondersteunde QLS-vervoerder geselecteerd", httpStatus.BAD_REQUEST);
   }
 
   const productCombinationId = resolveProductCombinationId(
@@ -313,7 +313,7 @@ const createShipment = async (payload: CreateShipmentPayload) => {
 
   if (!productCombinationId) {
     throw new AppError(
-      "QLS_DEFAULT_PRODUCT_COMBINATION_ID is required, or send productCombinationId",
+      "QLS_DEFAULT_PRODUCT_COMBINATION_ID is vereist, of stuur productCombinationId",
       httpStatus.BAD_REQUEST,
     );
   }
@@ -330,20 +330,20 @@ const createShipment = async (payload: CreateShipmentPayload) => {
   });
 
   if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (order.deliveryMethod === "pickup") {
-    throw new AppError("Pickup orders do not need QLS shipment labels");
+    throw new AppError("Afhaalbestellingen hebben geen QLS-verzendlabels nodig");
   }
 
   if (order.paymentStatus !== "paid") {
-    throw new AppError("Only paid orders can be shipped", httpStatus.BAD_REQUEST);
+    throw new AppError("Alleen betaalde bestellingen kunnen worden verzonden", httpStatus.BAD_REQUEST);
   }
 
   if (order.status !== "ready") {
     throw new AppError(
-      "Only ready orders can have QLS shipment labels created",
+      "Alleen bestellingen die gereed zijn, kunnen QLS-verzendlabels laten maken",
       httpStatus.BAD_REQUEST,
     );
   }
@@ -354,7 +354,7 @@ const createShipment = async (payload: CreateShipmentPayload) => {
 
   if (existingShipment?.qlsShipmentId) {
     throw new AppError(
-      "A QLS shipment already exists for this order",
+      "Er bestaat al een QLS-verzending voor deze bestelling",
       httpStatus.CONFLICT,
     );
   }
@@ -438,7 +438,7 @@ const getOrderShipment = async (orderId: string, user?: any) => {
   });
 
   if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   return order.shipments;
@@ -466,13 +466,13 @@ const refreshShipment = async (orderId: string, user?: any) => {
   });
 
   if (!order) {
-    throw new AppError("Order not found", httpStatus.NOT_FOUND);
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const shipment = order.shipments[0];
 
   if (!shipment?.qlsShipmentId) {
-    throw new AppError("QLS shipment not found", httpStatus.NOT_FOUND);
+    throw new AppError("QLS-verzending niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const response = await qlsClient.getShipment(shipment.qlsShipmentId, true);
@@ -493,11 +493,11 @@ const downloadLabel = async (shipmentId: string, user?: any) => {
   });
 
   if (!shipment) {
-    throw new AppError("Shipment not found", httpStatus.NOT_FOUND);
+    throw new AppError("Verzending niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (user?.role !== "admin" && shipment.order.userId !== user?.id) {
-    throw new AppError("You are not authorized to access this label", 403);
+    throw new AppError("U bent niet gemachtigd om toegang te krijgen tot dit label", 403);
   }
 
   let labelUrl = shipment.labelPdfUrl;
@@ -513,7 +513,7 @@ const downloadLabel = async (shipmentId: string, user?: any) => {
   }
 
   if (!labelUrl) {
-    throw new AppError("QLS label is not available yet", httpStatus.NOT_FOUND);
+    throw new AppError("QLS-label is nog niet beschikbaar", httpStatus.NOT_FOUND);
   }
 
   const label = await qlsClient.downloadLabel(labelUrl);

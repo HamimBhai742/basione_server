@@ -36,7 +36,7 @@ app.use(
       if (isAllowed) {
         callback(null, true);
       } else {
-        callback(new AppError("Not allowed by CORS"));
+        callback(new AppError("Niet toegestaan door CORS"));
       }
     },
     credentials: true,

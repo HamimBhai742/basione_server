@@ -12,16 +12,16 @@ export const uploadInvoicePdfToS3 = async ({
 }: UploadInvoicePdfToS3Params) => {
   if (!config.s3.name) {
     throw new AppError(
-      "AWS_S3_BUCKET_NAME is missing in environment variables",
+      "AWS_S3_BUCKET_NAME ontbreekt in omgevingsvariabelen",
     );
   }
 
   if (!config.s3.region) {
-    throw new AppError("AWS_REGION is missing in environment variables");
+    throw new AppError("AWS_REGION ontbreekt in omgevingsvariabelen");
   }
 
   if (!config.s3.credentials.accessKeyId) {
-    throw new AppError("AWS credentials are missing in environment variables");
+    throw new AppError("AWS-inloggegevens ontbreken in omgevingsvariabelen");
   }
 
   const bucketName = config.s3.name;

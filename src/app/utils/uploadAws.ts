@@ -16,7 +16,7 @@ export const uploadFileToS3 = async (
   const region = config.s3.region;
 
   if (!bucketName || !region) {
-    throw new AppError("S3 bucket name or region is missing");
+    throw new AppError("S3 bucketnaam of regio ontbreekt");
   }
 
   const safeFileName = file.originalname.replace(/\s+/g, "-");
@@ -51,7 +51,7 @@ export const uploadBufferToS3 = async ({
   const region = config.s3.region;
 
   if (!bucketName || !region) {
-    throw new AppError("S3 bucket name or region is missing");
+    throw new AppError("S3 bucketnaam of regio ontbreekt");
   }
 
   const command = new PutObjectCommand({

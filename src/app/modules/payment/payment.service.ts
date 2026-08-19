@@ -344,14 +344,14 @@ export const createPayment = async (
 
 const mollieWebhook = async (payId: string) => {
   if (!payId) {
-    throw new AppError("Payment ID not found", httpStatus.BAD_REQUEST);
+    throw new AppError("Betalings-ID niet gevonden", httpStatus.BAD_REQUEST);
   }
 
   const payment = await mollieClient.payments.get(payId);
   await handleMolliePaymentUpdate(payment);
 
   return {
-    message: "Payment processed",
+    message: "Betaling verwerkt",
   };
 };
 
@@ -359,7 +359,7 @@ const handleMolliePaymentUpdate = async (payment: any) => {
   const { orderId, paymentId, userId } = (payment.metadata || {}) as any;
 
   if (!orderId || !paymentId) {
-    throw new AppError("Payment metadata missing", httpStatus.BAD_REQUEST);
+    throw new AppError("Betalingsmetadata ontbreekt", httpStatus.BAD_REQUEST);
   }
 
   const localPayment = await prisma.payment.findUnique({
@@ -374,7 +374,7 @@ const handleMolliePaymentUpdate = async (payment: any) => {
   });
 
   if (!localPayment) {
-    throw new AppError("Payment not found", httpStatus.NOT_FOUND);
+    throw new AppError("Betaling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const invoice = localPayment.order.invoice;
@@ -385,7 +385,7 @@ const handleMolliePaymentUpdate = async (payment: any) => {
     invoice &&
     (invoice.status === "sent" || timeSinceCreation < 60000)
   ) {
-    return { message: "Already processed" };
+    return { message: "Al verwerkt" };
   }
 
   if (payment.status === "paid") {
@@ -402,7 +402,7 @@ const handleMolliePaymentUpdate = async (payment: any) => {
   }
 
   return {
-    message: `Payment ${payment.status}`,
+    message: `Betaling ${payment.status}`,
   };
 };
 
@@ -412,7 +412,7 @@ const syncPaymentStatus = async (
   guestToken?: string,
 ) => {
   if (!paymentId) {
-    throw new AppError("Payment ID not found", httpStatus.BAD_REQUEST);
+    throw new AppError("Betalings-ID niet gevonden", httpStatus.BAD_REQUEST);
   }
 
   const localPayment = await prisma.payment.findUnique({
@@ -438,7 +438,7 @@ const syncPaymentStatus = async (
   });
 
   if (!localPayment) {
-    throw new AppError("Payment not found", httpStatus.NOT_FOUND);
+    throw new AppError("Betaling niet gevonden", httpStatus.NOT_FOUND);
   }
 
   ensurePaymentAccess(localPayment, user, guestToken);
@@ -598,7 +598,7 @@ const paymentPaid = async (
       }
 
       if (!existingPayment || !existingPayment.order) {
-        throw new AppError("Payment or order not found", httpStatus.NOT_FOUND);
+        throw new AppError("Betaling of bestelling niet gevonden", httpStatus.NOT_FOUND);
       }
 
       updatedPayment = existingPayment;
@@ -649,11 +649,11 @@ const paymentPaid = async (
       orderUserId: updatedOrder.userId,
     });
 
-    throw new AppError("User not found", httpStatus.NOT_FOUND);
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
   }
 
   if (!updatedOrder || !updatedPayment) {
-    throw new AppError("Payment related data not found", httpStatus.NOT_FOUND);
+    throw new AppError("Betalingsgerelateerde gegevens niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const customerName =
@@ -665,7 +665,7 @@ const paymentPaid = async (
     user?.email || updatedOrder.guestEmail || updatedOrder.addresses?.email;
 
   if (!customerEmail) {
-    throw new AppError("Customer email not found", httpStatus.BAD_REQUEST);
+    throw new AppError("E-mailadres van klant niet gevonden", httpStatus.BAD_REQUEST);
   }
 
   /**
@@ -696,7 +696,7 @@ const paymentPaid = async (
     console.error("Invoice generation failed:", invoice);
 
     throw new AppError(
-      "Invoice generation failed",
+      "Factuur genereren mislukt",
       httpStatus.INTERNAL_SERVER_ERROR,
     );
   }

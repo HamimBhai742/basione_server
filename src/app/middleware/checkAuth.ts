@@ -50,7 +50,7 @@ export const checkAuth = (...role: string[]) => {
       }
 
       if (user.status !== "active") {
-        throw new AppError(`User is ${user.status}`, httpStatus.BAD_REQUEST);
+        throw new AppError(`Gebruiker is ${user.status}`, httpStatus.BAD_REQUEST);
       }
 
       if (!role.includes(user.role)) {
@@ -101,7 +101,7 @@ export const optionalAuth = (...role: string[]) => {
       }
 
       if (user.status !== "active") {
-        throw new AppError(`User is ${user.status}`, httpStatus.BAD_REQUEST);
+        throw new AppError(`Gebruiker is ${user.status}`, httpStatus.BAD_REQUEST);
       }
 
       if (role.length > 0 && !role.includes(user.role)) {

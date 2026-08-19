@@ -7,7 +7,7 @@ import { AppError } from "../error/AppError";
  */
 export function sanitizeSvg(svgContent: string): string {
   if (!svgContent) {
-    throw new AppError("Empty SVG content received");
+    throw new AppError("Lege SVG-inhoud ontvangen");
   }
 
   let sanitized = svgContent;

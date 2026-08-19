@@ -126,7 +126,7 @@ class QlsClient {
 
     if (missing.length > 0) {
       throw new AppError(
-        `QLS is not configured: ${missing.map(([key]) => key).join(", ")}`,
+        `QLS is niet geconfigureerd: ${missing.map(([key]) => key).join(", ")}`,
         httpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -142,7 +142,7 @@ class QlsClient {
 
     if (missing.length > 0) {
       throw new AppError(
-        `QLS is not configured: ${missing.map(([key]) => key).join(", ")}`,
+        `QLS is niet geconfigureerd: ${missing.map(([key]) => key).join(", ")}`,
         httpStatus.INTERNAL_SERVER_ERROR,
       );
     }

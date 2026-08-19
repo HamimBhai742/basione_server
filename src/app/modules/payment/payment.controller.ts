@@ -14,7 +14,7 @@ const createPayment = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Payment created successfully",
+      message: "Betaling succesvol aangemaakt",
       data: payment,
     });
   },
@@ -23,7 +23,7 @@ const createPayment = catchAsync(
 const mollieWebhook = catchAsync(async (req: Request, res: Response) => {
   const payId = req.body?.id;
   if (!payId) {
-    return res.status(httpStatus.BAD_REQUEST).send("Payment ID not found");
+    return res.status(httpStatus.BAD_REQUEST).send("Betalings-ID niet gevonden");
   }
 
   // Fire and forget to respond within Mollie's 10-second timeout window

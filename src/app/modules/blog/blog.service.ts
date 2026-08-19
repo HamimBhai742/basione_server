@@ -67,7 +67,7 @@ const updateBlog = async (id: string, data: any) => {
   });
 
   if (!existingBlog) {
-    throw new AppError("Blog post not found", httpStatus.NOT_FOUND);
+    throw new AppError("Blogpost niet gevonden", httpStatus.NOT_FOUND);
   }
 
   const updateData = { ...data };
@@ -110,7 +110,7 @@ const deleteBlog = async (id: string) => {
   });
 
   if (!existingBlog) {
-    throw new AppError("Blog post not found", httpStatus.NOT_FOUND);
+    throw new AppError("Blogpost niet gevonden", httpStatus.NOT_FOUND);
   }
 
   await prisma.blog.delete({
@@ -137,7 +137,7 @@ const getBlogBySlug = async (slug: string) => {
   });
 
   if (!blog) {
-    throw new AppError("Blog post not found", httpStatus.NOT_FOUND);
+    throw new AppError("Blogpost niet gevonden", httpStatus.NOT_FOUND);
   }
 
   return blog;
@@ -160,7 +160,7 @@ const getBlogById = async (id: string) => {
   });
 
   if (!blog) {
-    throw new AppError("Blog post not found", httpStatus.NOT_FOUND);
+    throw new AppError("Blogpost niet gevonden", httpStatus.NOT_FOUND);
   }
 
   return blog;

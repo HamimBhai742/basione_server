@@ -112,11 +112,11 @@ export const applyDesignNumberToBanner = async ({
   heightCm?: number;
 }) => {
   if (!imageUrl) {
-    throw new AppError("Banner image URL is missing", 400);
+    throw new AppError("Afbeelding-URL van banner ontbreekt", 400);
   }
 
   if (!designNumber) {
-    throw new AppError("Design number is missing", 400);
+    throw new AppError("Ontwerpnummer ontbreekt", 400);
   }
 
   let fetchUrl = imageUrl;
@@ -134,7 +134,7 @@ export const applyDesignNumberToBanner = async ({
   const metadata = await image.metadata();
 
   if (!metadata.width || !metadata.height) {
-    throw new AppError("Unable to read banner image dimensions", 400);
+    throw new AppError("Kan afmetingen van banner-afbeelding niet lezen", 400);
   }
 
   const watermark = getWatermarkSvg({
