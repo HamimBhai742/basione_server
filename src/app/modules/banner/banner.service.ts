@@ -1299,21 +1299,62 @@ const getTemplates = async (
         where.occasion = category;
       }
     } else {
-      const templateCategory = await prisma.templateCategory.findFirst({
+      let templateCategory = await prisma.templateCategory.findFirst({
         where: {
           slug: category,
           isActive: true,
         },
       });
 
-      if (templateCategory) {
-        where.OR = [
-          { templateCategoryId: templateCategory.id },
-          { templateCategoryIds: { has: templateCategory.id } },
-        ];
-      } else {
-        where.occasion = category;
+      if (!templateCategory) {
+        const term = category.replace(/-spandoek$/, "").toLowerCase();
+        templateCategory = await prisma.templateCategory.findFirst({
+          where: {
+            isActive: true,
+            OR: [
+              { slug: { contains: term, mode: "insensitive" } },
+              { name: { contains: term, mode: "insensitive" } },
+            ],
+          },
+        });
       }
+
+      const orConditions: any[] = [];
+      if (templateCategory) {
+        orConditions.push(
+          { templateCategoryId: templateCategory.id },
+          { templateCategoryIds: { has: templateCategory.id } }
+        );
+      }
+
+      const cleanCategory = category.replace(/-spandoek$/, "");
+      orConditions.push(
+        { occasion: category },
+        { occasion: cleanCategory },
+        { occasion: { equals: category, mode: "insensitive" } },
+        { occasion: { equals: cleanCategory, mode: "insensitive" } }
+      );
+
+      if (category.includes("abraham")) {
+        orConditions.push(
+          { occasion: "50-jaar" },
+          { headline: { contains: "Abraham", mode: "insensitive" } }
+        );
+      }
+      if (category.includes("sarah")) {
+        orConditions.push(
+          { occasion: "50-jaar" },
+          { headline: { contains: "Sarah", mode: "insensitive" } }
+        );
+      }
+      if (category.includes("verjaardag") || category.includes("birthday")) {
+        orConditions.push(
+          { occasion: "verjaardag" },
+          { headline: { contains: "verjaardag", mode: "insensitive" } }
+        );
+      }
+
+      where.OR = orConditions;
     }
   }
 
