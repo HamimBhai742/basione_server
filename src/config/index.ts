@@ -70,10 +70,4 @@ export default {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL as string,
     privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
   },
-  redis: {
-    useRedis: process.env.USE_REDIS === "true",
-    host: process.env.REDIS_HOST || "localhost",
-    port: Number(process.env.REDIS_PORT || 6379),
-    password: process.env.REDIS_PASSWORD || undefined,
-  },
 };

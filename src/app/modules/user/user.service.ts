@@ -5,7 +5,9 @@ import { generateOtp } from "../../utils/generateOtp";
 import { AppError } from "../../error/AppError";
 import httpStatus from "http-status";
 import { generateToken } from "../../utils/generateToken";
-import { addEmailJob } from "../../lib/emailQueue";
+import { registrationOtpTemplate } from "../../utils/emailTemplates/registrationOtpTemplate";
+import { registrationSuccessTemplate } from "../../utils/emailTemplates/registrationSuccess";
+import { forgotPasswordOTPTemplate } from "../../utils/emailTemplates/forgotPasswordOTPTemplate";
 import { Request } from "express";
 import { uploadImageToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
@@ -47,7 +49,7 @@ const registerUser = async (payload: IUserPayload) => {
       },
     });
 
-    await addEmailJob("registrationOtp", {
+    await registrationOtpTemplate({
       userName: isExistingUser.name,
       email: isExistingUser.email,
       otp,
@@ -82,7 +84,7 @@ const registerUser = async (payload: IUserPayload) => {
     },
   });
 
-  await addEmailJob("registrationOtp", {
+  await registrationOtpTemplate({
     userName: user.name,
     email: user.email,
     otp,
@@ -122,7 +124,7 @@ const verifyOtp = async (otp: string, email: string) => {
     },
   });
 
-  await addEmailJob("registrationSuccess", {
+  await registrationSuccessTemplate({
     userName: user.name,
     email: user.email,
     registeredAt: formatAmsterdamDateTime(new Date()),
@@ -182,7 +184,7 @@ const resendOtp = async (email: string) => {
   //     backoff: { type: "fixed", delay: 5000 },
   //   },
   // );
-  await addEmailJob("registrationOtp", {
+  await registrationOtpTemplate({
     userName: user.name,
     email: user.email,
     otp,
@@ -243,7 +245,7 @@ const forgotPassword = async (email: string) => {
   //   },
   // );
 
-  await addEmailJob("forgotPasswordOTP", {
+  await forgotPasswordOTPTemplate({
     userName: user.name,
     email: user.email,
     otp,
@@ -307,7 +309,7 @@ const resendForgotPassOtp = async (email: string) => {
   //   },
   // );
 
-  await addEmailJob("forgotPasswordOTP", {
+  await forgotPasswordOTPTemplate({
     userName: user.name,
     email: user.email,
     otp,

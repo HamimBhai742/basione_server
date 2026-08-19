@@ -4,7 +4,7 @@ import httpStatus from "http-status";
 import bcrypt from "bcrypt";
 import { generateToken } from "../../utils/generateToken";
 import config from "../../../config";
-import { addEmailJob } from "../../lib/emailQueue";
+import { resetPasswordSuccessTemplate } from "../../utils/emailTemplates/resetPasswordSuccessTemplate";
 import { verifyToken } from "../../utils/verifyToken";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 import { generateRefreshToken, getRefreshTokenExpiry } from "../../utils/generateRefreshToken";
@@ -105,7 +105,7 @@ const resetPassword = async (userId: string, password: string) => {
     },
   });
 
-  await addEmailJob("resetPasswordSuccess", {
+  await resetPasswordSuccessTemplate({
     userName: user.name,
     email: user.email,
     resetAt: formatAmsterdamDateTime(new Date()),

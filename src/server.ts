@@ -2,12 +2,11 @@ import { Server } from "http";
 import app from "./app";
 import config from "./config";
 import { connectedDB, seedAdmin } from "./app/db/connected.db";
-import "./app/workers/emailWorker";
 
 let server: Server;
 const port = config.port;
 
-const main = () => {
+const main = async () => {
   server = app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });
