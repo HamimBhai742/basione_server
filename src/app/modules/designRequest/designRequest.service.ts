@@ -13,7 +13,8 @@ interface CreateDesignRequestPayload {
 }
 
 const createDesignRequest = async (payload: CreateDesignRequestPayload) => {
-  const { name, email, phone, dimensions, eyelets, requirements, files } = payload;
+  const { name, email, phone, dimensions, eyelets, requirements, files } =
+    payload;
 
   const uploadedFileUrls: string[] = [];
 
@@ -42,18 +43,22 @@ const createDesignRequest = async (payload: CreateDesignRequestPayload) => {
     },
   });
 
-  // Target notification email (Testing email: mdhamim5088@gmail.com)
-  const targetEmail = process.env.DESIGN_REQUEST_NOTIFICATION_EMAIL || "mdhamim5088@gmail.com";
+  // Target notification email
+  const targetEmail =
+    process.env.DESIGN_REQUEST_NOTIFICATION_EMAIL ||
+    process.env.ADMIN_EMAIL_CONTACT ||
+    "info@spandoekprint.nl";
 
   // Build HTML for admin notification email
-  const fileLinksHtml = uploadedFileUrls.length > 0
-    ? uploadedFileUrls
-        .map(
-          (url, idx) =>
-            `<li style="margin-bottom: 6px;"><a href="${url}" target="_blank" style="color: #10b981; word-break: break-all; font-weight: 600;">Bestand ${idx + 1} Downloaden / Bekijken</a></li>`
-        )
-        .join("")
-    : "<p style='color: #6b7280; font-style: italic; margin: 0;'>Geen bestanden bijgevoegd.</p>";
+  const fileLinksHtml =
+    uploadedFileUrls.length > 0
+      ? uploadedFileUrls
+          .map(
+            (url, idx) =>
+              `<li style="margin-bottom: 6px;"><a href="${url}" target="_blank" style="color: #10b981; word-break: break-all; font-weight: 600;">Bestand ${idx + 1} Downloaden / Bekijken</a></li>`,
+          )
+          .join("")
+      : "<p style='color: #6b7280; font-style: italic; margin: 0;'>Geen bestanden bijgevoegd.</p>";
 
   const adminEmailHtml = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #f8fafc; padding: 24px; border-radius: 16px;">
@@ -74,11 +79,15 @@ const createDesignRequest = async (payload: CreateDesignRequestPayload) => {
               <a href="mailto:${email}" style="color: #10b981; font-weight: 600; text-decoration: none;">${email}</a>
             </td>
           </tr>
-          ${phone ? `
+          ${
+            phone
+              ? `
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #475569; font-size: 14px;">Telefoonnummer</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-size: 15px;">${phone}</td>
-          </tr>` : ""}
+          </tr>`
+              : ""
+          }
           <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #475569; font-size: 14px;">Gewenste Afmetingen</td>
             <td style="padding: 12px 0; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-size: 15px; font-weight: 600;">${dimensions}</td>
@@ -119,7 +128,7 @@ const createDesignRequest = async (payload: CreateDesignRequestPayload) => {
     await sendEmail(
       targetEmail,
       `[Design Aanvraag] ${dimensions} — van ${name}`,
-      adminEmailHtml
+      adminEmailHtml,
     );
   } catch (error) {
     console.error("Failed to send admin design request email:", error);
@@ -167,7 +176,7 @@ const createDesignRequest = async (payload: CreateDesignRequestPayload) => {
     await sendEmail(
       email,
       "Wij hebben uw design aanvraag ontvangen — Spandoekprint",
-      customerEmailHtml
+      customerEmailHtml,
     );
   } catch (error) {
     console.error("Failed to send customer confirmation email:", error);
