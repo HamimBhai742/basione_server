@@ -21,8 +21,9 @@ export const generateUniqueBannerSlug = async (
 
   let slug = baseSlug;
   let counter = 1;
+  const MAX_SLUG_ATTEMPTS = 100;
 
-  while (true) {
+  while (counter <= MAX_SLUG_ATTEMPTS) {
     const isExist = await prisma.banner.findFirst({
       where: {
         slug,
@@ -36,6 +37,11 @@ export const generateUniqueBannerSlug = async (
 
     slug = `${baseSlug}-${counter}`;
     counter++;
+  }
+
+  // Fallback: if somehow exhausted all attempts, append timestamp for uniqueness
+  if (counter > MAX_SLUG_ATTEMPTS) {
+    slug = `${baseSlug}-${Date.now()}`;
   }
 
   return slug;

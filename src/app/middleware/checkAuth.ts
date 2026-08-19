@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { verifyToken } from "../utils/verifyToken";
 import config from "../../config";
 import { prisma } from "../lib/prisma";
+import { User } from "@prisma/client";
 
 const extractToken = (authHeader?: string, cookieToken?: string): string | null => {
   if (authHeader) {
@@ -15,7 +16,7 @@ const extractToken = (authHeader?: string, cookieToken?: string): string | null 
 
 export const checkAuth = (...role: string[]) => {
   return async (
-    req: Request & { user?: any },
+    req: Request & { user?: User },
     res: Response,
     next: NextFunction,
   ) => {
@@ -27,12 +28,12 @@ export const checkAuth = (...role: string[]) => {
 
       if (!token) {
         throw new AppError(
-          "User is not authenticated to access this route",
+          "Gebruiker is niet geauthenticeerd om toegang te krijgen tot deze route",
           httpStatus.UNAUTHORIZED,
         );
       }
 
-      const decoded = verifyToken(token, config.jwt.secret);
+      const decoded = verifyToken(token, config.jwt.secret!);
 
       const user = await prisma.user.findUnique({
         where: {
@@ -41,11 +42,11 @@ export const checkAuth = (...role: string[]) => {
       });
 
       if (!user) {
-        throw new AppError("User not found", httpStatus.NOT_FOUND);
+        throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
       }
 
       if (!user.isVerified) {
-        throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+        throw new AppError("Gebruiker is niet geverifieerd", httpStatus.BAD_REQUEST);
       }
 
       if (user.status !== "active") {
@@ -54,7 +55,7 @@ export const checkAuth = (...role: string[]) => {
 
       if (!role.includes(user.role)) {
         throw new AppError(
-          "User is not authorized to access this route",
+          "Gebruiker heeft geen toegang tot deze route",
           httpStatus.FORBIDDEN,
         );
       }
@@ -69,7 +70,7 @@ export const checkAuth = (...role: string[]) => {
 
 export const optionalAuth = (...role: string[]) => {
   return async (
-    req: Request & { user?: any },
+    req: Request & { user?: User },
     res: Response,
     next: NextFunction,
   ) => {
@@ -83,7 +84,7 @@ export const optionalAuth = (...role: string[]) => {
         return next();
       }
 
-      const decoded = verifyToken(token, config.jwt.secret);
+      const decoded = verifyToken(token, config.jwt.secret!);
 
       const user = await prisma.user.findUnique({
         where: {
@@ -92,11 +93,11 @@ export const optionalAuth = (...role: string[]) => {
       });
 
       if (!user) {
-        throw new AppError("User not found", httpStatus.NOT_FOUND);
+        throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
       }
 
       if (!user.isVerified) {
-        throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+        throw new AppError("Gebruiker is niet geverifieerd", httpStatus.BAD_REQUEST);
       }
 
       if (user.status !== "active") {
@@ -105,7 +106,7 @@ export const optionalAuth = (...role: string[]) => {
 
       if (role.length > 0 && !role.includes(user.role)) {
         throw new AppError(
-          "User is not authorized to access this route",
+          "Gebruiker heeft geen toegang tot deze route",
           httpStatus.FORBIDDEN,
         );
       }

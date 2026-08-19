@@ -1,4 +1,4 @@
-import { AppError } from "../../error/AppError";
+﻿import { AppError } from "../../error/AppError";
 import { prisma } from "../../lib/prisma";
 import httpStatus from "http-status";
 import bcrypt from "bcrypt";
@@ -40,8 +40,8 @@ const loginUser = async (payload: IUserPayload) => {
 
   const token = await generateToken(
     user,
-    config.jwt.secret,
-    config.jwt.expire_in,
+    config.jwt.secret as string,
+    config.jwt.expire_in as string,
   );
 
   return {
@@ -90,20 +90,6 @@ const resetPassword = async (userId: string, password: string) => {
       forgetPasswordTokenExpires: null,
     },
   });
-
-  // await otpQueueEmail.add(
-  //   "resetPasswordSuccess",
-  //   {
-  //     userName: user.name,
-  //     email: user.email,
-  //   },
-  //   {
-  //     jobId: `${user.id}-${Date.now()}`,
-  //     removeOnComplete: true,
-  //     attempts: 3,
-  //     backoff: { type: "fixed", delay: 5000 },
-  //   },
-  // );
 
   await resetPasswordSuccessTemplate({
     userName: user.name,

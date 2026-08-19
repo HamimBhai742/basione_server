@@ -72,7 +72,7 @@ model Banner {
   material      String?
   eyeletType    String?
 
-  hobbies String[] // PostgreSQL array
+  hobbies String[] // MongoDB array field
 
   description String?
 

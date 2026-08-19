@@ -1,5 +1,6 @@
 import { messaging } from "../lib/firebase";
 import { prisma } from "../lib/prisma";
+import { SendResponse } from "firebase-admin/messaging";
 
 export interface PushNotificationPayload {
   title: string;
@@ -18,12 +19,12 @@ export const sendAdminPushNotification = async ({
   try {
     // Save in-app notification to DB
     try {
-      await (prisma as any).notification.create({
+      await prisma.notification.create({
         data: {
           title,
           message: body,
           type: data?.type || "order",
-          data: data || null,
+          data: data ? JSON.parse(JSON.stringify(data)) : null,
         },
       });
     } catch (dbErr) {
@@ -132,7 +133,7 @@ export const sendAdminPushNotification = async ({
     // Clean up stale or unregistered tokens if any failed
     if (response.failureCount > 0) {
       const tokensToRemove: string[] = [];
-      response.responses.forEach((resp: any, idx: number) => {
+      response.responses.forEach((resp: SendResponse, idx: number) => {
         if (!resp.success) {
           console.error(`[PushNotification] Token index ${idx} failed:`, resp.error?.code, resp.error?.message);
           const errCode = resp.error?.code;

@@ -49,21 +49,6 @@ const registerUser = async (payload: IUserPayload) => {
       },
     });
 
-    // await otpQueueEmail.add(
-    //   "registrationOtp",
-    //   {
-    //     userName: isExistingUser.name,
-    //     email: isExistingUser.email,
-    //     otpCode: otp,
-    //   },
-    //   {
-    //     jobId: `${isExistingUser.id}-${Date.now()}`,
-    //     removeOnComplete: true,
-    //     attempts: 3,
-    //     backoff: { type: "fixed", delay: 5000 },
-    //   },
-    // );
-
     await registrationOtpTemplate({
       userName: isExistingUser.name,
       email: isExistingUser.email,
@@ -98,21 +83,6 @@ const registerUser = async (payload: IUserPayload) => {
       updatedAt: true,
     },
   });
-
-  // await otpQueueEmail.add(
-  //   "registrationOtp",
-  //   {
-  //     userName: user.name,
-  //     email: user.email,
-  //     otpCode: otp,
-  //   },
-  //   {
-  //     jobId: `${user.id}-${Date.now()}`,
-  //     removeOnComplete: true,
-  //     attempts: 3,
-  //     backoff: { type: "fixed", delay: 5000 },
-  //   },
-  // );
 
   await registrationOtpTemplate({
     userName: user.name,
@@ -246,7 +216,7 @@ const forgotPassword = async (email: string) => {
   const otp = generateOtp(6);
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-  const tempToken = await generateToken(user, config.jwt.secret, "5m");
+  const tempToken = await generateToken(user, config.jwt.secret!, "5m");
 
   await prisma.user.update({
     where: {
@@ -309,7 +279,7 @@ const resendForgotPassOtp = async (email: string) => {
   const otp = generateOtp(6);
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-  const tempToken = await generateToken(user, config.jwt.secret, "5m");
+  const tempToken = await generateToken(user, config.jwt.secret!, "5m");
 
   await prisma.user.update({
     where: {
@@ -379,7 +349,7 @@ const verifyForgotOtp = async (otp: string, email: string, token: string) => {
     throw new AppError("OTP is verlopen", httpStatus.BAD_REQUEST);
   }
 
-  const tempToken = await generateToken(user, config.jwt.secret, "5m");
+  const tempToken = await generateToken(user, config.jwt.secret!, "5m");
   const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
   await prisma.user.update({

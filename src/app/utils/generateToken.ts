@@ -1,6 +1,17 @@
 import jwt from "jsonwebtoken";
 
-export const generateToken = (user: any, secret: any, expiresIn: any) => {
+interface TokenPayload {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export const generateToken = (
+  user: TokenPayload,
+  secret: string,
+  expiresIn: string,
+) => {
   const payload = {
     id: user.id,
     email: user.email,
@@ -8,5 +19,6 @@ export const generateToken = (user: any, secret: any, expiresIn: any) => {
     role: user.role,
   };
 
-  return jwt.sign(payload, secret, { expiresIn });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return jwt.sign(payload, secret, { expiresIn } as any);
 };

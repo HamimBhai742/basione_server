@@ -17,7 +17,7 @@ const getAggregateData = catchAsync(async (req, res) => {
     }
 
     try {
-      const decoded = verifyToken(token, config.jwt.secret);
+      const decoded = verifyToken(token, config.jwt.secret!);
       if (decoded && decoded.email) {
         const user = await prisma.user.findUnique({
           where: {
