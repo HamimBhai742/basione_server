@@ -27,6 +27,8 @@ router.get("/templates", bannerController.getTemplates);
 
 router.get("/template-categories", bannerController.getTemplateCategories);
 
+router.get("/template-subcategories", bannerController.getTemplateSubcategories);
+
 router.get("/tuinposter-categories", bannerController.getTuinposterCategories);
 
 router.get("/templates/:slug", bannerController.getTemplateBySlug);

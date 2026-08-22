@@ -365,6 +365,64 @@ const deleteTemplateCategory = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+const createTemplateSubcategory = catchAsync(async (req: Request, res: Response) => {
+  const subcategory = await adminService.createTemplateSubcategory(req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Templatesubcategorie succesvol aangemaakt",
+    data: subcategory,
+  });
+});
+
+const getAllTemplateSubcategories = catchAsync(async (req: Request, res: Response) => {
+  const subcategories = await adminService.getAllTemplateSubcategories(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatesubcategorieen succesvol opgehaald",
+    data: subcategories,
+  });
+});
+
+const updateTemplateSubcategory = catchAsync(async (req: Request, res: Response) => {
+  const subcategory = await adminService.updateTemplateSubcategory(
+    req.params.id as string,
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatesubcategorie succesvol bijgewerkt",
+    data: subcategory,
+  });
+});
+
+const deleteTemplateSubcategory = catchAsync(async (req: Request, res: Response) => {
+  await adminService.deleteTemplateSubcategory(req.params.id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatesubcategorie succesvol verwijderd",
+    data: null,
+  });
+});
+
+const reorderTemplateSubcategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.reorderTemplateSubcategories(req.body.ids);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatesubcategorieen succesvol geherordend",
+    data: result,
+  });
+});
+
 const createTuinposterCategory = catchAsync(async (req: Request, res: Response) => {
   const category = await adminService.createTuinposterCategory(req.body);
 
@@ -564,6 +622,11 @@ export const adminController = {
   updateTemplateCategory,
   deleteTemplateCategory,
   reorderTemplateCategories,
+  createTemplateSubcategory,
+  getAllTemplateSubcategories,
+  updateTemplateSubcategory,
+  deleteTemplateSubcategory,
+  reorderTemplateSubcategories,
   createTuinposterCategory,
   getAllTuinposterCategories,
   updateTuinposterCategory,

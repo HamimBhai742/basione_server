@@ -141,6 +141,9 @@ model Banner {
   wishlistItems     WishlistItem[]
   orderItems        OrderItem[]
 
+  templateSubcategoryId String? @db.ObjectId
+  templateSubcategory   TemplateSubcategory? @relation("SubcategoryRelation", fields: [templateSubcategoryId], references: [id])
+
   svgMaskId   String?  @db.ObjectId
   svgMask     SvgMask? @relation("BannerToSvgMask", fields: [svgMaskId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -148,6 +151,7 @@ model Banner {
   @@index([generationId])
   @@index([designNumber])
   @@index([templateCategoryId])
+  @@index([templateSubcategoryId])
   @@index([tuinposterCategoryId])
   @@index([sourceTemplateId])
   @@index([svgMaskId])
@@ -182,6 +186,23 @@ model TemplateCategory {
   oldTemplates Banner[] @relation("OldCategoryRelation")
   templateIds String[] @db.ObjectId
   templates Banner[] @relation("CategoryRelation", fields: [templateIds], references: [id])
+  subcategories TemplateSubcategory[]
+}
+
+model TemplateSubcategory {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  name               String
+  slug               String
+  isActive           Boolean           @default(true)
+  position           Int               @default(0)
+  templateCategoryId String            @db.ObjectId
+  templateCategory   TemplateCategory  @relation(fields: [templateCategoryId], references: [id])
+  templates          Banner[]          @relation("SubcategoryRelation")
+  
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@unique([templateCategoryId, slug])
 }
 
 model TuinposterCategory {

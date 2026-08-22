@@ -14,6 +14,7 @@ import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateGardenMockup } from "../../utils/generateMockup";
 import { generateAllMockups } from "../../utils/generateAllMockups";
+import { generateBusinessMockups } from "../../utils/generateBusinessMockups";
 import { optimizeImage } from "../../utils/optimizeImage";
 import axios from "axios";
 import { generateUniqueBannerSlug } from "../banner/banner.service";
@@ -31,6 +32,12 @@ const bannerListSelect = {
   templateCategory: true,
   templateCategoryIds: true,
   templateCategories: true,
+  templateSubcategoryId: true,
+  templateSubcategory: {
+    include: {
+      templateCategory: true,
+    },
+  },
   tuinposterCategoryId: true,
   tuinposterCategory: true,
   tuinposterCategoryIds: true,
@@ -55,6 +62,14 @@ const bannerListSelect = {
   revisedPrompt: true,
   isSelected: true,
   isTemplate: true,
+  isReadymade: true,
+  mockupUrl: true,
+  mockupFirstUrl: true,
+  mockupHedgeUrl: true,
+  mockupPartyUrl: true,
+  mockupRailingUrl: true,
+  mockupLawnNewUrl: true,
+  mockupGardenUrl: true,
   generationId: true,
   createdAt: true,
   updatedAt: true,
@@ -1862,6 +1877,54 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
 
   const isReadymade = parsedData.isReadymade === true || parsedData.isReadymade === "true";
 
+  let templateCategory = null;
+  let tuinCategory = null;
+  if (isReadymade) {
+    tuinCategory = await resolveTuinposterCategory(parsedData);
+  } else {
+    templateCategory = await resolveTemplateCategory(parsedData);
+  }
+
+  let isBusinessCategory = templateCategory?.slug?.toLowerCase() === "business" || 
+                           templateCategory?.slug?.toLowerCase() === "zakelijk" || 
+                           templateCategory?.slug?.toLowerCase() === "corporate" ||
+                           templateCategory?.name?.toLowerCase().includes("business") ||
+                           templateCategory?.name?.toLowerCase().includes("zakelijk");
+
+  if (!isBusinessCategory && !isReadymade && parsedData.categoryIds && parsedData.categoryIds.length > 0) {
+    const cats = await prisma.templateCategory.findMany({
+      where: { id: { in: parsedData.categoryIds } }
+    });
+    isBusinessCategory = cats.some(c => 
+      c.slug?.toLowerCase() === "business" || 
+      c.slug?.toLowerCase() === "zakelijk" || 
+      c.slug?.toLowerCase() === "corporate" ||
+      c.name?.toLowerCase().includes("business") ||
+      c.name?.toLowerCase().includes("zakelijk")
+    );
+  }
+
+  const subcategoryId = parsedData.templateSubcategoryId || parsedData.subcategoryId;
+  if (!isBusinessCategory && !isReadymade && subcategoryId) {
+    const subcat = await prisma.templateSubcategory.findUnique({
+      where: { id: subcategoryId },
+      include: { templateCategory: true }
+    });
+    if (subcat) {
+      isBusinessCategory = 
+        subcat.slug?.toLowerCase() === "business" ||
+        subcat.slug?.toLowerCase() === "zakelijk" ||
+        subcat.slug?.toLowerCase() === "corporate" ||
+        subcat.name?.toLowerCase().includes("business") ||
+        subcat.name?.toLowerCase().includes("zakelijk") ||
+        subcat.templateCategory?.slug?.toLowerCase() === "business" ||
+        subcat.templateCategory?.slug?.toLowerCase() === "zakelijk" ||
+        subcat.templateCategory?.slug?.toLowerCase() === "corporate" ||
+        subcat.templateCategory?.name?.toLowerCase().includes("business") ||
+        subcat.templateCategory?.name?.toLowerCase().includes("zakelijk");
+    }
+  }
+
   if (file) {
     originalImageUrl = await uploadImageToS3(file);
     try {
@@ -1888,6 +1951,34 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
           contentType: "image/png",
         });
         mockupUrl = uploadedGarden;
+      } else if (isBusinessCategory) {
+        // Business category generates 7 custom mockups
+        const mockups = await generateBusinessMockups(file.buffer);
+        const uploadMockup = async (buffer: Buffer, name: string) => {
+          return uploadBufferToS3({
+            buffer,
+            key: `mockups/${Date.now()}-${name}.png`,
+            contentType: "image/png",
+          });
+        };
+
+        const [t1, t2, t3, t4, t5, t6, t7] = await Promise.all([
+          uploadMockup(mockups.template1, "template1"),
+          uploadMockup(mockups.template2, "template2"),
+          uploadMockup(mockups.template3, "template3"),
+          uploadMockup(mockups.template4, "template4"),
+          uploadMockup(mockups.template5, "template5"),
+          uploadMockup(mockups.template6, "template6"),
+          uploadMockup(mockups.template7, "template7"),
+        ]);
+
+        mockupFirstUrl = t1;
+        mockupHedgeUrl = t2;
+        mockupPartyUrl = t3;
+        mockupRailingUrl = t4;
+        mockupLawnNewUrl = t5;
+        mockupGardenUrl = t6;
+        mockupUrl = t7;
       } else {
         // Banners generate all 6 mockups
         const mockups = await generateAllMockups(file.buffer);
@@ -1943,20 +2034,13 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const headline = parsedData.headline || "Template Headline";
   const slug = await generateUniqueBannerSlug(parsedData.slug || headline);
   
-  let templateCategory = null;
-  let tuinCategory = null;
-  if (isReadymade) {
-    tuinCategory = await resolveTuinposterCategory(parsedData);
-  } else {
-    templateCategory = await resolveTemplateCategory(parsedData);
-  }
-
   const sku = file ? (file.originalname ? path.parse(file.originalname).name : null) : (parsedData.sku || null);
 
   const template = await prisma.banner.create({
     data: {
       templateCategoryId: templateCategory?.id || null,
       templateCategoryIds: !isReadymade ? (parsedData.categoryIds || (templateCategory?.id ? [templateCategory.id] : [])) : [],
+      templateSubcategoryId: parsedData.templateSubcategoryId || null,
       tuinposterCategoryId: tuinCategory?.id || null,
       tuinposterCategoryIds: isReadymade ? (parsedData.categoryIds || (tuinCategory?.id ? [tuinCategory.id] : [])) : [],
       occasion: parsedData.occasion || templateCategory?.slug || tuinCategory?.slug || "custom",
@@ -2108,6 +2192,10 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
   updateData.isReadymade = isReadymade;
 
+  if (parsedData.templateSubcategoryId !== undefined) {
+    updateData.templateSubcategoryId = parsedData.templateSubcategoryId || null;
+  }
+
   if (file) {
     const originalUrl = await uploadImageToS3(file);
     updateData.originalImageUrl = originalUrl;
@@ -2142,6 +2230,59 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     }
   }
 
+  // Fetch templateCategory to check if Business category
+  let templateCategory = null;
+  if (updateData.templateCategoryId) {
+    templateCategory = await prisma.templateCategory.findUnique({
+      where: { id: updateData.templateCategoryId }
+    });
+  } else if (isExist.templateCategoryId) {
+    templateCategory = await prisma.templateCategory.findUnique({
+      where: { id: isExist.templateCategoryId }
+    });
+  }
+
+  let isBusinessCategory = templateCategory?.slug?.toLowerCase() === "business" || 
+                           templateCategory?.slug?.toLowerCase() === "zakelijk" || 
+                           templateCategory?.slug?.toLowerCase() === "corporate" ||
+                           templateCategory?.name?.toLowerCase().includes("business") ||
+                           templateCategory?.name?.toLowerCase().includes("zakelijk");
+
+  const currentCategoryIds = updateData.templateCategoryIds || isExist.templateCategoryIds || [];
+  if (!isBusinessCategory && !isReadymade && currentCategoryIds.length > 0) {
+    const cats = await prisma.templateCategory.findMany({
+      where: { id: { in: currentCategoryIds } }
+    });
+    isBusinessCategory = cats.some(c => 
+      c.slug?.toLowerCase() === "business" || 
+      c.slug?.toLowerCase() === "zakelijk" || 
+      c.slug?.toLowerCase() === "corporate" ||
+      c.name?.toLowerCase().includes("business") ||
+      c.name?.toLowerCase().includes("zakelijk")
+    );
+  }
+
+  const subcategoryId = updateData.templateSubcategoryId || isExist.templateSubcategoryId;
+  if (!isBusinessCategory && !isReadymade && subcategoryId) {
+    const subcat = await prisma.templateSubcategory.findUnique({
+      where: { id: subcategoryId },
+      include: { templateCategory: true }
+    });
+    if (subcat) {
+      isBusinessCategory = 
+        subcat.slug?.toLowerCase() === "business" ||
+        subcat.slug?.toLowerCase() === "zakelijk" ||
+        subcat.slug?.toLowerCase() === "corporate" ||
+        subcat.name?.toLowerCase().includes("business") ||
+        subcat.name?.toLowerCase().includes("zakelijk") ||
+        subcat.templateCategory?.slug?.toLowerCase() === "business" ||
+        subcat.templateCategory?.slug?.toLowerCase() === "zakelijk" ||
+        subcat.templateCategory?.slug?.toLowerCase() === "corporate" ||
+        subcat.templateCategory?.name?.toLowerCase().includes("business") ||
+        subcat.templateCategory?.name?.toLowerCase().includes("zakelijk");
+    }
+  }
+
   if (file) {
     try {
       if (isReadymade) {
@@ -2153,6 +2294,34 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
           contentType: "image/png",
         });
         updateData.mockupUrl = uploadedGarden;
+      } else if (isBusinessCategory) {
+        // Business category generates 7 custom mockups
+        const mockups = await generateBusinessMockups(file.buffer);
+        const uploadMockup = async (buffer: Buffer, name: string) => {
+          return uploadBufferToS3({
+            buffer,
+            key: `mockups/${Date.now()}-${name}.png`,
+            contentType: "image/png",
+          });
+        };
+
+        const [t1, t2, t3, t4, t5, t6, t7] = await Promise.all([
+          uploadMockup(mockups.template1, "template1"),
+          uploadMockup(mockups.template2, "template2"),
+          uploadMockup(mockups.template3, "template3"),
+          uploadMockup(mockups.template4, "template4"),
+          uploadMockup(mockups.template5, "template5"),
+          uploadMockup(mockups.template6, "template6"),
+          uploadMockup(mockups.template7, "template7"),
+        ]);
+
+        updateData.mockupFirstUrl = t1;
+        updateData.mockupHedgeUrl = t2;
+        updateData.mockupPartyUrl = t3;
+        updateData.mockupRailingUrl = t4;
+        updateData.mockupLawnNewUrl = t5;
+        updateData.mockupGardenUrl = t6;
+        updateData.mockupUrl = t7;
       } else {
         // Banners generate all 6 mockups
         const mockups = await generateAllMockups(file.buffer);
@@ -2413,6 +2582,164 @@ const getAllBackgroundImages = async () => {
   return backgrounds;
 };
 
+const generateUniqueTemplateSubcategorySlug = async (
+  templateCategoryId: string,
+  name: string,
+  currentId?: string,
+): Promise<string> => {
+  const baseSlug = generateSlug(name || "subcategory");
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const isExist = await prisma.templateSubcategory.findFirst({
+      where: {
+        templateCategoryId,
+        slug,
+        ...(currentId ? { id: { not: currentId } } : {}),
+      },
+    });
+
+    if (!isExist) {
+      return slug;
+    }
+
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+};
+
+const createTemplateSubcategory = async (data: {
+  name: string;
+  templateCategoryId: string;
+  slug?: string;
+  isActive?: boolean;
+}) => {
+  const name = data.name?.trim();
+  const templateCategoryId = data.templateCategoryId;
+
+  if (!name) {
+    throw new AppError("Subcategorienaam is verplicht", httpStatus.BAD_REQUEST);
+  }
+  if (!templateCategoryId) {
+    throw new AppError("Templatecategorie-ID is verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  const slug = data.slug?.trim()
+    ? generateSlug(data.slug)
+    : await generateUniqueTemplateSubcategorySlug(templateCategoryId, name);
+
+  const subcategory = await prisma.templateSubcategory.create({
+    data: {
+      name,
+      slug,
+      templateCategoryId,
+      isActive: data.isActive ?? true,
+    },
+  });
+
+  return subcategory;
+};
+
+const getAllTemplateSubcategories = async (query: { templateCategoryId?: string }) => {
+  const subcategories = await prisma.templateSubcategory.findMany({
+    where: query.templateCategoryId ? { templateCategoryId: query.templateCategoryId } : {},
+    include: {
+      templateCategory: true,
+    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
+  });
+
+  return subcategories;
+};
+
+const updateTemplateSubcategory = async (
+  id: string,
+  data: Partial<{
+    name: string;
+    slug: string;
+    isActive: boolean;
+    templateCategoryId: string;
+  }>,
+) => {
+  const isExist = await prisma.templateSubcategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Templatesubcategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const updateData: any = {};
+
+  if (data.name !== undefined) {
+    const name = data.name.trim();
+    if (!name) {
+      throw new AppError("Subcategorienaam is verplicht", httpStatus.BAD_REQUEST);
+    }
+    updateData.name = name;
+  }
+
+  const templateCategoryId = data.templateCategoryId || isExist.templateCategoryId;
+
+  if (data.slug !== undefined) {
+    updateData.slug = await generateUniqueTemplateSubcategorySlug(templateCategoryId, data.slug, id);
+  } else if (data.name !== undefined && data.name !== isExist.name) {
+    updateData.slug = await generateUniqueTemplateSubcategorySlug(templateCategoryId, data.name, id);
+  }
+
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  if (data.templateCategoryId !== undefined) updateData.templateCategoryId = data.templateCategoryId;
+
+  const subcategory = await prisma.templateSubcategory.update({
+    where: { id },
+    data: updateData,
+  });
+
+  return subcategory;
+};
+
+const deleteTemplateSubcategory = async (id: string) => {
+  const isExist = await prisma.templateSubcategory.findUnique({
+    where: { id },
+  });
+
+  if (!isExist) {
+    throw new AppError("Templatesubcategorie niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.banner.updateMany({
+      where: {
+        templateSubcategoryId: id,
+      },
+      data: {
+        templateSubcategoryId: null,
+      },
+    });
+
+    await tx.templateSubcategory.delete({
+      where: { id },
+    });
+  });
+
+  return true;
+};
+
+const reorderTemplateSubcategories = async (ids: string[]) => {
+  return prisma.$transaction(
+    ids.map((id, index) =>
+      prisma.templateSubcategory.update({
+        where: { id },
+        data: { position: index },
+      })
+    )
+  );
+};
+
 const reorderTemplateCategories = async (ids: string[]) => {
   return prisma.$transaction(
     ids.map((id, index) =>
@@ -2465,6 +2792,11 @@ export const adminService = {
   updateTuinposterCategory,
   deleteTuinposterCategory,
   reorderTuinposterCategories,
+  createTemplateSubcategory,
+  getAllTemplateSubcategories,
+  updateTemplateSubcategory,
+  deleteTemplateSubcategory,
+  reorderTemplateSubcategories,
   createTemplate,
   updateTemplate,
   deleteTemplate,

@@ -83,6 +83,37 @@ router.delete(
   adminController.deleteTemplateCategory,
 );
 
+// --- Admin Template Subcategory Management Endpoints ---
+router.post(
+  "/template-subcategories",
+  checkAuth("admin"),
+  adminController.createTemplateSubcategory,
+);
+
+router.get(
+  "/template-subcategories",
+  checkAuth("admin"),
+  adminController.getAllTemplateSubcategories,
+);
+
+router.patch(
+  "/template-subcategories/reorder",
+  checkAuth("admin"),
+  adminController.reorderTemplateSubcategories,
+);
+
+router.patch(
+  "/template-subcategories/:id",
+  checkAuth("admin"),
+  adminController.updateTemplateSubcategory,
+);
+
+router.delete(
+  "/template-subcategories/:id",
+  checkAuth("admin"),
+  adminController.deleteTemplateSubcategory,
+);
+
 // --- Admin Tuinposter Category Management Endpoints ---
 router.post(
   "/tuinposter-categories",

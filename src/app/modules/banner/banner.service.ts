@@ -55,6 +55,12 @@ const bannerListSelect = {
   templateCategory: true,
   templateCategoryIds: true,
   templateCategories: true,
+  templateSubcategoryId: true,
+  templateSubcategory: {
+    include: {
+      templateCategory: true,
+    },
+  },
   tuinposterCategoryId: true,
   tuinposterCategory: true,
   tuinposterCategoryIds: true,
@@ -82,6 +88,7 @@ const bannerListSelect = {
   width: true,
   height: true,
   imageUrl: true,
+  originalImageUrl: true,
   variant: true,
   designNumber: true,
   revisedPrompt: true,
@@ -97,6 +104,12 @@ const bannerListSelect = {
   isTemplate: true,
   isReadymade: true,
   mockupUrl: true,
+  mockupFirstUrl: true,
+  mockupHedgeUrl: true,
+  mockupPartyUrl: true,
+  mockupRailingUrl: true,
+  mockupLawnNewUrl: true,
+  mockupGardenUrl: true,
   status: true,
   generationId: true,
   createdAt: true,
@@ -1269,6 +1282,7 @@ const getTemplates = async (
   category?: string,
   isReadymade?: boolean,
   searchTerm?: string,
+  subcategory?: string,
 ) => {
   const where: any = {
     isTemplate: true,
@@ -1364,6 +1378,22 @@ const getTemplates = async (
     }
   }
 
+  if (subcategory) {
+    const subcategoryObj = await prisma.templateSubcategory.findFirst({
+      where: {
+        OR: [
+          { id: subcategory.match(/^[0-9a-fA-F]{24}$/) ? subcategory : undefined },
+          { slug: subcategory }
+        ].filter(Boolean) as any
+      }
+    });
+    if (subcategoryObj) {
+      where.templateSubcategoryId = subcategoryObj.id;
+    } else {
+      where.templateSubcategoryId = "non-existent-id";
+    }
+  }
+
   if (occasion) {
     where.occasion = occasion;
   }
@@ -1426,6 +1456,24 @@ const getTemplateCategories = async () => {
   return categories;
 };
 
+const getTemplateSubcategories = async (query: { templateCategoryId?: string }) => {
+  if (query.templateCategoryId === "skip") {
+    return [];
+  }
+  const subcategories = await prisma.templateSubcategory.findMany({
+    where: {
+      isActive: true,
+      ...(query.templateCategoryId ? { templateCategoryId: query.templateCategoryId } : {}),
+    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "desc" },
+    ],
+  });
+
+  return subcategories;
+};
+
 const getTuinposterCategories = async () => {
   const categories = await prisma.tuinposterCategory.findMany({
     where: {
@@ -1448,6 +1496,15 @@ const getTemplateBySlug = async (slug: string) => {
     },
     include: {
       svgMask: true,
+      templateCategory: true,
+      templateCategories: true,
+      templateSubcategory: {
+        include: {
+          templateCategory: true,
+        },
+      },
+      tuinposterCategory: true,
+      tuinposterCategories: true,
     },
   });
 
@@ -1728,6 +1785,7 @@ export const bannerService = {
   updateBanner,
   getTemplates,
   getTemplateCategories,
+  getTemplateSubcategories,
   getTuinposterCategories,
   getTemplateBySlug,
   createBannerFromTemplate,

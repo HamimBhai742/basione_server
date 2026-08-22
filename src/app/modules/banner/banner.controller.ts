@@ -130,6 +130,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
   const categoryId = req.query.categoryId as string;
   const category = req.query.category as string;
   const searchTerm = req.query.searchTerm as string;
+  const subcategory = req.query.subcategory as string;
   const isReadymade = req.query.isReadymade === "true" ? true : req.query.isReadymade === "false" ? false : undefined;
   const result = await bannerService.getTemplates(
     page,
@@ -140,6 +141,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
     category,
     isReadymade,
     searchTerm,
+    subcategory,
   );
 
   sendResponse(res, {
@@ -159,6 +161,20 @@ const getTemplateCategories = catchAsync(async (req: Request, res: Response) => 
     success: true,
     message: "Templatecategorieen succesvol opgehaald",
     data: categories,
+  });
+});
+
+const getTemplateSubcategories = catchAsync(async (req: Request, res: Response) => {
+  const query = {
+    templateCategoryId: req.query.templateCategoryId as string,
+  };
+  const subcategories = await bannerService.getTemplateSubcategories(query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Templatesubcategorieen succesvol opgehaald",
+    data: subcategories,
   });
 });
 
@@ -226,6 +242,7 @@ export const bannerController = {
   updateBanner,
   getTemplates,
   getTemplateCategories,
+  getTemplateSubcategories,
   getTuinposterCategories,
   getTemplateBySlug,
   createBannerFromTemplate,
