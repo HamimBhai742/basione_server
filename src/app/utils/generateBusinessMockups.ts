@@ -22,7 +22,7 @@ const businessMockupsConfig: Record<string, MockupConfig> = {
   },
   template2: {
     filename: "Template2.png",
-    inset: { top: 29.84, right: 21.08, bottom: 32.06, left: 20.28 },
+    inset: { top: 29.69, right: 21.08, bottom: 31.91, left: 20.28 },
   },
   template3: {
     filename: "Template3.png",
@@ -42,7 +42,7 @@ const businessMockupsConfig: Record<string, MockupConfig> = {
   },
   template7: {
     filename: "Template7.png",
-    inset: { top: 21.62, right: 9.64, bottom: 26.48, left: 9.57 },
+    inset: { top: 21.55, right: 9.41, bottom: 26.25, left: 9.11 },
   },
 };
 
