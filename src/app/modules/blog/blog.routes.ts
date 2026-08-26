@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkAuth } from "../../middleware/checkAuth";
+import { checkAuth, checkBlogPublishAuth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
 import { upload } from "../../middleware/upload";
 import { blogValidation } from "./blog.zod.schema";
@@ -16,6 +16,14 @@ router.post(
   upload.single("coverImage"),
   validateRequest(blogValidation.createBlogZodSchema),
   blogController.createBlog,
+);
+
+// Publish a blog post from an external source (handles base64 files and URLs)
+router.post(
+  "/publish-external",
+  checkBlogPublishAuth(),
+  validateRequest(blogValidation.publishExternalBlogZodSchema),
+  blogController.publishExternalBlog,
 );
 
 // Upload a cover or content image independently (returns image URL)

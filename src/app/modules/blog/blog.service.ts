@@ -3,10 +3,16 @@ import slugify from "slugify";
 import { AppError } from "../../error/AppError";
 import httpStatus from "http-status";
 import { BlogStatus } from "@prisma/client";
+import { uploadBase64OrUrl } from "../../utils/uploadBase64";
 
 // Generate a unique, lowercase slug from title. If duplicate exists, appends -1, -2, -3, etc.
 const generateUniqueSlug = async (title: string, currentId?: string): Promise<string> => {
-  const baseSlug = slugify(title, { lower: true, strict: true });
+  let baseSlug = slugify(title, { lower: true, strict: true });
+  
+  if (!baseSlug) {
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    baseSlug = `post-${randomSuffix}`;
+  }
   
   let slug = baseSlug;
   let counter = 1;
@@ -360,6 +366,36 @@ const getCategoriesAndTags = async () => {
   return { categories, tags };
 };
 
+// Publish blog post from external systems (handles Base64 or URL uploads)
+const publishExternalBlog = async (data: any, authorId: string) => {
+  const { pdf, mainImage, infographic, ...rest } = data;
+
+  // Process files
+  const pdfUrl = await uploadBase64OrUrl(pdf, "pdfs", "application/pdf");
+  const coverImage = await uploadBase64OrUrl(mainImage, "images", "image/jpeg");
+  const infographicUrl = await uploadBase64OrUrl(infographic, "images", "image/jpeg");
+
+  // Generate unique slug
+  const slug = await generateUniqueSlug(rest.title);
+
+  // Set publishedAt if status is PUBLISHED
+  const publishedAt = rest.status === BlogStatus.PUBLISHED ? new Date() : null;
+
+  const blog = await prisma.blog.create({
+    data: {
+      ...rest,
+      slug,
+      authorId,
+      pdfUrl,
+      coverImage,
+      infographicUrl,
+      publishedAt,
+    },
+  });
+
+  return blog;
+};
+
 export const blogService = {
   createBlog,
   updateBlog,
@@ -369,4 +405,5 @@ export const blogService = {
   getAdminBlogs,
   getPublicBlogs,
   getCategoriesAndTags,
+  publishExternalBlog,
 };

@@ -170,6 +170,22 @@ const getCategoriesAndTags = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Publish blog post from external systems (Admin only)
+const publishExternalBlog = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+  const authorId = req.user.id;
+  const result = await blogService.publishExternalBlog(req.body, authorId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Blog post published successfully",
+    data: {
+      slug: result.slug,
+      id: result.id,
+    },
+  });
+});
+
 export const blogController = {
   createBlog,
   updateBlog,
@@ -180,4 +196,5 @@ export const blogController = {
   getAdminBlogs,
   getPublicBlogs,
   getCategoriesAndTags,
+  publishExternalBlog,
 };

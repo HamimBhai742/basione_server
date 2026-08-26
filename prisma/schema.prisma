@@ -556,6 +556,11 @@ model Blog {
   tags       String[]
   isFeatured Boolean  @default(false)
 
+  pdfUrl          String?
+  youtubeVideoUrl String?
+  youtubeShortUrl String?
+  infographicUrl  String?
+
   metaTitle       String?
   metaDescription String?
 

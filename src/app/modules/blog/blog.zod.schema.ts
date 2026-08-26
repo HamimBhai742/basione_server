@@ -26,7 +26,21 @@ const updateBlogZodSchema = z.object({
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
 });
 
+const publishExternalBlogZodSchema = z.object({
+  title: z.string({ message: "Title is required" }).min(1, { message: "Title cannot be empty" }),
+  content: z.string({ message: "Content is required" }).min(1, { message: "Content cannot be empty" }),
+  category: z.string().optional().default("General"),
+  tags: z.array(z.string()).optional(),
+  pdf: z.string().optional(),
+  youtubeVideoUrl: z.string().optional(),
+  youtubeShortUrl: z.string().optional(),
+  mainImage: z.string().optional(),
+  infographic: z.string().optional(),
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional().default("PUBLISHED"),
+});
+
 export const blogValidation = {
   createBlogZodSchema,
   updateBlogZodSchema,
+  publishExternalBlogZodSchema,
 };

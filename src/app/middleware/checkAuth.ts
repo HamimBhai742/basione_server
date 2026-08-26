@@ -118,3 +118,83 @@ export const optionalAuth = (...role: string[]) => {
     }
   };
 };
+
+export const checkBlogPublishAuth = () => {
+  return async (
+    req: Request & { user?: User },
+    res: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      // 1. Check API Key
+      const apiKeyHeader = req.headers["x-api-key"] || req.headers["authorization"];
+      const clientApiKey = typeof apiKeyHeader === "string"
+        ? (apiKeyHeader.startsWith("Bearer ") ? apiKeyHeader.slice(7) : apiKeyHeader)
+        : null;
+
+      if (config.externalBlogApiKey && clientApiKey === config.externalBlogApiKey) {
+        // Authenticated via API key.
+        // Find an active admin user to associate as author.
+        const adminUser = await prisma.user.findFirst({
+          where: {
+            role: "admin",
+            status: "active",
+          },
+        });
+
+        if (!adminUser) {
+          throw new AppError("No active admin user found to associate as author", httpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        req.user = adminUser;
+        return next();
+      }
+
+      // 2. Fallback to normal JWT authentication
+      const token = extractToken(
+        req.headers.authorization,
+        req.cookies.accessToken,
+      );
+
+      if (!token) {
+        throw new AppError(
+          "Unauthenticated: Provide a valid x-api-key header or admin access token",
+          httpStatus.UNAUTHORIZED,
+        );
+      }
+
+      const decoded = verifyToken(token, config.jwt.secret!);
+
+      const user = await prisma.user.findUnique({
+        where: {
+          email: decoded.email,
+        },
+      });
+
+      if (!user) {
+        throw new AppError("User not found", httpStatus.NOT_FOUND);
+      }
+
+      if (!user.isVerified) {
+        throw new AppError("User is not verified", httpStatus.BAD_REQUEST);
+      }
+
+      if (user.status !== "active") {
+        throw new AppError(`User is ${user.status}`, httpStatus.BAD_REQUEST);
+      }
+
+      if (user.role !== "admin") {
+        throw new AppError(
+          "User does not have access to this route",
+          httpStatus.FORBIDDEN,
+        );
+      }
+
+      req.user = user;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
