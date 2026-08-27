@@ -1284,10 +1284,33 @@ const getTemplates = async (
   searchTerm?: string,
   subcategory?: string,
 ) => {
+  const businessSlugs = ["zakelijke", "business", "zakelijk", "corporate"];
+  let isBusinessRequest = false;
+
+  if (category) {
+    isBusinessRequest = businessSlugs.includes(category.toLowerCase());
+  } else if (categoryId) {
+    const cat = await prisma.templateCategory.findUnique({
+      where: { id: categoryId },
+      select: { slug: true }
+    });
+    if (cat && cat.slug) {
+      isBusinessRequest = businessSlugs.includes(cat.slug.toLowerCase());
+    }
+  }
+
   const where: any = {
     isTemplate: true,
     isReadymade: isReadymade ?? false,
   };
+
+  if (!isBusinessRequest) {
+    where.NOT = [
+      { templateCategory: { slug: { in: businessSlugs } } },
+      { templateCategories: { some: { slug: { in: businessSlugs } } } },
+      { occasion: { in: businessSlugs } },
+    ];
+  }
 
   if (categoryId) {
     if (isReadymade) {
