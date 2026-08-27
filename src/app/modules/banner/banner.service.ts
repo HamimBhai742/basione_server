@@ -1306,7 +1306,12 @@ const getTemplates = async (
 
   if (!isBusinessRequest) {
     where.NOT = [
-      { templateCategory: { slug: { in: businessSlugs } } },
+      {
+        AND: [
+          { templateCategoryId: { not: null } },
+          { templateCategory: { slug: { in: businessSlugs } } }
+        ]
+      },
       { templateCategories: { some: { slug: { in: businessSlugs } } } },
       { occasion: { in: businessSlugs } },
     ];
