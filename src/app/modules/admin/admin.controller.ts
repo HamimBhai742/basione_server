@@ -274,6 +274,19 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateOrderAddress = catchAsync(async (req: Request, res: Response) => {
+  const order = await adminService.updateOrderAddress(
+    req.params.id as string,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Adres succesvol bijgewerkt",
+    data: order,
+  });
+});
+
 const createFaq = catchAsync(async (req: Request, res: Response) => {
   const faq = await adminService.createFaq(req.body);
 
@@ -613,6 +626,7 @@ export const adminController = {
   updateDecorationCategory,
   deleteDecorationCategory,
   getSingleOrder,
+  updateOrderAddress,
   createFaq,
   updateFaq,
   deleteFaq,

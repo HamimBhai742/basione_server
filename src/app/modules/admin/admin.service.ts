@@ -1473,6 +1473,91 @@ const getSingleOrder = async (orderId: string) => {
   return order;
 };
 
+type UpdateOrderAddressPayload = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  houseNumber?: string;
+  street?: string;
+  city?: string;
+  zipCode?: string;
+  companyName?: string;
+  address?: string;
+};
+
+const updateOrderAddress = async (
+  orderId: string,
+  payload: UpdateOrderAddressPayload,
+) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    include: {
+      addresses: true,
+    },
+  });
+
+  if (!order) {
+    throw new AppError("Bestelling niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const existingAddress = order.addresses;
+
+  const name = payload.name !== undefined ? payload.name.trim() : (existingAddress?.name || "");
+  const phone = payload.phone !== undefined ? payload.phone.trim() : (existingAddress?.phone || "");
+  const email = payload.email !== undefined ? payload.email.trim() : (existingAddress?.email || "");
+  const street = payload.street !== undefined ? payload.street.trim() : (existingAddress?.street || "");
+  const houseNumber = payload.houseNumber !== undefined ? payload.houseNumber.trim() : (existingAddress?.houseNumber || "");
+  const zipCode = payload.zipCode !== undefined ? payload.zipCode.trim() : (existingAddress?.zipCode || "");
+  const city = payload.city !== undefined ? payload.city.trim() : (existingAddress?.city || "");
+  const companyName = payload.companyName !== undefined ? (payload.companyName?.trim() || null) : (existingAddress?.companyName || null);
+  const extraAddress = payload.address !== undefined ? (payload.address?.trim() || null) : (existingAddress?.address || null);
+
+  await prisma.address.upsert({
+    where: {
+      orderId,
+    },
+    update: {
+      name,
+      phone,
+      email,
+      street,
+      houseNumber,
+      zipCode,
+      city,
+      companyName,
+      address: extraAddress,
+    },
+    create: {
+      orderId,
+      userId: order.userId || null,
+      name,
+      phone,
+      email,
+      street,
+      houseNumber,
+      zipCode,
+      city,
+      companyName,
+      address: extraAddress,
+    },
+  });
+
+  if (order.isGuest) {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        guestName: name,
+        guestEmail: email,
+        guestPhone: phone,
+      },
+    });
+  }
+
+  return getSingleOrder(orderId);
+};
+
 const createFaq = async (data: { category: string; question: string; answer: string }) => {
   const faq = await prisma.faq.create({
     data,
@@ -2778,6 +2863,7 @@ export const adminService = {
   updateDecorationCategory,
   deleteDecorationCategory,
   getSingleOrder,
+  updateOrderAddress,
   createFaq,
   updateFaq,
   deleteFaq,

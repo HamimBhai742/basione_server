@@ -46,6 +46,7 @@ router.delete(
 );
 
 router.get("/single-order/:id", adminController.getSingleOrder);
+router.patch("/update-order-address/:id", adminController.updateOrderAddress);
 
 router.get("/faqs", adminController.getFaqs);
 router.post("/create-faq", adminController.createFaq);
