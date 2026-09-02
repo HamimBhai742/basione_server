@@ -143,6 +143,7 @@ const totalTransaction = catchAsync(async (req: Request, res: Response) => {
     message: "Transacties succesvol opgehaald",
     data: payments.payments,
     metaData: payments.metaData,
+    stats: payments.stats,
   });
 });
 

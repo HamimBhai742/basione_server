@@ -1271,6 +1271,19 @@ const totalTransaction = async (
 
   const andConditions: any[] = [];
 
+  if (cleanFilter.status) {
+    if (
+      cleanFilter.status === "unpaid" ||
+      cleanFilter.status === "failed_pending" ||
+      cleanFilter.status === "failed_or_pending"
+    ) {
+      delete cleanFilter.status;
+      andConditions.push({
+        status: { in: ["pending", "failed", "expired", "cancelled"] },
+      });
+    }
+  }
+
   if (Object.keys(cleanFilter).length > 0) {
     andConditions.push(cleanFilter);
   }
@@ -1290,19 +1303,67 @@ const totalTransaction = async (
 
   const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const payments = await prisma.payment.findMany({
-    where,
-    include: {
-      order: true,
-    },
-    orderBy: {
-      [sortBy]: sortOrder,
-    },
-    take: limit,
-    skip,
-  });
+  const [
+    payments,
+    total,
+    paidVolumeAggregate,
+    unpaidVolumeAggregate,
+    paidCount,
+    pendingCount,
+    failedCount,
+    totalAllPayments,
+  ] = await Promise.all([
+    prisma.payment.findMany({
+      where,
+      include: {
+        order: true,
+      },
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      take: limit,
+      skip,
+    }),
+    prisma.payment.count({ where }),
+    prisma.payment.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        status: "paid",
+      },
+    }),
+    prisma.payment.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        status: { in: ["pending", "failed", "expired", "cancelled"] },
+      },
+    }),
+    prisma.payment.count({
+      where: {
+        status: "paid",
+      },
+    }),
+    prisma.payment.count({
+      where: {
+        status: "pending",
+      },
+    }),
+    prisma.payment.count({
+      where: {
+        status: "failed",
+      },
+    }),
+    prisma.payment.count(),
+  ]);
 
-  const total = await prisma.payment.count({ where });
+  const totalPaidVolume =
+    Math.round((paidVolumeAggregate._sum.amount || 0) * 100) / 100;
+  const totalUnpaidVolume =
+    Math.round((unpaidVolumeAggregate._sum.amount || 0) * 100) / 100;
+  const failedOrPendingCount = Math.max(0, totalAllPayments - paidCount);
 
   return {
     payments,
@@ -1311,6 +1372,18 @@ const totalTransaction = async (
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+    },
+    stats: {
+      totalPaidVolume,
+      totalUnpaidVolume,
+      totalOverallVolume:
+        Math.round((totalPaidVolume + totalUnpaidVolume) * 100) / 100,
+      paidCount,
+      pendingCount,
+      failedCount,
+      totalCount: totalAllPayments,
+      successfulCount: paidCount,
+      failedOrPendingCount,
     },
   };
 };

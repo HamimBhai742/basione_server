@@ -6,6 +6,7 @@ interface IResponse<T> {
   message: string;
   data: T;
   metaData?: IMetaData;
+  stats?: any;
 }
 
 interface IMetaData {
