@@ -24,6 +24,7 @@ import { sendDeliveredOrderReviewEmail } from "../../utils/orderReview";
 import { formatLabel } from "../../utils/formatLable";
 import { webwinkelkeurService } from "../webwinkelkeur/webwinkelkeur.service";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
+import { assertNoDummyContent } from "../../utils/contentValidator";
 
 const bannerListSelect = {
   id: true,
@@ -2023,6 +2024,14 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
     );
   }
 
+  assertNoDummyContent(parsedData.headline, "headline");
+  assertNoDummyContent(parsedData.name, "name");
+  assertNoDummyContent(parsedData.description, "description");
+  assertNoDummyContent(parsedData.metaTitle, "metaTitle");
+  assertNoDummyContent(parsedData.metaDescription, "metaDescription");
+  assertNoDummyContent(parsedData.h1Title, "h1Title");
+  assertNoDummyContent(parsedData.seoDescription, "seoDescription");
+
   let imageUrl = "";
   let originalImageUrl: string | null = null;
   let mockupUrl: string | null = null;
@@ -2256,6 +2265,14 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
   const isReadymade = parsedData.isReadymade !== undefined
     ? (parsedData.isReadymade === true || parsedData.isReadymade === "true")
     : isExist.isReadymade;
+
+  if (parsedData.headline !== undefined) assertNoDummyContent(parsedData.headline, "headline");
+  if (parsedData.name !== undefined) assertNoDummyContent(parsedData.name, "name");
+  if (parsedData.description !== undefined) assertNoDummyContent(parsedData.description, "description");
+  if (parsedData.metaTitle !== undefined) assertNoDummyContent(parsedData.metaTitle, "metaTitle");
+  if (parsedData.metaDescription !== undefined) assertNoDummyContent(parsedData.metaDescription, "metaDescription");
+  if (parsedData.h1Title !== undefined) assertNoDummyContent(parsedData.h1Title, "h1Title");
+  if (parsedData.seoDescription !== undefined) assertNoDummyContent(parsedData.seoDescription, "seoDescription");
 
   const updateData: any = {};
 
