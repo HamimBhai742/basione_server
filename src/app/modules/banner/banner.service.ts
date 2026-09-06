@@ -1407,13 +1407,19 @@ const getTemplates = async (
   }
 
   if (subcategory) {
+    const cleanSub = subcategory.replace(/-spandoek$/, "").toLowerCase();
     const subcategoryObj = await prisma.templateSubcategory.findFirst({
       where: {
         OR: [
-          { id: subcategory.match(/^[0-9a-fA-F]{24}$/) ? subcategory : undefined },
-          { slug: subcategory }
-        ].filter(Boolean) as any
-      }
+          ...(subcategory.match(/^[0-9a-fA-F]{24}$/) ? [{ id: subcategory }] : []),
+          { slug: subcategory },
+          { slug: `${subcategory}-spandoek` },
+          { slug: cleanSub },
+          { slug: `${cleanSub}-spandoek` },
+          { slug: { contains: cleanSub, mode: "insensitive" } },
+          { name: { contains: cleanSub, mode: "insensitive" } },
+        ] as any,
+      },
     });
     if (subcategoryObj) {
       where.templateSubcategoryId = subcategoryObj.id;
@@ -1485,13 +1491,34 @@ const getTemplateCategories = async () => {
 };
 
 const getTemplateSubcategories = async (query: { templateCategoryId?: string }) => {
-  if (query.templateCategoryId === "skip") {
+  let categoryId = query.templateCategoryId;
+  if (categoryId === "skip") {
     return [];
   }
+
+  // If categoryId is passed as a slug (e.g. "zakelijke" or "zakelijk"), resolve to category ID
+  if (categoryId && !categoryId.match(/^[0-9a-fA-F]{24}$/)) {
+    const cleanCat = categoryId.replace(/-spandoek$/, "").toLowerCase();
+    const cat = await prisma.templateCategory.findFirst({
+      where: {
+        OR: [
+          { slug: categoryId },
+          { slug: `${categoryId}-spandoek` },
+          { slug: cleanCat },
+          { slug: { contains: cleanCat, mode: "insensitive" } },
+          { name: { contains: cleanCat, mode: "insensitive" } },
+        ],
+      },
+    });
+    if (cat) {
+      categoryId = cat.id;
+    }
+  }
+
   const subcategories = await prisma.templateSubcategory.findMany({
     where: {
       isActive: true,
-      ...(query.templateCategoryId ? { templateCategoryId: query.templateCategoryId } : {}),
+      ...(categoryId ? { templateCategoryId: categoryId } : {}),
     },
     orderBy: [
       { position: "asc" },

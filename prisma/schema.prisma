@@ -195,6 +195,13 @@ model TemplateSubcategory {
   slug               String
   isActive           Boolean           @default(true)
   position           Int               @default(0)
+
+  metaTitle          String?
+  metaDescription    String?
+  h1Title            String?
+  introText          String?
+  seoDescription     String?
+
   templateCategoryId String            @db.ObjectId
   templateCategory   TemplateCategory  @relation(fields: [templateCategoryId], references: [id])
   templates          Banner[]          @relation("SubcategoryRelation")

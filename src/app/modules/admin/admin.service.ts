@@ -2789,6 +2789,11 @@ const createTemplateSubcategory = async (data: {
   templateCategoryId: string;
   slug?: string;
   isActive?: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  h1Title?: string;
+  introText?: string;
+  seoDescription?: string;
 }) => {
   const name = data.name?.trim();
   const templateCategoryId = data.templateCategoryId;
@@ -2810,6 +2815,11 @@ const createTemplateSubcategory = async (data: {
       slug,
       templateCategoryId,
       isActive: data.isActive ?? true,
+      metaTitle: data.metaTitle || null,
+      metaDescription: data.metaDescription || null,
+      h1Title: data.h1Title || null,
+      introText: data.introText || null,
+      seoDescription: data.seoDescription || null,
     },
   });
 
@@ -2838,6 +2848,11 @@ const updateTemplateSubcategory = async (
     slug: string;
     isActive: boolean;
     templateCategoryId: string;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    h1Title: string | null;
+    introText: string | null;
+    seoDescription: string | null;
   }>,
 ) => {
   const isExist = await prisma.templateSubcategory.findUnique({
@@ -2868,6 +2883,12 @@ const updateTemplateSubcategory = async (
 
   if (data.isActive !== undefined) updateData.isActive = data.isActive;
   if (data.templateCategoryId !== undefined) updateData.templateCategoryId = data.templateCategoryId;
+
+  if (data.metaTitle !== undefined) updateData.metaTitle = data.metaTitle || null;
+  if (data.metaDescription !== undefined) updateData.metaDescription = data.metaDescription || null;
+  if (data.h1Title !== undefined) updateData.h1Title = data.h1Title || null;
+  if (data.introText !== undefined) updateData.introText = data.introText || null;
+  if (data.seoDescription !== undefined) updateData.seoDescription = data.seoDescription || null;
 
   const subcategory = await prisma.templateSubcategory.update({
     where: { id },
