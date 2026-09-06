@@ -18,6 +18,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://spandoekprint.nl",
   "https://www.spandoekprint.nl",
+  "http://localhost:3001"
 ];
 
 app.use(
