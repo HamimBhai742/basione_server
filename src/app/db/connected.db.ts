@@ -34,12 +34,17 @@ export const seedAdmin = async () => {
         email: adminEmail,
         password: hashedPassword,
         role: "admin",
-        name: "Admin",
+        name: "Bas",
         isVerified: true,
       },
     });
     // console.log("Admin user created successfully");
   } else {
-    // console.log("Admin user already exists");
+    if (existingAdmin.name === "Admin") {
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: { name: "Bas" },
+      });
+    }
   }
 };
