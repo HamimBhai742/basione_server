@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma";
 import axios from "axios";
 import FormData from "form-data";
 import { AppError } from "../../error/AppError";
-import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadBufferToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { processCanvasJsonImages } from "../../utils/processCanvasJson";
@@ -736,7 +736,7 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   let imgUrl = parsedData.imageUrl || "";
 
   if (req?.file) {
-    const img = await uploadImageToS3(req.file);
+    const img = await uploadOptimizedImageToS3(req.file);
     imgUrl = img;
   }
 
@@ -911,7 +911,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   const oldImg = banner?.imageUrl;
 
   if (req?.file) {
-    const img = await uploadImageToS3(req.file);
+    const img = await uploadOptimizedImageToS3(req.file);
     imageUrl = img;
 
     // Only delete original image from S3 if we are updating a user banner draft, NOT a template!
@@ -1611,7 +1611,7 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   let imageUrl = template.imageUrl;
   let originalImageUrl = template.originalImageUrl || template.imageUrl;
   if (req.file) {
-    imageUrl = await uploadImageToS3(req.file);
+    imageUrl = await uploadOptimizedImageToS3(req.file);
     originalImageUrl = imageUrl;
   }
 

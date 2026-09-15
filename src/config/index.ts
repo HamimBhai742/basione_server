@@ -24,11 +24,6 @@ export default {
     password: process.env.ADMIN_PASSWORD as string,
   },
   externalBlogApiKey: process.env.EXTERNAL_BLOG_API_KEY as string,
-  cloudinary: {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
-    api_key: process.env.CLOUDINARY_API_KEY as string,
-    api_secret: process.env.CLOUDINARY_API_SECRET as string,
-  },
   baseUrl: process.env.BASE_URL as string,
   client_url: process.env.CLIENT_URL as string,
   reviewBaseUrl: process.env.REVIEW_BASE_URL as string,

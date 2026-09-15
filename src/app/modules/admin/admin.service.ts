@@ -9,7 +9,7 @@ import { orderRefundedTemplate } from "../../utils/emailTemplates/orderRefunded"
 import { orderReadyTemplate } from "../../utils/emailTemplates/orderReadyTemplate";
 import { orderShippedTemplate } from "../../utils/emailTemplates/orderShipped";
 import { stat } from "fs";
-import { uploadImageToS3, uploadBufferToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadBufferToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { generateGardenMockup } from "../../utils/generateMockup";
@@ -2095,14 +2095,7 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   if (file) {
     originalImageUrl = await uploadImageToS3(file);
     try {
-      const optimizedBuffer = await optimizeImage(file.buffer);
-      const safeFileName = file.originalname.replace(/\s+/g, "-");
-      const optimizedKey = `images/optimized-${Date.now()}-${safeFileName}`;
-      imageUrl = await uploadBufferToS3({
-        buffer: optimizedBuffer,
-        key: optimizedKey,
-        contentType: "image/jpeg",
-      });
+      imageUrl = await uploadOptimizedImageToS3(file);
     } catch (err) {
       console.error("Image optimization failed, falling back to original:", err);
       imageUrl = originalImageUrl;
@@ -2384,14 +2377,7 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
 
     let imageUrl = originalUrl;
     try {
-      const optimizedBuffer = await optimizeImage(file.buffer);
-      const safeFileName = file.originalname.replace(/\s+/g, "-");
-      const optimizedKey = `images/optimized-${Date.now()}-${safeFileName}`;
-      imageUrl = await uploadBufferToS3({
-        buffer: optimizedBuffer,
-        key: optimizedKey,
-        contentType: "image/jpeg",
-      });
+      imageUrl = await uploadOptimizedImageToS3(file);
     } catch (err) {
       console.error("Image optimization failed on update, falling back to original:", err);
     }
