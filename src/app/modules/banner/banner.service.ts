@@ -1544,10 +1544,11 @@ const getTuinposterCategories = async () => {
 };
 
 const getTemplateBySlug = async (slug: string) => {
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
   const template = await prisma.banner.findFirst({
     where: {
-      slug,
       isTemplate: true,
+      ...(isObjectId ? { OR: [{ slug }, { id: slug }] } : { slug }),
     },
     include: {
       svgMask: true,

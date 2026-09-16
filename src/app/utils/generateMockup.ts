@@ -66,7 +66,7 @@ export const generateGardenMockup = async (bannerBuffer: Buffer): Promise<Buffer
           top: frameTop,
         },
       ])
-      .png()
+      .webp({ quality: 82 })
       .toBuffer();
 
     return mockupBuffer;

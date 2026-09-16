@@ -111,7 +111,7 @@ const generateSingleMockup = async (
         top: topPx,
       },
     ])
-    .png()
+    .webp({ quality: 82 })
     .toBuffer();
 
   return mockupBuffer;

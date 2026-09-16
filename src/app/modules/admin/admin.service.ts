@@ -2107,8 +2107,8 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
         const gardenBuffer = await generateGardenMockup(file.buffer);
         const uploadedGarden = await uploadBufferToS3({
           buffer: gardenBuffer,
-          key: `mockups/${Date.now()}-mockup.png`,
-          contentType: "image/png",
+          key: `mockups/${Date.now()}-mockup.webp`,
+          contentType: "image/webp",
         });
         mockupUrl = uploadedGarden;
       } else if (isBusinessCategory) {
@@ -2117,8 +2117,8 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
         const uploadMockup = async (buffer: Buffer, name: string) => {
           return uploadBufferToS3({
             buffer,
-            key: `mockups/${Date.now()}-${name}.png`,
-            contentType: "image/png",
+            key: `mockups/${Date.now()}-${name}.webp`,
+            contentType: "image/webp",
           });
         };
 
@@ -2145,8 +2145,8 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
         const uploadMockup = async (buffer: Buffer, name: string) => {
           return uploadBufferToS3({
             buffer,
-            key: `mockups/${Date.now()}-${name}.png`,
-            contentType: "image/png",
+            key: `mockups/${Date.now()}-${name}.webp`,
+            contentType: "image/webp",
           });
         };
 
@@ -2451,8 +2451,8 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
         const gardenBuffer = await generateGardenMockup(file.buffer);
         const uploadedGarden = await uploadBufferToS3({
           buffer: gardenBuffer,
-          key: `mockups/${Date.now()}-mockup.png`,
-          contentType: "image/png",
+          key: `mockups/${Date.now()}-mockup.webp`,
+          contentType: "image/webp",
         });
         updateData.mockupUrl = uploadedGarden;
       } else if (isBusinessCategory) {
@@ -2461,8 +2461,8 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
         const uploadMockup = async (buffer: Buffer, name: string) => {
           return uploadBufferToS3({
             buffer,
-            key: `mockups/${Date.now()}-${name}.png`,
-            contentType: "image/png",
+            key: `mockups/${Date.now()}-${name}.webp`,
+            contentType: "image/webp",
           });
         };
 
@@ -2489,8 +2489,8 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
         const uploadMockup = async (buffer: Buffer, name: string) => {
           return uploadBufferToS3({
             buffer,
-            key: `mockups/${Date.now()}-${name}.png`,
-            contentType: "image/png",
+            key: `mockups/${Date.now()}-${name}.webp`,
+            contentType: "image/webp",
           });
         };
 
