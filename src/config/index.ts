@@ -51,7 +51,11 @@ export default {
       dragonfly: Number(process.env.QLS_DRAGONFLY_PRODUCT_COMBINATION_ID || 0),
       dpd: Number(process.env.QLS_DPD_PRODUCT_COMBINATION_ID || 0),
       postnl: Number(process.env.QLS_POSTNL_PRODUCT_COMBINATION_ID || 0),
+      postnl_be: Number(process.env.QLS_POSTNL_BE_PRODUCT_COMBINATION_ID || 0),
     },
+    carriersCountry: {
+      postnl_be: "BE",
+    } as Record<string, string>,
     defaultWeightGram: Number(process.env.QLS_DEFAULT_WEIGHT_GRAM || 1000),
     defaultCountry: process.env.QLS_DEFAULT_COUNTRY || "NL",
     webhookSecret: process.env.QLS_WEBHOOK_SECRET as string,

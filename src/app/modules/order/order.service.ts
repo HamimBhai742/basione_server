@@ -577,6 +577,7 @@ interface CheckOutPayload {
   address?: string;
   zipCode: string;
   city: string;
+  country?: string;
   orderId?: string;
   selectedPaymentMethod?: string;
 }
@@ -595,6 +596,8 @@ const validateCheckoutPayload = (payload: CheckOutPayload) => {
   const address = sanitizeString(payload.address);
   const zipCode = sanitizeString(payload.zipCode);
   const city = sanitizeString(payload.city);
+  const rawCountry = sanitizeString(payload.country).toUpperCase();
+  const country = rawCountry === "BE" ? "BE" : "NL";
 
   if (!name) {
     throw new AppError("Naam is verplicht", httpStatus.BAD_REQUEST);
@@ -642,6 +645,7 @@ const validateCheckoutPayload = (payload: CheckOutPayload) => {
     address: address || null,
     zipCode,
     city,
+    country,
   };
 };
 
@@ -724,6 +728,7 @@ const checkOut = async (
       address: validatedAddress.address,
       zipCode: validatedAddress.zipCode,
       city: validatedAddress.city,
+      country: validatedAddress.country,
       userId: order.userId || userId || null,
     },
     create: {
@@ -736,6 +741,7 @@ const checkOut = async (
       address: validatedAddress.address,
       zipCode: validatedAddress.zipCode,
       city: validatedAddress.city,
+      country: validatedAddress.country,
       userId: order.userId || userId || null,
       orderId,
     },

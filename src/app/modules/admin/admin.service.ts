@@ -1557,6 +1557,7 @@ type UpdateOrderAddressPayload = {
   zipCode?: string;
   companyName?: string;
   address?: string;
+  country?: string;
 };
 
 const updateOrderAddress = async (
@@ -1587,6 +1588,7 @@ const updateOrderAddress = async (
   const city = payload.city !== undefined ? payload.city.trim() : (existingAddress?.city || "");
   const companyName = payload.companyName !== undefined ? (payload.companyName?.trim() || null) : (existingAddress?.companyName || null);
   const extraAddress = payload.address !== undefined ? (payload.address?.trim() || null) : (existingAddress?.address || null);
+  const country = payload.country !== undefined ? (payload.country?.trim().toUpperCase() || "NL") : (existingAddress?.country || "NL");
 
   await prisma.address.upsert({
     where: {
@@ -1602,6 +1604,7 @@ const updateOrderAddress = async (
       city,
       companyName,
       address: extraAddress,
+      country,
     },
     create: {
       orderId,
@@ -1615,6 +1618,7 @@ const updateOrderAddress = async (
       city,
       companyName,
       address: extraAddress,
+      country,
     },
   });
 

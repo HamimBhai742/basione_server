@@ -22,7 +22,7 @@ type CreateShipmentPayload = {
   shipmentProducts?: QlsShipmentProduct[];
 };
 
-export type QlsCarrierCode = "dhl" | "dragonfly" | "dpd" | "postnl";
+export type QlsCarrierCode = "dhl" | "dragonfly" | "dpd" | "postnl" | "postnl_be";
 
 const supportedCarriers: Record<QlsCarrierCode, { code: QlsCarrierCode; label: string }> = {
   dhl: {
@@ -40,6 +40,10 @@ const supportedCarriers: Record<QlsCarrierCode, { code: QlsCarrierCode; label: s
   postnl: {
     code: "postnl",
     label: "PostNL",
+  },
+  postnl_be: {
+    code: "postnl_be",
+    label: "PostNL BE",
   },
 };
 
@@ -116,7 +120,7 @@ const sanitize = (value?: string | null) => {
 const buildReference = (order: { id: string; trackingNumber?: string | null }) =>
   order.trackingNumber || order.id;
 
-const buildReceiverContact = (order: any) => {
+const buildReceiverContact = (order: any, carrierCountry?: string) => {
   const address = order.addresses;
 
   if (!address) {
@@ -126,6 +130,8 @@ const buildReceiverContact = (order: any) => {
     );
   }
 
+  const country = carrierCountry || address.country || config.qls.defaultCountry;
+
   return {
     name: sanitize(address.name),
     companyname: sanitize(address.companyName) || undefined,
@@ -134,7 +140,7 @@ const buildReceiverContact = (order: any) => {
     address2: sanitize(address.address) || undefined,
     postalcode: sanitize(address.zipCode),
     locality: sanitize(address.city),
-    country: config.qls.defaultCountry,
+    country,
     email: sanitize(address.email) || sanitize(order.user?.email) || undefined,
     phone: sanitize(address.phone) || undefined,
   };
@@ -367,7 +373,10 @@ const createShipment = async (payload: CreateShipmentPayload) => {
     weight: payload.weight || undefined,
     customs_invoice_number: payload.customsInvoiceNumber,
     customs_shipment_type: payload.customsShipmentType,
-    receiver_contact: buildReceiverContact(order),
+    receiver_contact: buildReceiverContact(
+      order,
+      payload.carrier ? config.qls.carriersCountry[payload.carrier] : undefined,
+    ),
     shipment_products: payload.shipmentProducts || buildShipmentProducts(order),
   });
   const selectedCarrier = payload.carrier
