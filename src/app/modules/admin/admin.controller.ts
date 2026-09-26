@@ -107,8 +107,10 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 const dashboardStats = catchAsync(async (req: Request, res: Response) => {
-  const range = req.query.range as string;
-  const stats = await adminService.dashboardStats(range);
+  const range = req.query.range as string | undefined;
+  const startDate = req.query.startDate as string | undefined;
+  const endDate = req.query.endDate as string | undefined;
+  const stats = await adminService.dashboardStats(range, startDate, endDate);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
