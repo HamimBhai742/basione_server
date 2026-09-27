@@ -677,6 +677,24 @@ model AlertBarSetting {
   updatedAt DateTime @updatedAt
 }
 
+model PricingSetting {
+  id                   String   @id @default(auto()) @map("_id") @db.ObjectId
+  baseBannerPrice      Float    @default(11.95)
+  pricePerM2Under1     Float    @default(25.0)
+  pricePerM2From1      Float    @default(20.0)
+  eyeletsFee           Float    @default(3.5)
+  standardPrice60x40   Float    @default(11.95)
+  standardPrice120x80  Float    @default(24.00)
+  standardPrice180x120 Float    @default(43.20)
+  standardPrice240x160 Float    @default(76.80)
+  standardDeliveryFee  Float    @default(4.95)
+  expressDeliveryFee   Float    @default(14.95)
+  standardPickupFee    Float    @default(0.0)
+  expressPickupFee     Float    @default(14.95)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
 model Notification {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String?  @db.ObjectId

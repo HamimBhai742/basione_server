@@ -18,7 +18,7 @@ import {
 } from "../../utils/guestOrderToken";
 import { calculateDeliveryDate, formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 import { sendAdminPushNotification } from "../../utils/notification.service";
-
+import { pricingSettingService } from "../pricingSetting/pricingSetting.service";
 
 type FrontendDeliveryType =
   | "standard-delivery"
@@ -81,7 +81,7 @@ const DELIVERY_OPTIONS: Record<
   "standard-delivery": {
     prismaDeliveryType: DeliveryType.standard_delivery,
     method: DeliveryMethod.delivery,
-    fee: 5,
+    fee: 4.95,
     time: "3-5 werkdagen",
     label: "Standaard levering",
   },
@@ -89,7 +89,7 @@ const DELIVERY_OPTIONS: Record<
   "express-delivery": {
     prismaDeliveryType: DeliveryType.express_delivery,
     method: DeliveryMethod.delivery,
-    fee: 15,
+    fee: 14.95,
     time: "1-2 werkdagen",
     label: "Express levering",
   },
@@ -97,7 +97,7 @@ const DELIVERY_OPTIONS: Record<
   "express-pickup": {
     prismaDeliveryType: DeliveryType.express_pickup,
     method: DeliveryMethod.pickup,
-    fee: 15,
+    fee: 14.95,
     time: "Vandaag afhalen bij bestelling vóór 12:00",
     label: "Express afhalen",
   },
@@ -281,6 +281,9 @@ const createOrder = async (
     );
   }
 
+  const pricingSettings = await pricingSettingService.getPricingSetting().catch(() => null);
+  const activeEyeletsFee = pricingSettings?.eyeletsFee ?? EYELETS_FEE;
+
   const orderItemsData: any[] = [];
   let totalBannerPriceExclVat = 0;
   let totalBannerVatAmount = 0;
@@ -332,7 +335,7 @@ const createOrder = async (
       throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
     }
 
-    const eyeletsFee = itemHasEyelets ? EYELETS_FEE * itemQuantity : 0;
+    const eyeletsFee = itemHasEyelets ? activeEyeletsFee * itemQuantity : 0;
 
     const bannerTotalPriceInclVat = roundToTwo(bannerPrice * itemQuantity);
     const bannerPriceExclVat = getPriceExcludingVatFromIncludedVat(bannerTotalPriceInclVat);
@@ -400,7 +403,20 @@ const createOrder = async (
     totalEyeletsFeeInclVat += eyeletsFeeInclVat;
   }
 
-  const deliveryFeeIncludingVat = roundToTwo(selectedDeliveryOption.fee);
+  let activeDeliveryFee = selectedDeliveryOption.fee;
+  if (pricingSettings) {
+    if (deliveryType === "standard-delivery") {
+      activeDeliveryFee = pricingSettings.standardDeliveryFee;
+    } else if (deliveryType === "express-delivery") {
+      activeDeliveryFee = pricingSettings.expressDeliveryFee;
+    } else if (deliveryType === "standard-pickup") {
+      activeDeliveryFee = pricingSettings.standardPickupFee;
+    } else if (deliveryType === "express-pickup") {
+      activeDeliveryFee = pricingSettings.expressPickupFee;
+    }
+  }
+
+  const deliveryFeeIncludingVat = roundToTwo(activeDeliveryFee);
   const deliveryFeeExcludingVat = getPriceExcludingVatFromIncludedVat(deliveryFeeIncludingVat);
   const deliveryVatAmount = getVatAmountFromIncludedVat(deliveryFeeIncludingVat);
 

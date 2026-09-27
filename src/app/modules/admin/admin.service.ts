@@ -2298,9 +2298,9 @@ const createTemplate = async (payload: any, file?: Express.Multer.File) => {
   const areaM2 = (width / 100) * (height / 100);
   const pricePerM2 = areaM2 < 1 ? 25 : 20;
   const calculatedPrice = areaM2 * pricePerM2;
-  const fallbackPrice = Math.max(calculatedPrice, 12);
-  // For global templates/readymades, the base starting price is always 12.00 EUR (60x40 cm price)
-  const finalPrice = 12.00;
+  const fallbackPrice = Math.max(calculatedPrice, 11.95);
+  // For global templates/readymades, the base starting price is always 11.95 EUR (60x40 cm price)
+  const finalPrice = 11.95;
 
   const headline = parsedData.headline || "Template Headline";
   const slug = await generateUniqueBannerSlug(parsedData.slug || headline);
@@ -2462,11 +2462,11 @@ const updateTemplate = async (templateId: string, payload: any, file?: Express.M
     updateData.height = height;
   }
 
-  // For global templates/readymades, the base starting price is always 12.00 EUR (60x40 cm price)
-  updateData.price = 12.00;
-  updateData.priceInclVat = 12.00;
-  updateData.priceExclVat = 9.92;
-  updateData.vatAmount = 2.08;
+  // For global templates/readymades, the base starting price is always 11.95 EUR (60x40 cm price)
+  updateData.price = 11.95;
+  updateData.priceInclVat = 11.95;
+  updateData.priceExclVat = 9.88;
+  updateData.vatAmount = 2.07;
   updateData.vatRate = 0.21;
 
   updateData.isReadymade = isReadymade;

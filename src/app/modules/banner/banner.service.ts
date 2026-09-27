@@ -172,7 +172,7 @@ type AuthRequest = Request & {
 const VAT_RATE = 0.21;
 
 // Client confirmed: these prices are INCLUDING VAT
-const MIN_PRICE_INCL_VAT = 12;
+const MIN_PRICE_INCL_VAT = 11.95;
 const PRICE_PER_M2_UNDER_1_INCL_VAT = 25;
 const PRICE_PER_M2_FROM_1_INCL_VAT = 20;
 
@@ -1730,9 +1730,9 @@ const getGoogleShoppingFeed = async () => {
     const link = `${clientUrl}/${route}/${template.slug || template.id}`;
     const imageLink = template.mockupUrl || template.imageUrl || "";
     // Google Merchant Center requires feed price to match website's initial page load price.
-    // Since the website details page always defaults to the 60x40 cm size (which costs 12.00 EUR),
-    // we enforce the feed price to be 12.00 EUR to prevent price mismatch suspensions.
-    const priceStr = "12.00 EUR";
+    // Since the website details page always defaults to the 60x40 cm size (which costs 11.95 EUR),
+    // we enforce the feed price to be 11.95 EUR to prevent price mismatch suspensions.
+    const priceStr = "11.95 EUR";
 
     const categoryName =
       template.templateCategory?.name ||

@@ -21,6 +21,7 @@ import { notificationRoutes } from "../modules/notification/notification.routes"
 import { wishlistRoutes } from "../modules/wishlist/wishlist.routes";
 import { couponRoutes } from "../modules/coupon/coupon.routes";
 import { designRequestRoutes } from "../modules/designRequest/designRequest.routes";
+import { pricingSettingRoutes } from "../modules/pricingSetting/pricingSetting.routes";
 
 export const router = Router();
 
@@ -113,6 +114,10 @@ const routes = [
   {
     path: "/design-request",
     route: designRequestRoutes,
+  },
+  {
+    path: "/pricing-settings",
+    route: pricingSettingRoutes,
   },
 ];
 
