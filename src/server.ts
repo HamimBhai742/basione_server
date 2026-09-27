@@ -1,3 +1,5 @@
+process.env.TZ = process.env.TZ || "Europe/Amsterdam";
+
 import { Server } from "http";
 import app from "./app";
 import config from "./config";

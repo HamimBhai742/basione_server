@@ -25,6 +25,19 @@ import { formatLabel } from "../../utils/formatLable";
 import { webwinkelkeurService } from "../webwinkelkeur/webwinkelkeur.service";
 import { formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 import { assertNoDummyContent } from "../../utils/contentValidator";
+import {
+  AMSTERDAM_TIMEZONE,
+  getAmsterdamComponents,
+  getAmsterdamMidnight,
+  getAmsterdamEndOfDay,
+  getAmsterdamDaysAgoMidnight,
+  getAmsterdamHourLabel,
+  getAmsterdamDayWeekdayLabel,
+  getAmsterdamDayMonthLabel,
+  getAmsterdamMonthLabel,
+  getAmsterdamMonthYearLabel,
+  ALL_DUTCH_MONTHS,
+} from "../../utils/amsterdamTime";
 
 const bannerListSelect = {
   id: true,
@@ -740,29 +753,17 @@ const dashboardStats = async (
 
   if (startDate || endDate || range === "custom") {
     if (startDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      dateFilter.gte = start;
+      dateFilter.gte = getAmsterdamMidnight(startDate);
     }
     if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      dateFilter.lte = end;
+      dateFilter.lte = getAmsterdamEndOfDay(endDate);
     }
   } else if (range === "today") {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    dateFilter.gte = startOfToday;
+    dateFilter.gte = getAmsterdamMidnight();
   } else if (range === "7d") {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-    dateFilter.gte = sevenDaysAgo;
+    dateFilter.gte = getAmsterdamDaysAgoMidnight(6);
   } else if (range === "30d") {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-    thirtyDaysAgo.setHours(0, 0, 0, 0);
-    dateFilter.gte = thirtyDaysAgo;
+    dateFilter.gte = getAmsterdamDaysAgoMidnight(29);
   }
 
   const hasDateFilter = Boolean(dateFilter.gte || dateFilter.lte);
@@ -867,8 +868,7 @@ const dashboardStats = async (
   const dutchMonths = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
 
   if (range === "today") {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const startOfToday = getAmsterdamMidnight();
 
     const todayOrders = await prisma.order.findMany({
       where: {
@@ -888,8 +888,7 @@ const dashboardStats = async (
     }
 
     todayOrders.forEach((order) => {
-      const hour = new Date(order.createdAt).getHours();
-      const hourStr = `${String(hour).padStart(2, "0")}:00`;
+      const hourStr = getAmsterdamHourLabel(order.createdAt);
       if (salesTrendMap[hourStr] !== undefined) {
         salesTrendMap[hourStr] += order.total || 0;
       }
@@ -900,9 +899,7 @@ const dashboardStats = async (
       revenue: Math.round(revenue * 100) / 100,
     }));
   } else if (range === "7d") {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = getAmsterdamDaysAgoMidnight(6);
 
     const last7DaysOrders = await prisma.order.findMany({
       where: {
@@ -915,21 +912,18 @@ const dashboardStats = async (
       },
     });
 
-    const weekdays = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
     const salesTrendMap: Record<string, number> = {};
     const orderedLabels: string[] = [];
 
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const label = `${d.getDate()} ${weekdays[d.getDay()]}`;
+      const d = getAmsterdamDaysAgoMidnight(i);
+      const label = getAmsterdamDayWeekdayLabel(d);
       salesTrendMap[label] = 0;
       orderedLabels.push(label);
     }
 
     last7DaysOrders.forEach((order) => {
-      const d = new Date(order.createdAt);
-      const label = `${d.getDate()} ${weekdays[d.getDay()]}`;
+      const label = getAmsterdamDayWeekdayLabel(order.createdAt);
       if (salesTrendMap[label] !== undefined) {
         salesTrendMap[label] += order.total || 0;
       }
@@ -940,9 +934,7 @@ const dashboardStats = async (
       revenue: Math.round(salesTrendMap[label] * 100) / 100,
     }));
   } else if (range === "30d") {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
-    thirtyDaysAgo.setHours(0, 0, 0, 0);
+    const thirtyDaysAgo = getAmsterdamDaysAgoMidnight(29);
 
     const last30DaysOrders = await prisma.order.findMany({
       where: {
@@ -959,16 +951,14 @@ const dashboardStats = async (
     const orderedLabels: string[] = [];
 
     for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const label = `${d.getDate()} ${dutchMonths[d.getMonth()]}`;
+      const d = getAmsterdamDaysAgoMidnight(i);
+      const label = getAmsterdamDayMonthLabel(d);
       salesTrendMap[label] = 0;
       orderedLabels.push(label);
     }
 
     last30DaysOrders.forEach((order) => {
-      const d = new Date(order.createdAt);
-      const label = `${d.getDate()} ${dutchMonths[d.getMonth()]}`;
+      const label = getAmsterdamDayMonthLabel(order.createdAt);
       if (salesTrendMap[label] !== undefined) {
         salesTrendMap[label] += order.total || 0;
       }
@@ -979,8 +969,8 @@ const dashboardStats = async (
       revenue: Math.round(salesTrendMap[label] * 100) / 100,
     }));
   } else if (range === "custom" || (startDate && endDate)) {
-    const start = dateFilter.gte || (startDate ? new Date(startDate) : new Date());
-    const end = dateFilter.lte || (endDate ? new Date(endDate) : new Date());
+    const start = dateFilter.gte || (startDate ? getAmsterdamMidnight(startDate) : getAmsterdamMidnight());
+    const end = dateFilter.lte || (endDate ? getAmsterdamEndOfDay(endDate) : getAmsterdamEndOfDay());
 
     const customOrders = await prisma.order.findMany({
       where: {
@@ -1002,43 +992,41 @@ const dashboardStats = async (
 
     if (diffDays <= 62) {
       // Day-by-day points
-      const cur = new Date(start);
-      cur.setHours(0, 0, 0, 0);
-      const endLimit = new Date(end);
-
-      while (cur <= endLimit) {
-        const label = `${cur.getDate()} ${dutchMonths[cur.getMonth()]}`;
+      let cur = new Date(start);
+      while (cur <= end) {
+        const label = getAmsterdamDayMonthLabel(cur);
         if (!orderedLabels.includes(label)) {
           orderedLabels.push(label);
           salesTrendMap[label] = 0;
         }
-        cur.setDate(cur.getDate() + 1);
+        cur = new Date(cur.getTime() + 24 * 60 * 60 * 1000);
       }
 
       customOrders.forEach((order) => {
-        const d = new Date(order.createdAt);
-        const label = `${d.getDate()} ${dutchMonths[d.getMonth()]}`;
+        const label = getAmsterdamDayMonthLabel(order.createdAt);
         if (salesTrendMap[label] !== undefined) {
           salesTrendMap[label] += order.total || 0;
         }
       });
     } else {
       // Month-by-month points
-      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
-      const endLimit = new Date(end.getFullYear(), end.getMonth(), 1);
-
-      while (cur <= endLimit) {
-        const label = `${dutchMonths[cur.getMonth()]} ${cur.getFullYear()}`;
-        if (!orderedLabels.includes(label)) {
-          orderedLabels.push(label);
-          salesTrendMap[label] = 0;
+      const startParts = getAmsterdamComponents(start);
+      const endParts = getAmsterdamComponents(end);
+      let y = startParts.year;
+      let m = startParts.month;
+      while (y < endParts.year || (y === endParts.year && m <= endParts.month)) {
+        const mLabel = `${ALL_DUTCH_MONTHS[m - 1]} ${y}`;
+        orderedLabels.push(mLabel);
+        salesTrendMap[mLabel] = 0;
+        m++;
+        if (m > 12) {
+          m = 1;
+          y++;
         }
-        cur.setMonth(cur.getMonth() + 1);
       }
 
       customOrders.forEach((order) => {
-        const d = new Date(order.createdAt);
-        const label = `${dutchMonths[d.getMonth()]} ${d.getFullYear()}`;
+        const label = getAmsterdamMonthYearLabel(order.createdAt);
         if (salesTrendMap[label] !== undefined) {
           salesTrendMap[label] += order.total || 0;
         }
@@ -1050,17 +1038,31 @@ const dashboardStats = async (
       revenue: Math.round(salesTrendMap[label] * 100) / 100,
     }));
   } else {
-    // Monthly Sales trend for last 6 months (All-time or default)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
-    sixMonthsAgo.setHours(0, 0, 0, 0);
+    // Monthly Sales trend for last 6 months (All-time or default in Amsterdam timezone)
+    const currentAms = getAmsterdamComponents();
+    const orderedMonthKeys: { monthNum: number; year: number; label: string }[] = [];
+    const salesTrendMap: Record<string, number> = {};
+
+    for (let i = 5; i >= 0; i--) {
+      let m = currentAms.month - i;
+      let y = currentAms.year;
+      while (m < 1) {
+        m += 12;
+        y -= 1;
+      }
+      const label = ALL_DUTCH_MONTHS[m - 1];
+      orderedMonthKeys.push({ monthNum: m, year: y, label });
+      salesTrendMap[label] = 0;
+    }
+
+    const oldestBucket = orderedMonthKeys[0];
+    const sixMonthsAgoStart = getAmsterdamMidnight(new Date(Date.UTC(oldestBucket.year, oldestBucket.monthNum - 1, 1)));
 
     const monthlyOrders = await prisma.order.findMany({
       where: {
         ...paidOrderCondition,
         createdAt: {
-          gte: sixMonthsAgo,
+          gte: sixMonthsAgoStart,
         },
       },
       select: {
@@ -1069,32 +1071,31 @@ const dashboardStats = async (
       },
     });
 
-    const salesTrendMap: Record<string, number> = {};
-
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const monthName = dutchMonths[d.getMonth()];
-      salesTrendMap[monthName] = 0;
-    }
-
     monthlyOrders.forEach((order) => {
-      const monthName = dutchMonths[new Date(order.createdAt).getMonth()];
-      if (salesTrendMap[monthName] !== undefined) {
-        salesTrendMap[monthName] += order.total || 0;
+      const monthLabel = getAmsterdamMonthLabel(order.createdAt);
+      if (salesTrendMap[monthLabel] !== undefined) {
+        salesTrendMap[monthLabel] += order.total || 0;
       }
     });
 
-    salesTrend = Object.entries(salesTrendMap).map(([month, revenue]) => ({
-      month,
-      revenue: Math.round(revenue * 100) / 100,
+    salesTrend = orderedMonthKeys.map(({ label }) => ({
+      month: label,
+      revenue: Math.round(salesTrendMap[label] * 100) / 100,
     }));
   }
 
-  // Trends calculation (Month-over-Month)
-  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  // Trends calculation (Month-over-Month in Amsterdam timezone)
+  const nowAms = getAmsterdamComponents();
+  const startOfCurrentMonth = getAmsterdamMidnight(new Date(Date.UTC(nowAms.year, nowAms.month - 1, 1)));
+
+  let lastMonthNum = nowAms.month - 1;
+  let lastMonthYear = nowAms.year;
+  if (lastMonthNum < 1) {
+    lastMonthNum = 12;
+    lastMonthYear -= 1;
+  }
+  const startOfLastMonth = getAmsterdamMidnight(new Date(Date.UTC(lastMonthYear, lastMonthNum - 1, 1)));
+  const endOfLastMonth = new Date(startOfCurrentMonth.getTime() - 1);
 
   // Revenue MoM
   const currentMonthRevenueData = await prisma.order.aggregate({
