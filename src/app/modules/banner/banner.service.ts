@@ -9,6 +9,7 @@ import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { processCanvasJsonImages } from "../../utils/processCanvasJson";
 import slugify from "slugify";
 import config from "../../../config";
+import { pricingSettingService } from "../pricingSetting/pricingSetting.service";
 
 export const generateUniqueBannerSlug = async (
   headline: string,
@@ -183,19 +184,54 @@ const calculateAreaM2 = (widthCm: number, heightCm: number) => {
   return (widthCm / 100) * (heightCm / 100);
 };
 
-const getPricePerM2InclVat = (areaM2: number) => {
-  return areaM2 < 1
-    ? PRICE_PER_M2_UNDER_1_INCL_VAT
-    : PRICE_PER_M2_FROM_1_INCL_VAT;
+const getPricePerM2InclVat = (
+  areaM2: number,
+  under1: number = PRICE_PER_M2_UNDER_1_INCL_VAT,
+  from1: number = PRICE_PER_M2_FROM_1_INCL_VAT
+) => {
+  return areaM2 < 1 ? under1 : from1;
 };
 
-const calculatePriceInclVat = (widthCm: number, heightCm: number) => {
+export const calculateBannerPriceInclVat = (
+  widthCm: number,
+  heightCm: number,
+  pricing?: {
+    baseBannerPrice?: number;
+    pricePerM2Under1?: number;
+    pricePerM2From1?: number;
+    standardPrice60x40?: number;
+    standardPrice120x80?: number;
+    standardPrice180x120?: number;
+    standardPrice240x160?: number;
+  } | null
+) => {
+  const minDim = Math.min(widthCm, heightCm);
+  const maxDim = Math.max(widthCm, heightCm);
+
+  if (minDim === 40 && maxDim === 60 && pricing?.standardPrice60x40 !== undefined) {
+    return pricing.standardPrice60x40;
+  }
+  if (minDim === 80 && maxDim === 120 && pricing?.standardPrice120x80 !== undefined) {
+    return pricing.standardPrice120x80;
+  }
+  if (minDim === 120 && maxDim === 180 && pricing?.standardPrice180x120 !== undefined) {
+    return pricing.standardPrice180x120;
+  }
+  if (minDim === 160 && maxDim === 240 && pricing?.standardPrice240x160 !== undefined) {
+    return pricing.standardPrice240x160;
+  }
+
   const areaM2 = calculateAreaM2(widthCm, heightCm);
-  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
+  const under1 = pricing?.pricePerM2Under1 ?? PRICE_PER_M2_UNDER_1_INCL_VAT;
+  const from1 = pricing?.pricePerM2From1 ?? PRICE_PER_M2_FROM_1_INCL_VAT;
+  const minPrice = pricing?.baseBannerPrice ?? MIN_PRICE_INCL_VAT;
+  const pricePerM2InclVat = getPricePerM2InclVat(areaM2, under1, from1);
   const calculatedPrice = areaM2 * pricePerM2InclVat;
 
-  return Math.max(calculatedPrice, MIN_PRICE_INCL_VAT);
+  return roundToTwo(Math.max(calculatedPrice, minPrice));
 };
+
+const calculatePriceInclVat = calculateBannerPriceInclVat;
 
 const calculatePriceExclVat = (priceInclVat: number) => {
   return priceInclVat / (1 + VAT_RATE);
@@ -210,14 +246,6 @@ const formatLabel = (text: string) => {
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-};
-
-const calculateBannerPriceInclVat = (widthCm: number, heightCm: number) => {
-  const areaM2 = calculateAreaM2(widthCm, heightCm);
-  const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
-  const calculatedPrice = areaM2 * pricePerM2InclVat;
-
-  return roundToTwo(Math.max(calculatedPrice, MIN_PRICE_INCL_VAT));
 };
 
 const roundToTwo = (value: number): number => {
@@ -440,8 +468,9 @@ const createBanner = async (req: AuthRequest) => {
    * Price calculation
    * All prices are INCLUDING VAT.
    */
+  const pricingSettings = await pricingSettingService.getPricingSetting().catch(() => null);
   const areaM2 = calculateAreaM2(width, height);
-  const price = calculateBannerPriceInclVat(width, height);
+  const price = calculateBannerPriceInclVat(width, height, pricingSettings);
   const priceExclVat = calculatePriceExclVat(price);
   const vatAmount = calculateVatAmount(price);
   const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
@@ -721,11 +750,13 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   const areaM2 = calculateAreaM2(width, height);
   const pricePerM2InclVat = getPricePerM2InclVat(areaM2);
 
+  const pricingSettings = await pricingSettingService.getPricingSetting().catch(() => null);
+
   // Final price is already INCLUDING VAT
   const priceInclVat =
     getProvidedNumber(parsedData.priceInclVat) ??
     getProvidedNumber(parsedData.price) ??
-    calculatePriceInclVat(width, height);
+    calculatePriceInclVat(width, height, pricingSettings);
   const priceExclVat =
     getProvidedNumber(parsedData.priceExclVat) ??
     calculatePriceExclVat(priceInclVat);
@@ -869,8 +900,9 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
     areaM2 = calculateAreaM2(width, height);
     pricePerM2InclVat = getPricePerM2InclVat(areaM2);
 
+    const pricingSettings = await pricingSettingService.getPricingSetting().catch(() => null);
     // Final price is already INCLUDING VAT
-    priceInclVat = calculatePriceInclVat(width, height);
+    priceInclVat = calculatePriceInclVat(width, height, pricingSettings);
     priceExclVat = calculatePriceExclVat(priceInclVat);
     vatAmount = calculateVatAmount(priceInclVat);
 
@@ -1607,7 +1639,11 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
 
   // Sizing validations (no upper limit enforced)
 
-  const price = calculateBannerPriceInclVat(width, height);
+  const pricingSettings = await pricingSettingService.getPricingSetting().catch(() => null);
+  const price =
+    getProvidedNumber(parsedData.priceInclVat) ??
+    getProvidedNumber(parsedData.price) ??
+    calculateBannerPriceInclVat(width, height, pricingSettings);
 
   let imageUrl = template.imageUrl;
   let originalImageUrl = template.originalImageUrl || template.imageUrl;

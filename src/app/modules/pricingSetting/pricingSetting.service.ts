@@ -16,22 +16,36 @@ export const DEFAULT_PRICING_SETTING = {
 };
 
 const getPricingSetting = async () => {
-  let setting = await (prisma as any).pricingSetting.findFirst();
-
-  if (!setting) {
-    setting = await (prisma as any).pricingSetting.create({
-      data: DEFAULT_PRICING_SETTING,
+  let doc: any = null;
+  try {
+    const rawResult: any = await prisma.$runCommandRaw({
+      find: "PricingSetting",
+      limit: 1,
     });
+    if (rawResult?.cursor?.firstBatch?.[0]) {
+      const raw = rawResult.cursor.firstBatch[0];
+      doc = {
+        ...raw,
+        id: raw._id?.$oid || raw._id,
+      };
+    }
+  } catch (err) {
+    console.error("[getPricingSetting raw error]", err);
+  }
+
+  if (!doc) {
+    const fallbackSetting = await (prisma as any).pricingSetting.findFirst().catch(() => null);
+    if (fallbackSetting) doc = fallbackSetting;
   }
 
   return {
     ...DEFAULT_PRICING_SETTING,
-    ...setting,
+    ...(doc || {}),
   };
 };
 
 const updatePricingSetting = async (payload: Partial<typeof DEFAULT_PRICING_SETTING>) => {
-  let setting = await (prisma as any).pricingSetting.findFirst();
+  const current = await getPricingSetting();
 
   const updateData: any = {};
   if (payload.baseBannerPrice !== undefined) updateData.baseBannerPrice = Number(payload.baseBannerPrice);
@@ -47,21 +61,36 @@ const updatePricingSetting = async (payload: Partial<typeof DEFAULT_PRICING_SETT
   if (payload.standardPickupFee !== undefined) updateData.standardPickupFee = Number(payload.standardPickupFee);
   if (payload.expressPickupFee !== undefined) updateData.expressPickupFee = Number(payload.expressPickupFee);
 
-  if (!setting) {
-    return (prisma as any).pricingSetting.create({
-      data: {
-        ...DEFAULT_PRICING_SETTING,
-        ...updateData,
-      },
+  if (current?.id) {
+    await prisma.$runCommandRaw({
+      update: "PricingSetting",
+      updates: [
+        {
+          q: { _id: { $oid: current.id } },
+          u: {
+            $set: {
+              ...updateData,
+              updatedAt: { $date: new Date().toISOString() },
+            },
+          },
+        },
+      ],
+    });
+  } else {
+    await prisma.$runCommandRaw({
+      insert: "PricingSetting",
+      documents: [
+        {
+          ...DEFAULT_PRICING_SETTING,
+          ...updateData,
+          createdAt: { $date: new Date().toISOString() },
+          updatedAt: { $date: new Date().toISOString() },
+        },
+      ],
     });
   }
 
-  return (prisma as any).pricingSetting.update({
-    where: {
-      id: setting.id,
-    },
-    data: updateData,
-  });
+  return getPricingSetting();
 };
 
 export const pricingSettingService = {

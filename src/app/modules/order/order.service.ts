@@ -19,6 +19,7 @@ import {
 import { calculateDeliveryDate, formatAmsterdamDateTime } from "../../utils/deliveryCalculator";
 import { sendAdminPushNotification } from "../../utils/notification.service";
 import { pricingSettingService } from "../pricingSetting/pricingSetting.service";
+import { calculateBannerPriceInclVat } from "../banner/banner.service";
 
 type FrontendDeliveryType =
   | "standard-delivery"
@@ -329,7 +330,10 @@ const createOrder = async (
       throw new AppError("Je bent niet geautoriseerd", httpStatus.FORBIDDEN);
     }
 
-    const bannerPrice = Number(banner.price);
+    const dynamicPrice = (banner.width && banner.height)
+      ? calculateBannerPriceInclVat(banner.width, banner.height, pricingSettings)
+      : Number(banner.price);
+    const bannerPrice = dynamicPrice || Number(banner.price);
 
     if (Number.isNaN(bannerPrice) || bannerPrice < 0) {
       throw new AppError("Ongeldige bannerprijs.", httpStatus.BAD_REQUEST);
