@@ -3,13 +3,14 @@ import { prisma } from "../../lib/prisma";
 import axios from "axios";
 import FormData from "form-data";
 import { AppError } from "../../error/AppError";
-import { uploadImageToS3, uploadBufferToS3, uploadOptimizedImageToS3 } from "../../utils/uploadAws";
+import { uploadImageToS3, uploadBufferToS3, uploadOptimizedImageToS3, uploadFileToS3 } from "../../utils/uploadAws";
 import { getS3KeyFromUrl } from "../../utils/getS3KeyFromUrl";
 import { deleteImageFromS3 } from "../../utils/deleteImageFromS3";
 import { processCanvasJsonImages } from "../../utils/processCanvasJson";
 import slugify from "slugify";
 import config from "../../../config";
 import { pricingSettingService } from "../pricingSetting/pricingSetting.service";
+import { generateBannerPrintPdf as generateBannerPrintPdfUtil } from "./banner.print.pdf";
 
 export const generateUniqueBannerSlug = async (
   headline: string,
@@ -765,10 +766,15 @@ const createBannerByTemplate = async (req: AuthRequest) => {
   const vatRate = getProvidedNumber(parsedData.vatRate) ?? VAT_RATE;
 
   let imgUrl = parsedData.imageUrl || "";
+  let originalImgUrl = parsedData.originalImageUrl || parsedData.imageUrl || "";
 
   if (req?.file) {
-    const img = await uploadOptimizedImageToS3(req.file);
-    imgUrl = img;
+    const [originalImg, optimizedImg] = await Promise.all([
+      uploadFileToS3(req.file, "banner-originals"),
+      uploadOptimizedImageToS3(req.file, "images"),
+    ]);
+    imgUrl = optimizedImg;
+    originalImgUrl = originalImg;
   }
 
   const sizeLabel = getSizeLabel(parsedData, sizeType);
@@ -784,6 +790,7 @@ const createBannerByTemplate = async (req: AuthRequest) => {
       slug,
       occasion: occ,
       imageUrl: imgUrl,
+      originalImageUrl: originalImgUrl || imgUrl,
 
       // Main price field should store VAT-included final price
       price: Number(priceInclVat.toFixed(2)),
@@ -940,18 +947,31 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
   }
 
   let imageUrl = banner?.imageUrl;
+  let originalImageUrl = banner?.originalImageUrl || banner?.imageUrl;
   const oldImg = banner?.imageUrl;
+  const oldOriginalImg = banner?.originalImageUrl;
 
   if (req?.file) {
-    const img = await uploadOptimizedImageToS3(req.file);
-    imageUrl = img;
+    const [originalImg, optimizedImg] = await Promise.all([
+      uploadFileToS3(req.file, "banner-originals"),
+      uploadOptimizedImageToS3(req.file, "images"),
+    ]);
+    imageUrl = optimizedImg;
+    originalImageUrl = originalImg;
 
     // Only delete original image from S3 if we are updating a user banner draft, NOT a template!
     if (oldImg && !banner.isTemplate) {
       const oldKey = getS3KeyFromUrl(oldImg);
 
       if (oldKey) {
-        await deleteImageFromS3(oldKey);
+        await deleteImageFromS3(oldKey).catch(() => null);
+      }
+    }
+    if (oldOriginalImg && !banner.isTemplate && oldOriginalImg !== oldImg) {
+      const oldOrigKey = getS3KeyFromUrl(oldOriginalImg);
+
+      if (oldOrigKey) {
+        await deleteImageFromS3(oldOrigKey).catch(() => null);
       }
     }
   }
@@ -994,6 +1014,7 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
         width,
         height,
         imageUrl,
+        originalImageUrl,
         price,
         priceInclVat: Number(priceInclVat.toFixed(2)),
         priceExclVat: Number(priceExclVat.toFixed(2)),
@@ -1020,6 +1041,10 @@ const updateBanner = async (req: AuthRequest, bannerId: string) => {
 
   if (imageUrl) {
     updateData.imageUrl = imageUrl;
+  }
+
+  if (originalImageUrl) {
+    updateData.originalImageUrl = originalImageUrl;
   }
 
   let finalHeadline = banner.headline;
@@ -1648,8 +1673,12 @@ const createBannerFromTemplate = async (req: AuthRequest) => {
   let imageUrl = template.imageUrl;
   let originalImageUrl = template.originalImageUrl || template.imageUrl;
   if (req.file) {
-    imageUrl = await uploadOptimizedImageToS3(req.file);
-    originalImageUrl = imageUrl;
+    const [originalImg, optimizedImg] = await Promise.all([
+      uploadFileToS3(req.file, "banner-originals"),
+      uploadOptimizedImageToS3(req.file, "images"),
+    ]);
+    imageUrl = optimizedImg;
+    originalImageUrl = originalImg;
   }
 
   const sizeType = parsedData.sizeType || template.sizeType;
@@ -1867,6 +1896,46 @@ const duplicateBanner = async (bannerId: string, req: AuthRequest) => {
   return duplicatedBanner;
 };
 
+const generateBannerPrintPdf = async (
+  bannerId: string,
+  options?: { bleedMm?: number; includeCropMarks?: boolean },
+) => {
+  const banner = await prisma.banner.findUnique({
+    where: { id: bannerId },
+  });
+
+  if (!banner) {
+    throw new AppError("Banner niet gevonden", 404);
+  }
+
+  const pdfBuffer = await generateBannerPrintPdfUtil({
+    banner: {
+      id: banner.id,
+      headline: banner.headline,
+      name: banner.name,
+      width: banner.width,
+      height: banner.height,
+      imageUrl: banner.imageUrl,
+      originalImageUrl: banner.originalImageUrl,
+      material: banner.material,
+      eyeletType: banner.eyeletType,
+      orderId: banner.orderId,
+      designNumber: banner.designNumber,
+    },
+    bleedMm: options?.bleedMm,
+    includeCropMarks: options?.includeCropMarks,
+  });
+
+  const safeHeadline = (banner.headline || banner.name || "spandoek")
+    .replace(/[^a-zA-Z0-9-_\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+
+  const filename = `Drukbestand-${safeHeadline}-${banner.width}x${banner.height}cm.pdf`;
+
+  return { pdfBuffer, filename };
+};
+
 export const bannerService = {
   duplicateBanner,
   mybanner,
@@ -1882,4 +1951,5 @@ export const bannerService = {
   getTemplateBySlug,
   createBannerFromTemplate,
   getGoogleShoppingFeed,
+  generateBannerPrintPdf,
 };

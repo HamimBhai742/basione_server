@@ -36,6 +36,25 @@ const downloadImage = catchAsync(async (req: Request, res: Response) => {
   response.data.pipe(res);
 });
 
+const getBannerPrintPdf = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const bleedMm = req.query.bleedMm ? Number(req.query.bleedMm) : 0;
+  const includeCropMarks = req.query.cropMarks === "true";
+
+  const { pdfBuffer, filename } = await bannerService.generateBannerPrintPdf(
+    id,
+    { bleedMm, includeCropMarks },
+  );
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${encodeURIComponent(filename)}"`,
+  );
+  res.setHeader("Content-Length", pdfBuffer.length);
+  res.end(pdfBuffer);
+});
+
 const createBanner = catchAsync(
   async (req: Request & { user?: any }, res: Response) => {
     const banner = await bannerService.createBanner(req);
@@ -248,4 +267,5 @@ export const bannerController = {
   createBannerFromTemplate,
   downloadImage,
   getGoogleShoppingFeed,
+  getBannerPrintPdf,
 };

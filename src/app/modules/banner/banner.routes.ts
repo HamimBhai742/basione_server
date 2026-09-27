@@ -33,6 +33,8 @@ router.get("/tuinposter-categories", bannerController.getTuinposterCategories);
 
 router.get("/templates/:slug", bannerController.getTemplateBySlug);
 
+router.get("/:id/print-pdf", bannerController.getBannerPrintPdf);
+
 router.get("/:id", optionalAuth("user", "admin"), bannerController.getSelectedBanner);
 
 router.post(
