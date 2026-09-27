@@ -355,6 +355,8 @@ const createOrder = async (
 
     const designNumber = i === 0 ? baseDesignNumber : `${baseDesignNumber}-${i + 1}`;
     let finalBannerImageUrl = banner.imageUrl;
+    let finalOriginalImageUrl = banner.originalImageUrl;
+
     try {
       finalBannerImageUrl = await applyDesignNumberToBanner({
         imageUrl: banner.imageUrl,
@@ -364,6 +366,21 @@ const createOrder = async (
       });
     } catch (err: any) {
       console.error("[applyDesignNumberToBanner Error]", err?.message || err);
+    }
+
+    if (banner.originalImageUrl && banner.originalImageUrl !== banner.imageUrl) {
+      try {
+        finalOriginalImageUrl = await applyDesignNumberToBanner({
+          imageUrl: banner.originalImageUrl,
+          designNumber,
+          widthCm: banner.width,
+          heightCm: banner.height,
+        });
+      } catch (err: any) {
+        console.error("[applyDesignNumberToBanner originalImageUrl Error]", err?.message || err);
+      }
+    } else {
+      finalOriginalImageUrl = finalBannerImageUrl;
     }
 
     const markDesignAsOrdered = shouldMarkDesignAsOrdered(banner, payload);
@@ -384,6 +401,7 @@ const createOrder = async (
         ...(userId ? { userId } : {}),
         designNumber,
         imageUrl: finalBannerImageUrl,
+        ...(finalOriginalImageUrl ? { originalImageUrl: finalOriginalImageUrl } : {}),
         ...(markDesignAsOrdered
           ? {
               isOrdered: true,
