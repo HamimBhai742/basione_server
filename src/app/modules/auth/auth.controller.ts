@@ -73,9 +73,27 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const changePassword = catchAsync(
+  async (req: Request & { user?: any }, res: Response) => {
+    if (!req.user?.id) {
+      throw new AppError("Je bent niet ingelogd", httpStatus.UNAUTHORIZED);
+    }
+
+    const result = await authService.changePassword(req.user.id, req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Wachtwoord succesvol gewijzigd",
+      data: result,
+    });
+  },
+);
+
 export const authController = {
   loginUser,
   logoutUser,
   resetPassword,
   refreshToken,
+  changePassword,
 };

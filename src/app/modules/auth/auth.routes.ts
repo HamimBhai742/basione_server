@@ -20,4 +20,6 @@ router.post("/refresh", authController.refreshToken);
 
 router.post("/reset-password", authRateLimiter, checkAuth("user", "admin"), authController.resetPassword);
 
+router.post("/change-password", checkAuth("user", "admin"), authController.changePassword);
+
 export const authRoutes = router;

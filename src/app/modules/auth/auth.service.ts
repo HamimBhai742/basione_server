@@ -153,8 +153,48 @@ const refreshAccessToken = async (refreshToken: string) => {
   };
 };
 
+const changePassword = async (
+  userId: string,
+  payload: { oldPassword: string; newPassword: string },
+) => {
+  const { oldPassword, newPassword } = payload;
+
+  if (!oldPassword || !newPassword) {
+    throw new AppError("Oud en nieuw wachtwoord zijn verplicht", httpStatus.BAD_REQUEST);
+  }
+
+  if (newPassword.length < 6) {
+    throw new AppError("Nieuw wachtwoord moet minimaal 6 tekens bevatten", httpStatus.BAD_REQUEST);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new AppError("Gebruiker niet gevonden", httpStatus.NOT_FOUND);
+  }
+
+  const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isPasswordMatch) {
+    throw new AppError("Huidig wachtwoord is onjuist", httpStatus.BAD_REQUEST);
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, config.password_salt);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  return { message: "Wachtwoord succesvol gewijzigd" };
+};
+
 export const authService = {
   loginUser,
   resetPassword,
   refreshAccessToken,
+  changePassword,
 };
