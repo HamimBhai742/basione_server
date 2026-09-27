@@ -8,9 +8,9 @@ export default {
   },
   jwt: {
     secret: process.env.JWT_SECRET,
-    expire_in: process.env.JWT_EXPIRES_IN,
+    expire_in: process.env.JWT_EXPIRES_IN || "7d",
     refresh_secret: process.env.JWT_REFRESH_SECRET,
-    refresh_expire_in: process.env.JWT_REFRESH_EXPIRES_IN,
+    refresh_expire_in: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
   },
   stripe: {
     secret: process.env.STRIPE_SECRET_KEY as string,
