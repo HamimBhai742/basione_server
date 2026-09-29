@@ -50,7 +50,7 @@ export const isWeekendInAmsterdam = (date: Date): boolean => {
  * Find the next workday (Mon-Fri) in Amsterdam timezone starting after the given date
  */
 export const getNextWorkday = (date: Date): Date => {
-  const nextDate = new Date(date.getTime());
+  const nextDate = getAmsterdamDateObj(date);
   do {
     nextDate.setDate(nextDate.getDate() + 1);
   } while (isWeekendInAmsterdam(nextDate));
@@ -88,22 +88,13 @@ export const calculateDeliveryDate = (
   let baseDate: Date;
   
   // 1. Determine base start date
-  if (deliveryType === "express-delivery" || deliveryType === "express-pickup") {
-    // Noon cut-off logic: if weekend or >= 12:00 PM, starts processing next workday
-    if (isWeekend || hour >= 12) {
-      baseDate = getNextWorkday(nowDate);
-    } else {
-      // If weekday and < 12:00 PM, starts processing today
-      baseDate = getAmsterdamDateObj(nowDate);
-    }
+  // Noon cut-off logic (12:00 PM Europe/Amsterdam time):
+  // If weekend or >= 12:00 PM, processing starts next workday
+  if (isWeekend || hour >= 12) {
+    baseDate = getNextWorkday(nowDate);
   } else {
-    // Standard options (standard-delivery, standard-pickup):
-    // Standard doesn't have strict noon cut-off, but if ordered on weekend, starts next workday
-    if (isWeekend) {
-      baseDate = getNextWorkday(nowDate);
-    } else {
-      baseDate = getAmsterdamDateObj(nowDate);
-    }
+    // If weekday and < 12:00 PM, processing starts today
+    baseDate = getAmsterdamDateObj(nowDate);
   }
   
   let minDays = 0;
@@ -113,14 +104,14 @@ export const calculateDeliveryDate = (
   switch (deliveryType) {
     case "express-pickup":
       // "Haal vandaag op (Bestel vóór 12:00 in Almere)"
-      // If it started today, 0 days to add. If next workday, 0 days to add from next workday.
+      // If ordered before 12:00 on workday -> ready today. If after 12:00 or weekend -> next workday.
       minDays = 0;
       maxDays = 0;
       break;
     case "express-delivery":
-      // "1-2 werkdagen"
+      // "1 werkdag"
       minDays = 1;
-      maxDays = 2;
+      maxDays = 1;
       break;
     case "standard-pickup":
       // "Klaar binnen 2-3 werkdagen"
@@ -129,9 +120,9 @@ export const calculateDeliveryDate = (
       break;
     case "standard-delivery":
     default:
-      // "3-5 werkdagen"
+      // "3 werkdagen"
       minDays = 3;
-      maxDays = 5;
+      maxDays = 3;
       break;
   }
   

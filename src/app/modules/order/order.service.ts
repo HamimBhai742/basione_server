@@ -83,7 +83,7 @@ const DELIVERY_OPTIONS: Record<
     prismaDeliveryType: DeliveryType.standard_delivery,
     method: DeliveryMethod.delivery,
     fee: 4.95,
-    time: "3-5 werkdagen",
+    time: "3 werkdagen",
     label: "Standaard levering",
   },
 
@@ -91,7 +91,7 @@ const DELIVERY_OPTIONS: Record<
     prismaDeliveryType: DeliveryType.express_delivery,
     method: DeliveryMethod.delivery,
     fee: 14.95,
-    time: "1-2 werkdagen",
+    time: "1 werkdag",
     label: "Express levering",
   },
 
